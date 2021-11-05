@@ -3,3 +3,4 @@ schedule
 clipboard
 pymongo[srv]
 keyboard
+opencv-python
