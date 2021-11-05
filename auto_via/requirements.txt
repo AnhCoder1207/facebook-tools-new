@@ -1,0 +1,12 @@
+pyotp
+pyautogui
+clipboard
+pymongo
+dnspython
+exchangelib
+bs4
+opencv-python
+dnspython
+google-auth-httplib2
+google-auth-oauthlib
+google-api-python-client

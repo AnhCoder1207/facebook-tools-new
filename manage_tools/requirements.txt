@@ -1,0 +1,4 @@
+flask
+flask-jwt-extended
+flask-pymongo
+flask-marshmallow
