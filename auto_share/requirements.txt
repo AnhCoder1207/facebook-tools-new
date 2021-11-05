@@ -1,3 +1,5 @@
 pyautogui
 schedule
 clipboard
+pymongo[srv]
+keyboard
