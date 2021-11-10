@@ -65,7 +65,8 @@ def join_group(via_name):
                 access_group(line)
                 time.sleep(5)
                 buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG",
-                           "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG"]
+                           "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG",
+                           "join_group_5.PNG"]
                 decision = deciscion(buttons, waiting_time=10)
                 if decision:
                     x, y, btn_idx = decision
@@ -420,11 +421,6 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                                                 pyautogui.press('backspace')
                                                 logger.error(f"{via_name} not found group :{group_name}")
 
-                                share_number += 1
-                                update_data = {"share_number": share_number}
-                                if share_number >= len(groups_share):
-                                    update_data['shared'] = True
-                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                                 if found_group_name:
                                     post_btn = waiting_for("post.PNG", confidence=0.8, waiting_time=20)
                                     if post_btn:
@@ -454,6 +450,11 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                                             # time.sleep(1)
                                             # pyautogui.hotkey('ctrl', 'f4')
                                             logger.info(f"limited {via_name}")
+                                        share_number += 1
+                                        update_data = {"share_number": share_number}
+                                        if share_number >= len(groups_share):
+                                            update_data['shared'] = True
+                                        scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                         else:
                             scheduler_table.delete_one({"video_id": video_id})
 
