@@ -103,6 +103,7 @@ def join_group(via_name):
                                         break
 
                                 click_many("check.PNG")
+                                #click_many("agree.PNG")
                                 submit_status = click_to("submit_join.PNG", waiting_time=10)
                                 if submit_status:
                                     # joined
@@ -263,8 +264,9 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                 results = deciscion(buttons)
                 if results:
                     # join groups
-                    if enable_join_group:
-                        join_group(via_name)
+                    #if enable_join_group:
+                    #    join_group(via_name)
+                    #    continue
                     btn_x, btn_y, btn_index = results
                     if btn_index == 0:
                         # change theme
@@ -335,6 +337,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
 
                             for _ in range(2):
                                 # click share buttons
+                                pyautogui.moveTo(1027, 549)
                                 buttons = ['share_btn_1.PNG', 'share_btn.PNG']
                                 result = deciscion(buttons, confidence=0.9, waiting_time=10)
                                 if result:
