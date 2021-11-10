@@ -63,7 +63,9 @@ def join_group(via_name):
             line = line.strip()
             if line not in groups_joined and line != "":
                 access_group(line)
-                buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG", "join_group_2.PNG", "join_group_3.PNG"]
+                time.sleep(5)
+                buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG",
+                           "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG"]
                 decision = deciscion(buttons, waiting_time=10)
                 if decision:
                     x, y, btn_idx = decision
@@ -264,8 +266,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                 results = deciscion(buttons)
                 if results:
                     # join groups
-                    #if enable_join_group:
-                    #    join_group(via_name)
+                    if enable_join_group:
+                        join_group(via_name)
                     #    continue
                     btn_x, btn_y, btn_index = results
                     if btn_index == 0:
