@@ -74,8 +74,9 @@ class ChromeHelper:
         """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
         options = webdriver.ChromeOptions()
         os.makedirs("UserData", exist_ok=True)
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        options.add_argument(f"user-data-dir={dir_path}\\UserData\\{fb_id}")  # Path to your chrome profile
+        # dir_path = os.path.dirname(os.path.realpath(__file__))
+        options.add_argument(f"user-data-dir=E:\\Chrome\\User Data")  # Path to your chrome profile
+        options.add_argument(f"--profile-directory={fb_id}")
         options.add_argument("--start-maximized")
         pluginfile = f'UserData\\proxy_auth_plugin{fb_id}.zip'
 
@@ -214,7 +215,7 @@ class ChromeHelper:
                                     where(db.and_(scheduler_video.columns.video_id == video_id,
                                                   scheduler_video.columns.shared == False))).fetchone()
         if not result:
-            return True
+            return False
 
         self.driver.get(f"https://facebook.com/{video_id}")
         time.sleep(20)
@@ -231,6 +232,9 @@ class ChromeHelper:
         groups_share_fixed = list(set(groups_share) - set(groups_shared))
         for group_name in groups_share_fixed:
             search_group_inp.clear()
+            for _ in range(100):
+                search_group_inp.send_keys(Keys.BACKSPACE)
+
             search_group_inp.send_keys(group_name)
             time.sleep(1)
             found_group = self.find_by_text("span", group_name)
@@ -241,7 +245,7 @@ class ChromeHelper:
                     post_description.send_keys("This is the awesome videos")
                     post_btn = self.find_by_text("span", "Post")
                     if post_btn:
-                        post_btn.click()
+                        # post_btn.click()
                         groups_shared.append(group_name)
                         share_number += 1
                         if share_number <= len(groups_share):

@@ -413,6 +413,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                                             else:
                                                 pyautogui.hotkey('ctrl', 'a')
                                                 pyautogui.press('backspace')
+                                                logger.error(f"{via_name} not found group :{group_name}")
 
                                 share_number += 1
                                 update_data = {"share_number": share_number}

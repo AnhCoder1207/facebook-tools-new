@@ -157,3 +157,7 @@ auto_share/join_group.txt
 /facebook-downloader/downloaded/
 /facebook-downloader/chromedriver.exe
 /auto_share_v2/chromedriver.exe
+/auto_share_v2/UserData/
+/auto_share_v2/db.sqlite
+/auto_share_v2/main.ipynb
+/auto_share_v2/proxy_auth_plugin.zip

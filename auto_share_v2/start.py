@@ -93,23 +93,24 @@ def start_share(main_window, stop_thread):
                 group_options = get_group_joining_data("group_options")
                 groups_share.extend([x.strip() for x in group_options.split('\n')])
 
-            chrome_worker.sharing(video_id, groups_share)
+            share_status = chrome_worker.sharing(video_id, groups_share)
+            if share_status:
+                via_share_number += 1
+                query = db.update(via_share).values(status='live', share_number=via_share_number)
+                query = query.where(via_share.columns.id == via_id)
+                connection.execute(query)
         except Exception as ex:
             print(ex)
         finally:
-            via_share_number += 1
-            query = db.update(via_share).values(status='live', share_number=via_share_number)
-            query = query.where(via_share.columns.id == via_id)
-            connection.execute(query)
             chrome_worker.driver.close()
 
-
         time.sleep(1)
+
 
 def mapping_table(item):
     return [
         item.get('video_id', ''),
-        len(item.get('groups_shared', [])),
+        item.get('share_number', 0),
         item.get('shared', False),
         item.get('go', False),
         item.get('co_khi', False),
@@ -170,7 +171,8 @@ def make_main_window(table_data):
             sg.Button('Kill Chrome'),
             sg.Button('Via Management'),
             sg.Checkbox('Join group when sharing video', key='join_group', enable_events=False, default=False),
-            sg.Button('Edit list group')
+            sg.Button('Edit list group'),
+            sg.Button('Edit Share Descriptions')
         ],
         [
             sg.Table(values=table_data,
@@ -248,6 +250,14 @@ def group_to_join_window(join_group, group_go, group_co_khi, group_xay_dung):
     return sg.Window('Group Join', layout_group_to_join, finalize=True)
 
 
+def text_seo_window(text_seo_data):
+    layout_text_seo_window = [
+        [sg.Multiline(size=(40, 10), key="share_description_data", default_text=text_seo_data)],
+        [sg.Button('Ok', key="text_seo_modified")]
+    ]
+    return sg.Window('Share descriptions', layout_text_seo_window, finalize=True)
+
+
 if __name__ == '__main__':
     # time.sleep(2)
     # print(pyautogui.position())
@@ -255,7 +265,7 @@ if __name__ == '__main__':
     sg.theme('DarkAmber')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
-    window1, window2, window3, window4 = make_main_window(table_data), None, None, None
+    window1, window2, window3, window4, window5 = make_main_window(table_data), None, None, None, None
 
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
@@ -283,6 +293,7 @@ if __name__ == '__main__':
                     daemon=True
                 )
                 thread.start()
+                time.sleep(5)
         elif event == 'Remove':
             removed = values['table']
             table_data = window1.Element('table').Get()
@@ -343,7 +354,7 @@ if __name__ == '__main__':
                            group.strip() != ''])
 
             # remove all exist
-            query = db.delete(joining_group).where(joining_group.columns.id != "")
+            query = db.delete(joining_group).where(joining_group.columns.group_type != "share_description_data")
             results = connection.execute(query)
 
             # update new
@@ -383,6 +394,10 @@ if __name__ == '__main__':
                             keep_on_top=True)
                         break
 
+                    via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
+                    if via_exist:
+                        continue
+
                     via_status = "not ready"
                     if values.get('login.options', False):
                         chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
@@ -412,6 +427,20 @@ if __name__ == '__main__':
                 fb_id, password, mfa, email, email_password, proxy_data, status = via_data
                 chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
                 time.sleep(1)
+        elif event == "Edit Share Descriptions":
+            share_descriptions = get_group_joining_data('share_descriptions')
+            window5 = text_seo_window(share_descriptions)
+        elif event == "text_seo_modified":
+            share_description = values.get("share_description_data", "").split('\n')
+            groups = [{"name": name.strip(), "group_type": "share_descriptions"} for name in share_description if
+                      name.strip() != '']
+            # remove all exist
+            query = db.delete(joining_group).where(joining_group.columns.group_type == "share_description_data")
+            results = connection.execute(query)
+
+            # update new
+            query = db.insert(joining_group)
+            ResultProxy = connection.execute(query, groups)
     for window in [window1, window2, window3, window4]:
         if window:
             window.close()
