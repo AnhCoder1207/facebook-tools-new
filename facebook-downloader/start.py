@@ -132,7 +132,7 @@ def download_chromium(idx, link, filename, window):
                             window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
                             return True
         window.write_event_value('-THREAD-', [idx, 'Error'])
-        return False
+    return False
     except Exception as ex:
         window.write_event_value('-THREAD-', [idx, 'Error'])
         print(ex)
@@ -153,7 +153,7 @@ def download_file(url, local_filename):
                     #
                     f.write(chunk)
                     filesize += 8192
-                    pbar.update(f"Downloaded: {round(filesize/1048576, 1)} MB")
+                    pbar.set_description(f"Downloaded: {round(filesize/1024/1024, 1)} Mb")
                 print(f"Done {local_filename}")
 
 
