@@ -95,7 +95,7 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
                         info_dict = ydl.extract_info(link, download=False)
                         video_title = info_dict.get('title', None)
                         ext = info_dict.get('ext', None)
-                        ydl_opts = {'outtmpl': f'downloaded/{ten_phim}/{views}-{name}'}
+                        ydl_opts = {'outtmpl': f'downloaded/{ten_phim}/{views}-{name}.mp4'}
                         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                             ydl.download([link])
                         window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
@@ -125,7 +125,7 @@ def download_chromium(idx, link, filename, window):
                         href = download_button.get_attribute("href")
                         if href:
                             print(href)
-                            download_file(href, filename + '.mp4')
+                            download_file(href, filename)
                             window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
                             return True
         window.write_event_value('-THREAD-', [idx, 'Error'])
