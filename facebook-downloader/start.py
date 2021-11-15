@@ -10,6 +10,7 @@ import PySimpleGUI as sg
 import pyautogui
 import logging
 
+from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -48,7 +49,7 @@ driver = webdriver.Chrome('./chromedriver.exe', options=options)
 
 def waiting_for_id(id_here):
     try:
-        element = WebDriverWait(driver, 5).until(
+        element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, id_here))
         )
         return element
@@ -59,7 +60,7 @@ def waiting_for_id(id_here):
 
 def waiting_for_class(class_here):
     try:
-        element = WebDriverWait(driver, 5).until(
+        element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, class_here))
         )
         return element
@@ -70,7 +71,7 @@ def waiting_for_class(class_here):
 
 def waiting_for_xpath(xpath):
     try:
-        element = WebDriverWait(driver, 5).until(
+        element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
         return element
@@ -88,22 +89,24 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
 
             link, name, views, status = row
             ydl_opts = {}
-            if status == "waiting" or status == 'Error':
-                window.write_event_value('-THREAD-', [idx, 'Downloading'])
-                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                    try:
-                        info_dict = ydl.extract_info(link, download=False)
-                        video_title = info_dict.get('title', None)
-                        ext = info_dict.get('ext', None)
-                        ydl_opts = {'outtmpl': f'downloaded/{ten_phim}/{views}-{name}.mp4'}
-                        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                            ydl.download([link])
-                        window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
-                    except Exception as ex:
-                        print(ex)
-                        filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
-                        if not os.path.isfile("f'downloaded/{ten_phim}/{views}-{name}.mp4'"):
+            if status == "waiting":
+                if not os.path.isfile("f'downloaded/{ten_phim}/{views}-{name}.mp4'"):
+                    window.write_event_value('-THREAD-', [idx, 'Downloading'])
+                    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                        try:
+                            info_dict = ydl.extract_info(link, download=False)
+                            video_title = info_dict.get('title', None)
+                            ext = info_dict.get('ext', None)
+                            ydl_opts = {'outtmpl': f'downloaded/{ten_phim}/{views}-{name}'}
+                            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                                ydl.download([link])
+                            window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
+                        except Exception as ex:
+                            print(ex)
+                            filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
                             download_chromium(idx, link, filename, window)
+                else:
+                    window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
 
 
 def download_chromium(idx, link, filename, window):
@@ -140,14 +143,18 @@ def download_file(url, local_filename):
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(local_filename, 'wb') as f:
-            print(f"Downloading {local_filename}")
-            for chunk in r.iter_content(chunk_size=8192):
-                # If you have chunk encoded response uncomment if
-                # and set chunk_size parameter to None.
-                #if chunk:
-                #
-                f.write(chunk)
-            print(f"Done {local_filename}")
+            with tqdm(desc='Download Progress') as pbar:
+                print(f"Downloading {local_filename}")
+                filesize = 0
+                for chunk in r.iter_content(chunk_size=8192):
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    #if chunk:
+                    #
+                    f.write(chunk)
+                    filesize += 8192
+                    pbar.update(f"Downloaded: {round(filesize/1048576, 1)} MB")
+                print(f"Done {local_filename}")
 
 
 def crawl_movie(page_name, filter_number):
@@ -178,13 +185,14 @@ def crawl_movie(page_name, filter_number):
             view_count = views.text
             href = href_el.get('href')
             if "M" in view_count:
-                view_count_float = view_count.replace("M", "").replace("Views", "")
+                view_count_float = view_count.replace("M", "").replace("Views", "").replace("views", "")
                 view_count = float(view_count_float)*1000000
             elif "K" in view_count:
-                view_count = view_count.replace("K", "").replace("Views", "")
+                view_count = view_count.replace("K", "").replace("Views", "").replace("views", "")
                 view_count = float(view_count)*1000
             else:
-                view_count = 0
+                view_count = view_count.replace("Views", "").replace("views", "")
+                view_count = float(view_count)
 
             if view_count > filter_number or filter_number == 0:
                 if view_count >= 1000000:
