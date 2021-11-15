@@ -450,13 +450,13 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                                             # time.sleep(1)
                                             # pyautogui.hotkey('ctrl', 'f4')
                                             logger.info(f"limited {via_name}")
-                                        share_number += 1
-                                        update_data = {"share_number": share_number}
-                                        if share_number >= len(groups_share):
-                                            update_data['shared'] = True
-                                        scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
-                        else:
-                            scheduler_table.delete_one({"video_id": video_id})
+                                share_number += 1
+                                update_data = {"share_number": share_number}
+                                if share_number >= len(groups_share):
+                                    update_data['shared'] = True
+                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
+                        #else:
+                        #    scheduler_table.delete_one({"video_id": video_id})
 
                 window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
                 # move via to done folder
@@ -710,22 +710,22 @@ if __name__ == '__main__':
                     }
 
                     result = scheduler_table.insert_one(new_scheduler)
-                    table_default = scheduler_table.find(
-                        {
-                            "shared": False
-                        },
-                        {
-                            "video_id": 1,
-                            "groups_shared": 1,
-                            "shared": 1,
-                            "go": 1,
-                            "co_khi": 1,
-                            "xay_dung": 1,
-                            "options": 1,
-                        }
-                    ).sort("create_date", pymongo.ASCENDING)
-                    table_default = list(map(mapping_table, list(table_default)))
-                    window.Element('table').Update(values=table_default)
+            table_default = scheduler_table.find(
+                {
+                    "shared": False
+                },
+                {
+                    "video_id": 1,
+                    "groups_shared": 1,
+                    "shared": 1,
+                    "go": 1,
+                    "co_khi": 1,
+                    "xay_dung": 1,
+                    "options": 1,
+                }
+            ).sort("create_date", pymongo.ASCENDING)
+            table_default = list(map(mapping_table, list(table_default)))
+            window.Element('table').Update(values=table_default)
             sg.Popup('Them thanh cong', keep_on_top=True)
             # else:
             #     sg.Popup('Them that bai', keep_on_top=True)
