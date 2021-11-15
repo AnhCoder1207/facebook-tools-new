@@ -450,11 +450,11 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                                             # time.sleep(1)
                                             # pyautogui.hotkey('ctrl', 'f4')
                                             logger.info(f"limited {via_name}")
-                                        share_number += 1
-                                        update_data = {"share_number": share_number}
-                                        if share_number >= len(groups_share):
-                                            update_data['shared'] = True
-                                        scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
+                                share_number += 1
+                                update_data = {"share_number": share_number}
+                                if share_number >= len(groups_share):
+                                    update_data['shared'] = True
+                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                         #else:
                         #    scheduler_table.delete_one({"video_id": video_id})
 
