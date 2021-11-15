@@ -282,12 +282,12 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                         time.sleep(2)
 
                     waiting_for("reload_bar.PNG")
-                    waiting_for("dark_logo.PNG")
+                    #waiting_for("dark_logo.PNG")
+                    #if check_exist("chan_socket.PNG"):
+                    #    click_to("chan_socket.PNG")
 
-                    if check_exist("chan_socket.PNG"):
-                        click_to("chan_socket.PNG")
-
-                    buttons = ["checkpoint_1.PNG", "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG"]
+                    buttons = ["checkpoint_1.PNG", "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+                               "login_btn.PNG", "site_can_reach.PNG"]
                     ret = deciscion(buttons, waiting_time=10)
                     if ret:
                         continue
