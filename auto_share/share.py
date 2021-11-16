@@ -268,7 +268,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                         pyautogui.hotkey('ctrl', 'f4')
                         continue
 
-                    if enable_join_group:
+                    if enable_join_group or join_group_only_enable:
                         join_group(via_name)
 
                     if join_group_only_enable:
