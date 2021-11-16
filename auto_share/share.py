@@ -74,7 +74,7 @@ def join_group(via_name):
                 if decision:
                     x, y, btn_idx = decision
                     if btn_idx == 0:
-                        groups_joined.append(line)
+                        groups_joined.append(group_href)
                         group_joined.update_one({"via_name": via_name},
                                                 {"$set": {"groups_joined": groups_joined}})
                     else:
@@ -85,7 +85,7 @@ def join_group(via_name):
                             x, y, btn_idx = decision
                             if btn_idx == 0:
                                 # joined
-                                groups_joined.append(line)
+                                groups_joined.append(group_href)
                                 group_joined.update_one({"via_name": via_name},
                                                         {"$set": {"groups_joined": groups_joined}})
                             else:
@@ -113,7 +113,7 @@ def join_group(via_name):
                                 submit_status = click_to("submit_join.PNG", waiting_time=10)
                                 if submit_status:
                                     # joined
-                                    groups_joined.append(line)
+                                    groups_joined.append(group_href)
 
                                     group_joined.update_one({"via_name": via_name},
                                                             {"$set": {"groups_joined": groups_joined}})
