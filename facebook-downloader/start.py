@@ -10,6 +10,7 @@ import PySimpleGUI as sg
 import pyautogui
 import logging
 
+from selenium.common.exceptions import NoSuchElementException
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -80,6 +81,17 @@ def waiting_for_xpath(xpath):
         return False
 
 
+def waiting_for_selector(selector):
+    try:
+        element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+        return element
+    except Exception as ex:
+        print(ex)
+        return False
+
+
 def download_video(table_data, current_index, window, ten_phim, pause_download):
     os.makedirs(f"downloaded/{ten_phim}", exist_ok=True)
     for idx, row in enumerate(table_data):
@@ -120,20 +132,77 @@ def download_chromium(idx, link, filename, window):
             if input_url and submit_btn:
                 input_url.send_keys(link)
                 submit_btn.click()
-                waiting_for_xpath("""//*[@id="download-section"]/section/div/div[1]/div[2]/div/table/thead/tr/th[1]/abbr""")
+                waiting_for_class("media-content")
+                body_table = """//*[@id="download-section"]/section/div/div[1]/div[2]/div/table/tbody/tr"""
+                waiting_for_xpath(body_table)
                 # button is-success is-small
-                download_buttons = driver.find_elements(By.CLASS_NAME, "is-success")
-                for download_button in download_buttons:
-                    if download_button.text == 'Download':
-                        href = download_button.get_attribute("href")
-                        if href:
-                            print(href)
-                            download_file(href, filename)
-                            window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
+                quality = driver.find_elements(By.XPATH, body_table)
+                first_link = ""
+                for row_idx, row in enumerate(quality):
+                    video_quality_el = download_link_el = button_render_el = None
+                    try:
+                        video_quality_el = row.find_element(By.CSS_SELECTOR, "td.video-quality")
+                    except NoSuchElementException:  # spelling error making this code not work as expected
+                        pass
+                    try:
+                        download_link_el = row.find_element(By.TAG_NAME, "a")
+                    except NoSuchElementException:  # spelling error making this code not work as expected
+                        pass
+                    try:
+                        button_render_el = row.find_element(By.TAG_NAME, "button")
+                    except NoSuchElementException:  # spelling error making this code not work as expected
+                        pass
+
+                    if video_quality_el and download_link_el and download_link_el.text == "Download":
+                        resolution = video_quality_el.text
+                        video_link = download_link_el.get_attribute('href')
+                        if '1080p' in resolution or '720p' in resolution:
+                            try:
+                                logger.info(f"Download file {filename} resolution {resolution}")
+                                download_file(video_link, filename)
+                                window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                            except Exception as ex:
+                                window.write_event_value('-THREAD-', [idx, 'Error'])
+
                             return True
+                        if row_idx == 0:
+                            first_link = video_link
+
+                # can not download, try to render
+                quality = driver.find_elements(By.XPATH, body_table)
+                for row_idx, row in enumerate(quality):
+                    video_quality_el = button_render_el = None
+                    try:
+                        video_quality_el = row.find_element(By.CSS_SELECTOR, "td.video-quality")
+                    except NoSuchElementException:  # spelling error making this code not work as expected
+                        pass
+                    try:
+                        button_render_el = row.find_element(By.TAG_NAME, "button")
+                    except NoSuchElementException:  # spelling error making this code not work as expected
+                        pass
+
+                    if video_quality_el and button_render_el:
+                        resolution = video_quality_el.text
+                        logger.info(f'render resolution {resolution}')
+                        button_render_el.click()
+                        download_video_btn = waiting_for_selector("#procress-dllink > div > a")
+                        if download_video_btn and "download video" in download_video_btn.text.lower():
+                            video_link = download_video_btn.get_attribute('href')
+                            logger.info(f"Download render file {filename} resolution {resolution}")
+                            download_file(video_link, filename)
+                            window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                            return True
+
+                # can not download render file, let's download with first link
+                if first_link != "":
+                    logger.info(f"Download first file {filename}")
+                    download_file(first_link, filename)
+                    window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                    return True
         window.write_event_value('-THREAD-', [idx, 'Error'])
         return False
     except Exception as ex:
+        # driver.close()
         window.write_event_value('-THREAD-', [idx, 'Error'])
         print(ex)
 
@@ -209,7 +278,6 @@ def crawl_movie(page_name, filter_number):
 
 
 if __name__ == '__main__':
-
     # browserExe = "movies.exe"
     # os.system("taskkill /f /im " + browserExe)
     sg.theme('DarkAmber')  # Add a touch of color
