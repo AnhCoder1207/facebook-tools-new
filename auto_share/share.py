@@ -264,6 +264,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 ret = deciscion(buttons, waiting_time=10)
                 if ret:
                     btn_x, btn_y, btn_index = ret
+                    logger.info(f"found button: {buttons[btn_index]}")
                     if btn_index not in [0, 1]:
                         pyautogui.hotkey('ctrl', 'f4')
                         continue
