@@ -377,16 +377,16 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
 
                                 if go_enable:
                                     with open("go.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x for x in group_file.readlines()])
+                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
                                 if co_khi_enable:
                                     with open("co_khi.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x for x in group_file.readlines()])
+                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
                                 if xay_dung_enable:
                                     with open("xay_dung.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x for x in group_file.readlines()])
+                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
                                 if options_enable:
                                     with open("tuy_chon.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x for x in group_file.readlines()])
+                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
 
                                 found_group_name = False
                                 for group_name in groups_share:
