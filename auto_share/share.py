@@ -175,7 +175,7 @@ def show_full_screen():
     pyautogui.press('x')
 
 
-def auto_share(table_data, current_index, window, stop, enable_join_group):
+def auto_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable):
     shared_group_name = []
     time.sleep(5)
     logger.debug("start share")
@@ -241,7 +241,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                 via_history = via_shared.find_one({"date": now})
                 if via_history:
                     via_share_number = via_history.get(via_name, 0)
-                    if via_share_number >= 4:
+                    if via_share_number >= 4 and not join_group_only_enable:
                         pyautogui.hotkey('ctrl', 'f4')
                         logger.info(f"via {via_name} da share du 4 video")
                         continue
@@ -270,6 +270,10 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
 
                     if enable_join_group:
                         join_group(via_name)
+
+                    if join_group_only_enable:
+                        pyautogui.hotkey('ctrl', 'f4')
+                        continue
 
                     if btn_index == 0:
                         # change theme
@@ -544,10 +548,10 @@ def watch_videos():
         pyautogui.hotkey('windows', 'd')
 
 
-def start_share(table_data, current_index, window, stop, enable_join_group):
+def start_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable):
     logger.debug("Start share")
     try:
-        auto_share(table_data, current_index, window, stop, enable_join_group)
+        auto_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable)
         logger.debug("Done share")
     except Exception as ex:
         logger.error(ex)
@@ -607,7 +611,9 @@ if __name__ == '__main__':
                   sg.Checkbox(
                       'Tùy Chọn', key='groups.options', enable_events=False, default=True),
                   sg.Checkbox(
-                      'Join group when sharing video', key='join_group', enable_events=False, default=False)
+                      'Join group when sharing video', key='join_group', enable_events=False, default=False),
+                  sg.Checkbox(
+                      'Join group only', key='join_group_only', enable_events=False, default=False)
               ],
               [
                   sg.Table(values=table_default,
@@ -650,7 +656,8 @@ if __name__ == '__main__':
             table_data = window.Element('table').Get()
             thread = threading.Thread(target=start_share,
                                       args=(table_data, current_index, window,
-                                            lambda: stop_threads, values.get("join_group", False)),
+                                            lambda: stop_threads, values.get("join_group", False),
+                                            values.get("join_group_only", False)),
                                       daemon=True)
             thread.start()
         elif event == 'Remove':
