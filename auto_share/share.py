@@ -258,19 +258,19 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                 if waiting_for("reload_bar.PNG"):
                     if check_exist("chan_socket.PNG"):
                         click_to("chan_socket.PNG")
+                buttons = ['light_logo.PNG', 'dark_logo.PNG', "checkpoint_1.PNG",
+                           "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+                           "login_btn.PNG", "site_can_reach.PNG"]
+                ret = deciscion(buttons, waiting_time=10)
+                if ret:
+                    btn_x, btn_y, btn_index = ret
+                    if btn_index not in [0, 1]:
+                        pyautogui.hotkey('ctrl', 'f4')
+                        continue
 
-                # if waiting_for("chan_socket.PNG", waiting_time=10):
-                #     click_to("chan_socket.PNG")
-
-                # check dark theme
-                buttons = ['light_logo.PNG', 'dark_logo.PNG']
-                results = deciscion(buttons)
-                if results:
-                    # join groups
                     if enable_join_group:
                         join_group(via_name)
-                    #    continue
-                    btn_x, btn_y, btn_index = results
+
                     if btn_index == 0:
                         # change theme
                         click_to("light_dropdown.PNG")
@@ -283,14 +283,6 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
 
                     waiting_for("reload_bar.PNG")
                     waiting_for("dark_logo.PNG")
-
-                    if check_exist("chan_socket.PNG"):
-                        click_to("chan_socket.PNG")
-
-                    buttons = ["checkpoint_1.PNG", "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG"]
-                    ret = deciscion(buttons, waiting_time=10)
-                    if ret:
-                        continue
 
                     if not waiting_for("search_title.PNG", waiting_time=10):
                         # change language
@@ -311,9 +303,6 @@ def auto_share(table_data, current_index, window, stop, enable_join_group):
                                 waiting_for("reload_bar.PNG")
                                 if check_exist("languages_and_regions.PNG"):
                                     break
-
-                    # for _ in range(2):
-                    # join_group()
 
                     status = access_video(video_id)
                     if status:
