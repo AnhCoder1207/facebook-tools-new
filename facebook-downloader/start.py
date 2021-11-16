@@ -90,7 +90,7 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
             link, name, views, status = row
             ydl_opts = {}
             if status == "waiting":
-                if not os.path.isfile("f'downloaded/{ten_phim}/{views}-{name}.mp4'"):
+                if not os.path.isfile(f'downloaded/{ten_phim}/{views}-{name}.mp4'):
                     window.write_event_value('-THREAD-', [idx, 'Downloading'])
                     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                         try:
@@ -132,7 +132,7 @@ def download_chromium(idx, link, filename, window):
                             window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
                             return True
         window.write_event_value('-THREAD-', [idx, 'Error'])
-    return False
+        return False
     except Exception as ex:
         window.write_event_value('-THREAD-', [idx, 'Error'])
         print(ex)
