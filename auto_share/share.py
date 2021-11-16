@@ -70,7 +70,13 @@ def join_group(via_name):
             group_href, _ = splitter
             if group_href not in groups_joined:
                 access_group(group_href)
-                time.sleep(5)
+                time.sleep(3)
+                if check_exist("not_available.PNG"):
+                    groups_joined.append(group_href)
+                    group_joined.update_one({"via_name": via_name},
+                                            {"$set": {"groups_joined": groups_joined}})
+                    continue
+
                 buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG",
                            "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG",
                            "join_group_5.PNG"]
