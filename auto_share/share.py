@@ -58,11 +58,14 @@ def join_group(via_name):
         groups_joined = via_data['groups_joined']
 
     number_join = 0
-    with open("join_group.txt") as group_file:
+    with open("join_group.txt", encoding="utf-8") as group_file:
         for line in group_file.readlines():
-            line = line.strip()
-            if line not in groups_joined and line != "":
-                access_group(line)
+            if line.strip() == '':
+                continue
+
+            group_href, _ = line.strip().split(',')
+            if group_href not in groups_joined:
+                access_group(group_href)
                 time.sleep(5)
                 buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG",
                            "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG",
@@ -444,11 +447,11 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                             # time.sleep(1)
                                             # pyautogui.hotkey('ctrl', 'f4')
                                             logger.info(f"limited {via_name}")
-                                share_number += 1
-                                update_data = {"share_number": share_number}
-                                if share_number >= len(groups_share):
-                                    update_data['shared'] = True
-                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
+                                        share_number += 1
+                                        update_data = {"share_number": share_number}
+                                        if share_number >= len(groups_share):
+                                            update_data['shared'] = True
+                                        scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                         #else:
                         #    scheduler_table.delete_one({"video_id": video_id})
 
