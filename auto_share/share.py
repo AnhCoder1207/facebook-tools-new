@@ -504,7 +504,12 @@ def watch_videos():
         waiting_for("reload_bar.PNG")
         # check dark theme
         buttons = ['light_logo.PNG', 'dark_logo.PNG']
-        btn_x, btn_y, btn_index = deciscion(buttons)
+        decistion_result = deciscion(buttons)
+        if decistion_result is None:
+            pyautogui.hotkey('ctrl', 'f4')
+            continue
+
+        btn_x, btn_y, btn_index = decistion_result
         if btn_index == 0:
             # change theme
             click_to("light_dropdown.PNG")
@@ -559,6 +564,7 @@ def start_share(table_data, current_index, window, stop, enable_join_group, join
         logger.debug("Done share")
     except Exception as ex:
         logger.error(ex)
+        raise ex
 
 
 def start_watch():
@@ -568,6 +574,7 @@ def start_watch():
         logger.debug("Done watch")
     except Exception as ex:
         logger.error(ex)
+        raise ex
 
 
 def mapping_table(item):
