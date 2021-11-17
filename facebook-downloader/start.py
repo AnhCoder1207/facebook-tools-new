@@ -44,7 +44,7 @@ logger.addHandler(ch)
 
 options = webdriver.ChromeOptions()
 options.add_argument("--start-maximized")
-# options.add_argument('--headless')
+options.add_argument('--headless')
 driver = webdriver.Chrome('./chromedriver.exe', options=options)
 
 
