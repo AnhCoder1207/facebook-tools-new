@@ -44,13 +44,13 @@ logger.addHandler(ch)
 
 options = webdriver.ChromeOptions()
 options.add_argument("--start-maximized")
-options.add_argument('--headless')
+# options.add_argument('--headless')
 driver = webdriver.Chrome('./chromedriver.exe', options=options)
 
 
 def waiting_for_id(id_here):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, id_here))
         )
         return element
@@ -61,7 +61,7 @@ def waiting_for_id(id_here):
 
 def waiting_for_class(class_here):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CLASS_NAME, class_here))
         )
         return element
@@ -72,7 +72,7 @@ def waiting_for_class(class_here):
 
 def waiting_for_xpath(xpath):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
         return element
@@ -83,7 +83,7 @@ def waiting_for_xpath(xpath):
 
 def waiting_for_selector(selector):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         )
         return element
@@ -185,13 +185,24 @@ def download_chromium(idx, link, filename, window):
                         resolution = video_quality_el.text
                         logger.info(f'render resolution {resolution}')
                         button_render_el.click()
-                        download_video_btn = waiting_for_selector("#procress-dllink > div > a")
-                        if download_video_btn and "download video" in download_video_btn.text.lower():
-                            video_link = download_video_btn.get_attribute('href')
-                            logger.info(f"Download render file {filename} resolution {resolution}")
-                            download_file(video_link, filename)
-                            window.write_event_value('-THREAD-', [idx, 'Downloaded'])
-                            return True
+
+                        waiting = 0
+                        while waiting < 6:
+                            waiting += 1
+                            download_video_btn = waiting_for_selector("#procress-dllink > div > a")
+                            download_video_btn_2 = waiting_for_selector("#process-section > section > div > div.columns.btn-convert-dl > div > a")
+                            if download_video_btn and "download video" in download_video_btn.text.lower():
+                                video_link = download_video_btn.get_attribute('href')
+                                logger.info(f"Download render file {filename} resolution {resolution}")
+                                download_file(video_link, filename)
+                                window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                                return True
+                            if download_video_btn_2 and "download video" in download_video_btn_2.text.lower():
+                                video_link = download_video_btn_2.get_attribute('href')
+                                logger.info(f"Download render file {filename} resolution {resolution}")
+                                download_file(video_link, filename)
+                                window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                                return True
 
                 # can not download render file, let's download with first link
                 if first_link != "":
