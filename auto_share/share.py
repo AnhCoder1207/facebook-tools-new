@@ -63,7 +63,11 @@ def join_group(via_name):
             if line.strip() == '':
                 continue
 
-            group_href, _ = line.strip().split(',')
+            splitter = line.strip().split(',')
+            if len(splitter) != 2:
+                continue
+
+            group_href, _ = splitter
             if group_href not in groups_joined:
                 access_group(group_href)
                 time.sleep(3)
