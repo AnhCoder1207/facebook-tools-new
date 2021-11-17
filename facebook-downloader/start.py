@@ -125,7 +125,7 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
                                 except Exception as ex:
                                     logger.error(f"Snapsave errors: {ex}")
                                     pass
-                            window.write_event_value('-THREAD-', [idx, 'Error'])
+                    window.write_event_value('-THREAD-', [idx, 'Error'])
                 else:
                     window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
 
