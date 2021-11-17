@@ -116,16 +116,19 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
                         except Exception as ex:
                             print(ex)
                             filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
-                            for retry in range(15):
+                            retrying_time = 10
+                            for retry in range(retrying_time):
                                 try:
                                     downloaded_status = download_chromium(idx, link, filename, window)
                                     if downloaded_status:
                                         window.write_event_value('-THREAD-', [idx, 'Downloaded'])
                                         break
+                                    if retry == retrying_time:
+                                        window.write_event_value('-THREAD-', [idx, 'Error'])
+                                        break
                                 except Exception as ex:
                                     logger.error(f"Snapsave errors: {ex}")
                                     pass
-                    window.write_event_value('-THREAD-', [idx, 'Error'])
                 else:
                     window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
 
