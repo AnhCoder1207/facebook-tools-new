@@ -50,45 +50,45 @@ driver = webdriver.Chrome('./chromedriver.exe', options=options)
 
 def waiting_for_id(id_here):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, id_here))
         )
         return element
     except Exception as ex:
-        print(ex)
+        # print(ex)
         return False
 
 
 def waiting_for_class(class_here):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CLASS_NAME, class_here))
         )
         return element
     except Exception as ex:
-        print(ex)
+        # print(ex)
         return False
 
 
 def waiting_for_xpath(xpath):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
         return element
     except Exception as ex:
-        print(ex)
+        # print(ex)
         return False
 
 
 def waiting_for_selector(selector):
     try:
-        element = WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         )
         return element
     except Exception as ex:
-        print(ex)
+        # print(ex)
         return False
 
 
@@ -116,95 +116,111 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
                         except Exception as ex:
                             print(ex)
                             filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
-                            download_chromium(idx, link, filename, window)
+                            retrying_time = 10
+                            for retry in range(retrying_time):
+                                try:
+                                    downloaded_status = download_chromium(idx, link, filename, window)
+                                    if downloaded_status:
+                                        window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                                        break
+                                    if retry == retrying_time:
+                                        window.write_event_value('-THREAD-', [idx, 'Error'])
+                                        break
+                                except Exception as ex:
+                                    logger.error(f"Snapsave errors: {ex}")
+                                    pass
                 else:
                     window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
 
 
 def download_chromium(idx, link, filename, window):
-    try:
-        for _ in range(3):
-            driver.get("https://snapsave.app/")
-            input_url_xpath = """//*[@id="url"]"""
-            input_url = waiting_for_xpath(input_url_xpath)
-            submit_btn_xpath = """//*[@id="send"]"""
-            submit_btn = waiting_for_xpath(submit_btn_xpath)
-            if input_url and submit_btn:
-                input_url.send_keys(link)
-                submit_btn.click()
-                waiting_for_class("media-content")
-                body_table = """//*[@id="download-section"]/section/div/div[1]/div[2]/div/table/tbody/tr"""
-                waiting_for_xpath(body_table)
-                # button is-success is-small
-                quality = driver.find_elements(By.XPATH, body_table)
-                first_link = ""
-                for row_idx, row in enumerate(quality):
-                    video_quality_el = download_link_el = button_render_el = None
-                    try:
-                        video_quality_el = row.find_element(By.CSS_SELECTOR, "td.video-quality")
-                    except NoSuchElementException:  # spelling error making this code not work as expected
-                        pass
-                    try:
-                        download_link_el = row.find_element(By.TAG_NAME, "a")
-                    except NoSuchElementException:  # spelling error making this code not work as expected
-                        pass
-                    try:
-                        button_render_el = row.find_element(By.TAG_NAME, "button")
-                    except NoSuchElementException:  # spelling error making this code not work as expected
-                        pass
+    driver.get("https://snapsave.app/")
+    input_url_xpath = """//*[@id="url"]"""
+    input_url = waiting_for_xpath(input_url_xpath)
+    submit_btn_xpath = """//*[@id="send"]"""
+    submit_btn = waiting_for_xpath(submit_btn_xpath)
+    if input_url and submit_btn:
+        input_url.send_keys(link)
+        submit_btn.click()
+        waiting_for_class("media-content")
+        body_table = """//*[@id="download-section"]/section/div/div[1]/div[2]/div/table/tbody/tr"""
+        waiting_for_xpath(body_table)
+        # button is-success is-small
+        quality = driver.find_elements(By.XPATH, body_table)
+        first_link = ""
+        for row_idx, row in enumerate(quality):
+            video_quality_el = download_link_el = button_render_el = None
+            try:
+                video_quality_el = row.find_element(By.CSS_SELECTOR, "td.video-quality")
+            except NoSuchElementException:  # spelling error making this code not work as expected
+                pass
+            try:
+                download_link_el = row.find_element(By.TAG_NAME, "a")
+            except NoSuchElementException:  # spelling error making this code not work as expected
+                pass
+            try:
+                button_render_el = row.find_element(By.TAG_NAME, "button")
+            except NoSuchElementException:  # spelling error making this code not work as expected
+                pass
 
-                    if video_quality_el and download_link_el and download_link_el.text == "Download":
-                        resolution = video_quality_el.text
-                        video_link = download_link_el.get_attribute('href')
-                        if '1080p' in resolution or '720p' in resolution:
-                            try:
-                                logger.info(f"Download file {filename} resolution {resolution}")
-                                download_file(video_link, filename)
-                                window.write_event_value('-THREAD-', [idx, 'Downloaded'])
-                            except Exception as ex:
-                                window.write_event_value('-THREAD-', [idx, 'Error'])
-
-                            return True
-                        if row_idx == 0:
-                            first_link = video_link
-
-                # can not download, try to render
-                quality = driver.find_elements(By.XPATH, body_table)
-                for row_idx, row in enumerate(quality):
-                    video_quality_el = button_render_el = None
+            if video_quality_el and download_link_el and download_link_el.text == "Download":
+                resolution = video_quality_el.text
+                video_link = download_link_el.get_attribute('href')
+                if '1080p' in resolution or '720p' in resolution:
                     try:
-                        video_quality_el = row.find_element(By.CSS_SELECTOR, "td.video-quality")
-                    except NoSuchElementException:  # spelling error making this code not work as expected
-                        pass
-                    try:
-                        button_render_el = row.find_element(By.TAG_NAME, "button")
-                    except NoSuchElementException:  # spelling error making this code not work as expected
-                        pass
+                        logger.info(f"Download file {filename} resolution {resolution}")
+                        download_file(video_link, filename)
+                        window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                    except Exception as ex:
+                        window.write_event_value('-THREAD-', [idx, 'Error'])
 
-                    if video_quality_el and button_render_el:
-                        resolution = video_quality_el.text
-                        logger.info(f'render resolution {resolution}')
-                        button_render_el.click()
-                        download_video_btn = waiting_for_selector("#procress-dllink > div > a")
-                        if download_video_btn and "download video" in download_video_btn.text.lower():
-                            video_link = download_video_btn.get_attribute('href')
-                            logger.info(f"Download render file {filename} resolution {resolution}")
-                            download_file(video_link, filename)
-                            window.write_event_value('-THREAD-', [idx, 'Downloaded'])
-                            return True
-
-                # can not download render file, let's download with first link
-                if first_link != "":
-                    logger.info(f"Download first file {filename}")
-                    download_file(first_link, filename)
-                    window.write_event_value('-THREAD-', [idx, 'Downloaded'])
                     return True
-        window.write_event_value('-THREAD-', [idx, 'Error'])
-        return False
-    except Exception as ex:
-        # driver.close()
-        window.write_event_value('-THREAD-', [idx, 'Error'])
-        print(ex)
+                if row_idx == 0:
+                    first_link = video_link
+
+        # can not download, try to render
+        quality = driver.find_elements(By.XPATH, body_table)
+        for row_idx, row in enumerate(quality):
+            video_quality_el = button_render_el = None
+            try:
+                video_quality_el = row.find_element(By.CSS_SELECTOR, "td.video-quality")
+            except NoSuchElementException:  # spelling error making this code not work as expected
+                pass
+            try:
+                button_render_el = row.find_element(By.TAG_NAME, "button")
+            except NoSuchElementException:  # spelling error making this code not work as expected
+                pass
+
+            if video_quality_el and button_render_el:
+                resolution = video_quality_el.text
+                logger.info(f'render resolution {resolution}')
+                button_render_el.click()
+
+                waiting = 0
+                while waiting < 6:
+                    waiting += 1
+                    download_video_btn = waiting_for_selector("#procress-dllink > div > a")
+                    download_video_btn_2 = waiting_for_selector("#process-section > section > div > div.columns.btn-convert-dl > div > a")
+                    if download_video_btn and "download video" in download_video_btn.text.lower():
+                        video_link = download_video_btn.get_attribute('href')
+                        logger.info(f"Download render file {filename} resolution {resolution}")
+                        download_file(video_link, filename)
+                        window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                        return True
+                    if download_video_btn_2 and "download video" in download_video_btn_2.text.lower():
+                        video_link = download_video_btn_2.get_attribute('href')
+                        logger.info(f"Download render file {filename} resolution {resolution}")
+                        download_file(video_link, filename)
+                        window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+                        return True
+
+        # can not download render file, let's download with first link
+        if first_link != "":
+            logger.info(f"Download first file {filename}")
+            download_file(first_link, filename)
+            window.write_event_value('-THREAD-', [idx, 'Downloaded'])
+            return True
+    return False
 
 
 def download_file(url, local_filename):
