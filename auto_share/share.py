@@ -89,6 +89,7 @@ def join_group(via_name):
                                                 {"$set": {"groups_joined": groups_joined}})
                     else:
                         pyautogui.click(x, y)
+                        click_to("join_group_5.PNG", waiting_time=10)
                         buttons = ["joined.PNG", "answer_question.PNG"]
                         decision = deciscion(buttons, waiting_time=20)
                         if decision:
@@ -429,7 +430,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                                 logger.error(f"{via_name} not found group :{group_name}")
 
                                 if found_group_name:
-                                    post_btn = waiting_for("post.PNG", confidence=0.8, waiting_time=20)
+                                    post_btn = waiting_for("post.PNG", confidence=0.8, waiting_time=40)
                                     if post_btn:
                                         title = get_title()
                                         logger.info(title)
@@ -449,19 +450,20 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                             new_item = {"_id": str(uuid.uuid4()), "date": now, via_name: 1}
                                             via_shared.insert_one(new_item)
                                         click_to("post_success.PNG", confidence=0.8, waiting_time=10)
-                                        spam = waiting_for("spam.PNG", confidence=0.9, waiting_time=10)
-                                        if spam:
+                                #leave = waiting_for("leave.PNG", confidence=0.9, waiting_time=10)
+                                #if leave:
+                                #    click_to(leave)
                                             # pyautogui.hotkey('ctrl', 'f4')
                                             # time.sleep(1)
                                             # pyautogui.press('enter')
                                             # time.sleep(1)
                                             # pyautogui.hotkey('ctrl', 'f4')
-                                            logger.info(f"limited {via_name}")
-                                        share_number += 1
-                                        update_data = {"share_number": share_number}
-                                        if share_number >= len(groups_share):
-                                            update_data['shared'] = True
-                                        scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
+                                    #logger.info(f"leave {via_name}")
+                                share_number += 1
+                                update_data = {"share_number": share_number}
+                                if share_number >= len(groups_share):
+                                    update_data['shared'] = True
+                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                         #else:
                         #    scheduler_table.delete_one({"video_id": video_id})
 
@@ -475,6 +477,9 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                     logger.error(ex)
 
                 pyautogui.hotkey('ctrl', 'f4')
+                leave = waiting_for("leave.PNG", confidence=0.9, waiting_time=5)
+                if leave:
+                    click_to(leave)
 
         et = time.time()
         logger.debug(f"share done time consuming: {round((et - st)/60, 1)}")
