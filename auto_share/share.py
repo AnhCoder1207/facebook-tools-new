@@ -89,8 +89,7 @@ def join_group(via_name):
                                                 {"$set": {"groups_joined": groups_joined}})
                     else:
                         pyautogui.click(x, y)
-                        click_to("join_group_5.PNG", waiting_time=10)
-                        buttons = ["joined.PNG", "answer_question.PNG"]
+                        buttons = ["joined.PNG", "answer_question.PNG", "how_to_join_group.PNG"]
                         decision = deciscion(buttons, waiting_time=20)
                         if decision:
                             x, y, btn_idx = decision
@@ -99,7 +98,7 @@ def join_group(via_name):
                                 groups_joined.append(group_href)
                                 group_joined.update_one({"via_name": via_name},
                                                         {"$set": {"groups_joined": groups_joined}})
-                            else:
+                            elif btn_idx == 1:
                                 pyautogui.moveTo(x, y)
                                 write_an_answer = waiting_for("write_an_answer.PNG", waiting_time=10)
                                 while write_an_answer:
@@ -128,6 +127,12 @@ def join_group(via_name):
 
                                     group_joined.update_one({"via_name": via_name},
                                                             {"$set": {"groups_joined": groups_joined}})
+                            else:
+                                click_to("join_group_6.PNG", waiting_time=10)
+                                groups_joined.append(group_href)
+
+                                group_joined.update_one({"via_name": via_name},
+                                                        {"$set": {"groups_joined": groups_joined}})
                 number_join += 1
                 if number_join > 3:
                     return True
@@ -469,17 +474,17 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
 
                 window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
                 # move via to done folder
-                try:
-                    home_dir = os.path.expanduser("~")
-                    os.makedirs(f"{home_dir}\\Desktop\\shared", exist_ok=True)
-                    os.rename(f"{home_dir}\\Desktop\\{via_name}", f"{home_dir}\\Desktop\\shared\\{via_name}")
-                except Exception as ex:
-                    logger.error(ex)
+                #try:
+                #    home_dir = os.path.expanduser("~")
+                #    os.makedirs(f"{home_dir}\\Desktop\\shared", exist_ok=True)
+                #    os.rename(f"{home_dir}\\Desktop\\{via_name}", f"{home_dir}\\Desktop\\shared\\{via_name}")
+                #except Exception as ex:
+                #    logger.error(ex)
 
                 pyautogui.hotkey('ctrl', 'f4')
                 leave = waiting_for("leave.PNG", confidence=0.9, waiting_time=5)
                 if leave:
-                    click_to(leave)
+                    pyautogui.click(leave)
 
         et = time.time()
         logger.debug(f"share done time consuming: {round((et - st)/60, 1)}")
