@@ -58,6 +58,7 @@ def join_group(via_name):
         groups_joined = via_data['groups_joined']
 
     number_join = 0
+    all_groups = []
     with open("join_group.txt", encoding="utf-8") as group_file:
         for line in group_file.readlines():
             if line.strip() == '':
@@ -68,74 +69,75 @@ def join_group(via_name):
                 continue
 
             group_href, _ = splitter
-            if group_href not in groups_joined:
-                access_group(group_href)
-                time.sleep(3)
-                if check_exist("not_available.PNG"):
+            all_groups.append(group_href)
+    for group_href in random.sample(all_groups, k=len(all_groups)):
+        if group_href not in groups_joined:
+            access_group(group_href)
+            if check_exist("not_available.PNG"):
+                groups_joined.append(group_href)
+                group_joined.update_one({"via_name": via_name},
+                                        {"$set": {"groups_joined": groups_joined}})
+                continue
+
+            buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG",
+                       "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG",
+                       "join_group_5.PNG"]
+            decision = deciscion(buttons, waiting_time=10)
+            if decision:
+                x, y, btn_idx = decision
+                if btn_idx == 0:
                     groups_joined.append(group_href)
                     group_joined.update_one({"via_name": via_name},
                                             {"$set": {"groups_joined": groups_joined}})
-                    continue
+                else:
+                    pyautogui.click(x, y)
+                    buttons = ["joined.PNG", "answer_question.PNG", "how_to_join_group.PNG"]
+                    decision = deciscion(buttons, waiting_time=20)
+                    if decision:
+                        x, y, btn_idx = decision
+                        if btn_idx == 0:
+                            # joined
+                            groups_joined.append(group_href)
+                            group_joined.update_one({"via_name": via_name},
+                                                    {"$set": {"groups_joined": groups_joined}})
+                        elif btn_idx == 1:
+                            pyautogui.moveTo(x, y)
+                            write_an_answer = waiting_for("write_an_answer.PNG", waiting_time=10)
+                            while write_an_answer:
+                                pyautogui.click(write_an_answer)
+                                paste_text("Yes. I'm agree")
+                                pyautogui.scroll(-300)
+                                write_an_answer = check_exist("write_an_answer.PNG")
+                                time.sleep(1)
+                            check_box_group = check_exist("check_box_group.PNG")
+                            waiting_time = 0
+                            while check_box_group and waiting_time < 5:
+                                waiting_time += 1
+                                pyautogui.click(check_box_group)
+                                pyautogui.scroll(-300)
+                                check_box_group = check_exist("check_box_group.PNG")
+                                time.sleep(1)
+                                if check_exist("submit_join.PNG"):
+                                    break
 
-                buttons = ["joined.PNG", "join_group.PNG", "join_group_1.PNG",
-                           "join_group_2.PNG", "join_group_3.PNG", "join_group_4.PNG",
-                           "join_group_5.PNG"]
-                decision = deciscion(buttons, waiting_time=10)
-                if decision:
-                    x, y, btn_idx = decision
-                    if btn_idx == 0:
-                        groups_joined.append(group_href)
-                        group_joined.update_one({"via_name": via_name},
-                                                {"$set": {"groups_joined": groups_joined}})
-                    else:
-                        pyautogui.click(x, y)
-                        buttons = ["joined.PNG", "answer_question.PNG", "how_to_join_group.PNG"]
-                        decision = deciscion(buttons, waiting_time=20)
-                        if decision:
-                            x, y, btn_idx = decision
-                            if btn_idx == 0:
+                            click_many("check.PNG")
+                            #click_many("agree.PNG")
+                            submit_status = click_to("submit_join.PNG", waiting_time=10)
+                            if submit_status:
                                 # joined
                                 groups_joined.append(group_href)
-                                group_joined.update_one({"via_name": via_name},
-                                                        {"$set": {"groups_joined": groups_joined}})
-                            elif btn_idx == 1:
-                                pyautogui.moveTo(x, y)
-                                write_an_answer = waiting_for("write_an_answer.PNG", waiting_time=10)
-                                while write_an_answer:
-                                    pyautogui.click(write_an_answer)
-                                    paste_text("Yes. I'm agree")
-                                    pyautogui.scroll(-300)
-                                    write_an_answer = check_exist("write_an_answer.PNG")
-                                    time.sleep(1)
-                                check_box_group = check_exist("check_box_group.PNG")
-                                waiting_time = 0
-                                while check_box_group and waiting_time < 5:
-                                    waiting_time += 1
-                                    pyautogui.click(check_box_group)
-                                    pyautogui.scroll(-300)
-                                    check_box_group = check_exist("check_box_group.PNG")
-                                    time.sleep(1)
-                                    if check_exist("submit_join.PNG"):
-                                        break
-
-                                click_many("check.PNG")
-                                #click_many("agree.PNG")
-                                submit_status = click_to("submit_join.PNG", waiting_time=10)
-                                if submit_status:
-                                    # joined
-                                    groups_joined.append(group_href)
-
-                                    group_joined.update_one({"via_name": via_name},
-                                                            {"$set": {"groups_joined": groups_joined}})
-                            else:
-                                click_to("join_group_6.PNG", waiting_time=10)
-                                groups_joined.append(group_href)
 
                                 group_joined.update_one({"via_name": via_name},
                                                         {"$set": {"groups_joined": groups_joined}})
-                number_join += 1
-                if number_join > 3:
-                    return True
+                        else:
+                            click_to("join_group_6.PNG", waiting_time=10)
+                            groups_joined.append(group_href)
+
+                            group_joined.update_one({"via_name": via_name},
+                                                    {"$set": {"groups_joined": groups_joined}})
+            number_join += 1
+            if number_join > 3:
+                return True
 
 
 def access_video(video_id):
