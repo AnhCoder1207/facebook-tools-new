@@ -27,14 +27,14 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 
-client = pymongo.MongoClient("mongodb+srv://facebook:auft.baff1vawn*WEC@cluster0.dtlfk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
-                             ssl=True,ssl_cert_reqs=ssl.CERT_NONE)
-db = client.test
-phone_table = db['phone']
-email_table = db['emails']
-cookies_table = db['cookies']
-via_share_table = db['via_share']
-scheduler_table = db['scheduler']
+# client = pymongo.MongoClient("mongodb+srv://facebook:auft.baff1vawn*WEC@cluster0.dtlfk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+#                              ssl=True,ssl_cert_reqs=ssl.CERT_NONE)
+# db = client.test
+# phone_table = db['phone']
+# email_table = db['emails']
+# cookies_table = db['cookies']
+# via_share_table = db['via_share']
+# scheduler_table = db['scheduler']
 
 
 def random_interval():
@@ -132,6 +132,6 @@ def relative_position(x, y):
 
 
 def check_exit_program():
-    if keyboard.is_pressed('esc'):
+    if keyboard.is_pressed('c'):
         print("keyboard pressed")
         sys.exit()
