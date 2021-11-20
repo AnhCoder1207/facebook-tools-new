@@ -38,7 +38,7 @@ def inviting():
 
 if __name__ == '__main__':
     # number_invited = 0s
-    click_to("start_invite_group.PNG")
+    # click_to("start_invite_group.PNG")
     inviting()
     click_to("send_invite_group.PNG")
     # da_chon_btn = check_exist("da_chon.PNG", confidence=.7)

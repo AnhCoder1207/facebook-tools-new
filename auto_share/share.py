@@ -204,19 +204,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
         st = time.time()
         scheduler = scheduler_table.find({"shared": False}).sort("create_date", pymongo.ASCENDING)
         scheduler = list(scheduler)
-        if len(scheduler) > 0:
-            scheduler = scheduler[0]
-            share_number = scheduler.get("share_number", 0)
-            groups_shared = scheduler.get('groups_shared', [])
+        if len(scheduler) > 0 or join_group_only_enable:
             via_name = ""
-            # group_type = scheduler.get("group_type", ["go", "co_khi", "xay_dung"])
-
-            video_id = scheduler['video_id']
-            logger.debug(f"share video {video_id}")
-
-            # pyautogui.moveTo(browser)
-            # time.sleep(0.2)
-
             if not check_exist("coccoc.PNG"):
                 logger.info("Not found coc coc")
                 show_desktop()
@@ -295,11 +284,22 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                         pyautogui.hotkey('ctrl', 'f4')
                         continue
 
+                    scheduler = scheduler[0]
+                    share_number = scheduler.get("share_number", 0)
+                    groups_shared = scheduler.get('groups_shared', [])
+                    video_id = scheduler['video_id']
+                    logger.debug(f"share video {video_id}")
+
                     if btn_index == 0:
                         # change theme
                         click_to("light_dropdown.PNG")
+                        time.sleep(1)
+                        if not check_exist("theme_btn.PNG"):
+                            click_to("light_dropdown.PNG")
                         click_to("theme_btn.PNG")
-                        click_to("theme_btn.PNG", waiting_time=5)
+                        time.sleep(1)
+                        if not check_exist("confirm_change.PNG"):
+                            click_to("theme_btn.PNG")
                         click_to("confirm_change.PNG")
                         click_to('dark_logo.PNG')
                         pyautogui.press('f5')
