@@ -457,15 +457,9 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                             new_item = {"_id": str(uuid.uuid4()), "date": now, via_name: 1}
                                             via_shared.insert_one(new_item)
                                         click_to("post_success.PNG", confidence=0.8, waiting_time=10)
-                                #leave = waiting_for("leave.PNG", confidence=0.9, waiting_time=10)
-                                #if leave:
-                                #    click_to(leave)
-                                            # pyautogui.hotkey('ctrl', 'f4')
-                                            # time.sleep(1)
-                                            # pyautogui.press('enter')
-                                            # time.sleep(1)
-                                            # pyautogui.hotkey('ctrl', 'f4')
-                                    #logger.info(f"leave {via_name}")
+                                else:
+                                    click_to("close_share_dialog.PNG", waiting_time=10)
+
                                 share_number += 1
                                 update_data = {"share_number": share_number}
                                 if share_number >= len(groups_share):
