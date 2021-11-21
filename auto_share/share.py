@@ -268,14 +268,14 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 if waiting_for("reload_bar.PNG"):
                     if check_exist("chan_socket.PNG"):
                         click_to("chan_socket.PNG")
-                buttons = ['light_logo.PNG', 'dark_logo.PNG', "checkpoint_1.PNG",
+                buttons = ["checkpoint_1.PNG",
                            "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
-                           "login_btn.PNG", "site_can_reach.PNG"]
-                ret = deciscion(buttons, waiting_time=10)
+                           "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
+                ret = deciscion(buttons, waiting_time=20)
                 if ret:
                     btn_x, btn_y, btn_index = ret
                     logger.info(f"found button: {buttons[btn_index]}")
-                    if btn_index not in [0, 1]:
+                    if btn_index not in [6, 7]:
                         pyautogui.hotkey('ctrl', 'f4')
                         continue
 
