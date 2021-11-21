@@ -69,6 +69,7 @@ def join_group(via_name):
                 continue
 
             group_href, _ = splitter
+            group_href = group_href.strip()
             all_groups.append(group_href)
     for group_href in random.sample(all_groups, k=len(all_groups)):
         if group_href not in groups_joined:
