@@ -47,7 +47,7 @@ def show_desktop():
 
 def join_group(via_name):
     if not os.path.isfile("join_group.txt"):
-        return
+        return False
 
     via_data = group_joined.find_one({"via_name": via_name})
     if via_data is None:
@@ -74,6 +74,16 @@ def join_group(via_name):
     for group_href in random.sample(all_groups, k=len(all_groups)):
         if group_href not in groups_joined:
             access_group(group_href)
+
+            buttons = ["checkpoint_1.PNG",
+                       "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+                       "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
+            ret = deciscion(buttons, waiting_time=10)
+            if ret:
+                btn_x, btn_y, btn_index = ret
+                if btn_index not in [6, 7]:
+                    return False
+
             if check_exist("not_available.PNG"):
                 groups_joined.append(group_href)
                 group_joined.update_one({"via_name": via_name},
@@ -139,6 +149,7 @@ def join_group(via_name):
             number_join += 1
             if number_join > 3:
                 return True
+    return True
 
 
 def access_video(video_id):
@@ -272,7 +283,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 buttons = ["checkpoint_1.PNG",
                            "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
                            "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
-                ret = deciscion(buttons, waiting_time=20)
+                ret = deciscion(buttons, waiting_time=10)
                 if ret:
                     btn_x, btn_y, btn_index = ret
                     logger.info(f"found button: {buttons[btn_index]}")
@@ -282,6 +293,16 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
 
                     if enable_join_group or join_group_only_enable:
                         join_group(via_name)
+
+                    buttons = ["checkpoint_1.PNG",
+                               "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+                               "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
+                    ret = deciscion(buttons, waiting_time=10)
+                    if ret:
+                        btn_x, btn_y, btn_index = ret
+                        if btn_index not in [6, 7]:
+                            pyautogui.hotkey('ctrl', 'f4')
+                            continue
 
                     if join_group_only_enable:
                         pyautogui.hotkey('ctrl', 'f4')
