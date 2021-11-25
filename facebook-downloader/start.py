@@ -311,6 +311,7 @@ if __name__ == '__main__':
                         vertical_scroll_only=False,
                         num_rows=24, key='table')],
               [sg.Button('Start download'),
+               sg.Button('Download selected link'),
                sg.Button('Pause'),
                sg.Button('Remove link'),
                sg.Input(key='file_browser', enable_events=True, visible=False), sg.FileBrowse(button_text="Load HTML file", enable_events=True),
@@ -344,6 +345,18 @@ if __name__ == '__main__':
                                                                    window, values.get("ten_phim", "").strip(),
                                                                    lambda: stop_threads,), daemon=True)
             thread.start()
+        elif event == 'Download selected link':
+            if len(values['table']) > 0:
+                stop_threads = False
+                table_data = window.Element('table').Get()
+
+                link_index = values['table'][0]
+                download_data = table_data[0:link_index+1]
+
+                thread = threading.Thread(target=download_video, args=(download_data, link_index,
+                                                                       window, values.get("ten_phim", "").strip(),
+                                                                       lambda: stop_threads,), daemon=True)
+                thread.start()
         elif event == 'Remove All Links':
             window.Element('table').Update(values=[])
         elif event == 'Pause':
