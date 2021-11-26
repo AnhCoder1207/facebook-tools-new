@@ -401,6 +401,7 @@ if __name__ == '__main__':
 
                 # close windows
                 add_new_window.close()
+                add_new_window = None
             else:
                 sg.Popup('Nhap link, title, view. Khong de trong!', keep_on_top=True, title="Chu y!")
         elif event == 'Remove All Links':
