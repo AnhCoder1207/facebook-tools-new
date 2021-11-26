@@ -386,8 +386,10 @@ if __name__ == '__main__':
         elif event == 'add_new_link':
             link_input = values.get("link_input", None)
             link_title = values.get("link_title", None)
-            link_view = values.get("link_view", None)
-            if link_input and link_title and link_view:
+            link_view = values.get("link_view", '1')
+            if link_input:
+                if link_title is None:
+                    link_title = str(len(table_data) + 1)
                 table_data = main_windows.Element('table').Get()
                 table_data.append([link_input, link_title, link_view, 'waiting'])
                 main_windows.Element('table').Update(values=table_data)
