@@ -131,8 +131,9 @@ def join_group(via_name):
                                 if check_exist("submit_join.PNG"):
                                     break
 
-                            click_many("check.PNG")
+                            click_many("check.PNG", duration=0.5)
                             #click_many("agree.PNG")
+                            time.sleep(1)
                             submit_status = click_to("submit_join.PNG", waiting_time=10)
                             if submit_status:
                                 # joined
@@ -156,10 +157,16 @@ def access_video(video_id):
     # if video_id:
     #     waiting_for("dark_logo.PNG", waiting_time=20)
     reload_bar = waiting_for("reload_bar.PNG")
+    time.sleep(0.5)
+    if waiting_for("proxy_require.PNG", waiting_time=10):
+        paste_text("huyduc399")
+        pyautogui.press("tab")
+        paste_text("3b4i7mMN")
+        click_to("proxy_signin.PNG", waiting_time=5)
     if reload_bar:
         bar_x, bar_y = reload_bar
         bar_y += 0
-        pyautogui.click(bar_x + 100, bar_y)
+        pyautogui.click(bar_x + 250, bar_y)
         pyautogui.hotkey('ctrl', 'a')
         pyautogui.press('backspace')
         if video_id:

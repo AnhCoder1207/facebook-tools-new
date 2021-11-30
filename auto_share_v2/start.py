@@ -405,10 +405,11 @@ if __name__ == '__main__':
                             chrome_worker.login()
                             # login success
                             via_status = "live"
+
                         except Exception as ex:
                             via_status = "can not login"
                             print(ex)
-
+                        chrome_worker.driver.close()
                     query = db.insert(via_share).values(
                         fb_id=fb_id, password=password, mfa=mfa,
                         email=email, email_password=email_password,
