@@ -92,7 +92,12 @@ def waiting_for_selector(selector):
         return False
 
 
+def validate_string(input_txt):
+    return ''.join(e for e in input_txt if e.isalnum())
+
+
 def download_video(table_data, current_index, window, ten_phim, pause_download):
+    ten_phim = validate_string(ten_phim)
     os.makedirs(f"downloaded/{ten_phim}", exist_ok=True)
     for idx, row in enumerate(table_data):
         if idx >= current_index:
@@ -100,6 +105,8 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
                 return True
 
             link, name, views, status = row
+            name = validate_string(name)
+            views = validate_string(views)
             ydl_opts = {}
             if status == "waiting":
                 if not os.path.isfile(f'downloaded/{ten_phim}/{views}-{name}.mp4'):
@@ -293,12 +300,7 @@ def crawl_movie(page_name, filter_number):
     return tables_data
 
 
-if __name__ == '__main__':
-    # browserExe = "movies.exe"
-    # os.system("taskkill /f /im " + browserExe)
-    sg.theme('DarkAmber')  # Add a touch of color
-    # All the stuff inside your window.
-    headings = ['links', 'name', 'likes', 'status']  # the text of the headings
+def main_layouts():
 
     layout = [[sg.Text('views filter'), sg.InputText("0", key="input_number")],
               [sg.Text('Ten Phim'), sg.InputText(key="ten_phim")],
@@ -311,66 +313,126 @@ if __name__ == '__main__':
                         vertical_scroll_only=False,
                         num_rows=24, key='table')],
               [sg.Button('Start download'),
+               sg.Button('Download selected link'),
+               sg.Button('Add new link', key='open_add_new_window'),
                sg.Button('Pause'),
                sg.Button('Remove link'),
                sg.Input(key='file_browser', enable_events=True, visible=False), sg.FileBrowse(button_text="Load HTML file", enable_events=True),
                sg.Button('Remove All Links'),
                sg.Button('Cancel')]]
+    window = sg.Window('Douyin Downloader', layout, finalize=True)
+    return window
+
+
+def add_new_layouts():
+    layout_add_new = [[sg.Text('Link'), sg.InputText(key="link_input")],
+                      [sg.Text('Tieu De'), sg.InputText(key="link_title")],
+                      [sg.Text('Luot Xem'), sg.InputText(key="link_view")],
+                      [sg.Button('Add', key='add_new_link')]]
+    window = sg.Window('Add New Link', layout_add_new, finalize=True)
+    return window
+
+
+if __name__ == '__main__':
+    # browserExe = "movies.exe"
+    # os.system("taskkill /f /im " + browserExe)
+    sg.theme('DarkAmber')  # Add a touch of color
+    # All the stuff inside your window.
+    headings = ['links', 'name', 'likes', 'status']  # the text of the headings
 
     # Create the Window
-    window = sg.Window('Douyin Downloader', layout)
+    main_windows, add_new_window = main_layouts(), None
 
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
-        event, values = window.read()
+        window, event, values = sg.read_all_windows()
         print(f'{event} You entered {values}')
         print('event', event)
         if event == sg.WIN_CLOSED or event == 'Cancel':  # if user closes window or clicks cancel
-            # browserExe = "movies.exe"
-            # os.system("taskkill /f /im " + browserExe)
-            break
+            if window:
+                window.close()
+            else:
+                break
         elif event == 'Get Links Online':
             sg.Popup('Bat dau lay links videos. Vui long khong dong cua so!', keep_on_top=True, title="Chu y!")
-            x = threading.Thread(target=crawl_movie, args=(values[0], window, ))
+            x = threading.Thread(target=crawl_movie, args=(values[0], main_windows, ))
             x.start()
         elif event == 'Start download':
-            window.Element('Start download').Update(text="Downloading")
+            main_windows.Element('Start download').Update(text="Downloading")
             stop_threads = False
             current_index = 0
             if len(values['table']) > 0:
                 current_index = values['table'][0]
-            table_data = window.Element('table').Get()
+            table_data = main_windows.Element('table').Get()
             thread = threading.Thread(target=download_video, args=(table_data, current_index,
-                                                                   window, values.get("ten_phim", "").strip(),
+                                                                   main_windows, values.get("ten_phim", "").strip(),
                                                                    lambda: stop_threads,), daemon=True)
             thread.start()
+        elif event == 'Download selected link':
+            if len(values['table']) > 0:
+                stop_threads = False
+                table_data = main_windows.Element('table').Get()
+
+                link_index = values['table'][0]
+                download_data = table_data[0:link_index+1]
+
+                thread = threading.Thread(target=download_video, args=(download_data, link_index,
+                                                                       main_windows, values.get("ten_phim", "").strip(),
+                                                                       lambda: stop_threads,), daemon=True)
+                thread.start()
+        elif event == 'open_add_new_window':
+            if not add_new_window:
+                add_new_window = add_new_layouts()
+        elif event == 'add_new_link':
+            link_input = values.get("link_input", None)
+            link_title = values.get("link_title", None)
+            link_view = values.get("link_view", '1')
+            if link_input:
+                if link_title is None:
+                    link_title = str(len(table_data) + 1)
+                table_data = main_windows.Element('table').Get()
+                table_data.append([link_input, link_title, link_view, 'waiting'])
+                main_windows.Element('table').Update(values=table_data)
+                link_index = len(table_data) - 1
+                download_data = table_data[0:link_index+1]
+
+                thread = threading.Thread(target=download_video, args=(download_data, link_index,
+                                                                       main_windows, values.get("ten_phim", "").strip(),
+                                                                       lambda: stop_threads,), daemon=True)
+                thread.start()
+
+                # close windows
+                add_new_window.close()
+                add_new_window = None
+            else:
+                sg.Popup('Nhap link, title, view. Khong de trong!', keep_on_top=True, title="Chu y!")
         elif event == 'Remove All Links':
-            window.Element('table').Update(values=[])
+            main_windows.Element('table').Update(values=[])
         elif event == 'Pause':
-            window.Element('Start download').Update(text="Resume")
+            main_windows.Element('Start download').Update(text="Resume")
             stop_threads = True
         elif event == 'file_browser':
             if os.path.isfile(values['file_browser']):
-                table_data = window.Element('table').Get()
+                table_data = main_windows.Element('table').Get()
                 table_data += crawl_movie(values['file_browser'], values['input_number'])
-                window.Element('table').Update(values=table_data)
-                window.Element('table').Update(select_rows=[0])
+                main_windows.Element('table').Update(values=table_data)
+                main_windows.Element('table').Update(select_rows=[0])
         elif event == 'Remove link':
             removed = values['table']
-            table_data = window.Element('table').Get()
+            table_data = main_windows.Element('table').Get()
             for item in reversed(removed):
                 table_data.pop(item)
-            window.Element('table').Update(values=table_data)
+            main_windows.Element('table').Update(values=table_data)
         elif event == '-THREAD-':
             idx, download_status = values['-THREAD-']
             logger.debug(f"download status: {idx} {download_status} {len(table_data)}")
-            table_data = window.Element('table').Get()
+            table_data = main_windows.Element('table').Get()
             table_data[idx][-1] = download_status
             # table_data[idx][-1] = download_status
-            window.Element('table').Update(values=table_data, select_rows=[idx])
-            window.Refresh()
-            if idx == len(table_data) - 1:
-                window.Element('Start download').Update(text="Start download")
+            main_windows.Element('table').Update(values=table_data, select_rows=[idx])
+            main_windows.Refresh()
+            if idx == len(table_data) - 1 and download_status == 'Downloaded':
+                main_windows.Element('Start download').Update(text="Start download")
                 pyautogui.alert("Download complete")
         elif event == 'GetLinksSuccessfully':
             with open("movies.json") as json_file:
@@ -386,5 +448,12 @@ if __name__ == '__main__':
                             "waiting"
                         ])
 
-                window.Element('table').Update(values=table_data, select_rows=[0])
-    window.close()
+                main_windows.Element('table').Update(values=table_data, select_rows=[0])
+
+    # close drive
+    if driver:
+        driver.close()
+    # close all windows
+    for window in [main_windows, add_new_window]:
+        if window:
+            window.close()

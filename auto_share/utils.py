@@ -125,8 +125,11 @@ def paste_text(inp_text):
 def get_title():
     with open("title.txt") as file:
         lines = [line.strip() for line in file.readlines() if line.strip() != ""]
-        title = random.choice(lines)
-        logger.info(title)
+        title = ""
+        if len(lines) > 0:
+            title = random.choice(lines)
+            logger.info(title)
+
         return title
 
 
