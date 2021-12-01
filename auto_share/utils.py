@@ -49,7 +49,7 @@ def random_interval():
     return 0
 
 
-def click_to(btn, confidence=0.8, region=None, waiting_time=50, interval=None, check_close=True, duration=0.0):
+def click_to(btn, confidence=0.8, region=None, waiting_time=20, interval=None, check_close=True, duration=0.0):
     logger.debug(f"Click to {btn}")
     start_count = 0
     while start_count < waiting_time:
@@ -84,7 +84,7 @@ def check_exist(btn, region=None, confidence=0.8):
     return exist
 
 
-def waiting_for(btn, region=None, confidence=0.8, waiting_time=50):
+def waiting_for(btn, region=None, confidence=0.8, waiting_time=20):
     logger.debug(f"Waiting for {btn}")
     start_count = 0
     while start_count < waiting_time:
@@ -99,7 +99,7 @@ def waiting_for(btn, region=None, confidence=0.8, waiting_time=50):
     return None
 
 
-def deciscion(btns, region=None, confidence=0.8, waiting_time=50):
+def deciscion(btns, region=None, confidence=0.8, waiting_time=20):
     start_count = 0
     while start_count < waiting_time:
         start_count += 1
