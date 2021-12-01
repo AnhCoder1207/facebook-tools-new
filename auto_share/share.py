@@ -235,8 +235,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 if not pyautogui.locateOnScreen(f"btn/coccoc.PNG", confidence=0.8, region=browser):
                     pyautogui.moveTo(1027, 549)
                     show_desktop()
-                # click_to("recycle.PNG", waiting_time=5)
-                # time.sleep(0.5)
+                click_to("recycle.PNG", waiting_time=5)
+                time.sleep(0.5)
                 pyautogui.click(browser)
                 time.sleep(0.5)
                 logger.info(f"click to: {browser}")
@@ -250,6 +250,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 logger.info(f"via name: {via_name}")
                 if "Chrome" in via_name:
                     # shared_via.append(via_name)
+                    pyautogui.click(browser)
+                    time.sleep(0.2)
                     pyautogui.press('enter')
                     time.sleep(1)
 
