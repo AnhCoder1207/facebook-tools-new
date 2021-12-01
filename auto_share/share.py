@@ -224,6 +224,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 logger.info("Not found coc coc")
                 show_desktop()
             for _ in range(3):
+                pyautogui.press('f5')
                 if not pyautogui.locateOnScreen(f"btn/coccoc.PNG", confidence=0.95, region=browser):
                     pyautogui.moveTo(1027, 549)
                     show_desktop()
