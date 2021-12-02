@@ -220,32 +220,32 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
     time.sleep(5)
     logger.debug("start share")
     show_desktop()
-    browsers = pyautogui.locateAllOnScreen(f"btn/coccoc.PNG", confidence=0.8)
+    browsers = pyautogui.locateAllOnScreen(f"btn/coccoc.PNG", confidence=0.95)
     for browser in browsers:
         st = time.time()
         scheduler = scheduler_table.find({"shared": False}).sort("create_date", pymongo.ASCENDING)
         scheduler = list(scheduler)
         if len(scheduler) > 0 or join_group_only_enable:
             via_name = ""
-            if not check_exist("coccoc.PNG"):
-                logger.info("Not found coc coc")
-                show_desktop()
+            # if not check_exist("coccoc.PNG"):
+            #     logger.info("Not found coc coc")
+            #     show_desktop()
             for _ in range(3):
                 pyautogui.press('f5')
-                if not pyautogui.locateOnScreen(f"btn/coccoc.PNG", confidence=0.8, region=browser):
+                if not pyautogui.locateOnScreen(f"btn/coccoc.PNG", confidence=0.95, region=browser):
                     pyautogui.moveTo(1027, 549)
                     show_desktop()
-                click_to("recycle.PNG", waiting_time=5)
-                time.sleep(0.5)
+                click_to("recycle.PNG", waiting_time=10)
+                time.sleep(0.2)
                 pyautogui.click(browser)
-                time.sleep(0.5)
+                time.sleep(0.2)
                 logger.info(f"click to: {browser}")
                 pyautogui.press("f2")
-                time.sleep(0.5)
+                time.sleep(0.2)
                 pyautogui.hotkey('ctrl', 'c')
-                time.sleep(0.5)
+                time.sleep(0.2)
                 pyautogui.press('esc')
-                time.sleep(0.5)
+                time.sleep(0.2)
                 via_name = clipboard.paste().strip()
                 logger.info(f"via name: {via_name}")
                 if "Chrome" in via_name:
@@ -259,7 +259,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                         # not in maximize mod
                         show_full_screen()
 
-                    if waiting_for("reload_bar.PNG", waiting_time=5):
+                    if waiting_for("reload_bar.PNG", waiting_time=10):
                         break
 
             # time.sleep(2)
