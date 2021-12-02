@@ -157,12 +157,12 @@ def access_video(video_id):
     # if video_id:
     #     waiting_for("dark_logo.PNG", waiting_time=20)
     reload_bar = waiting_for("reload_bar.PNG")
-    time.sleep(0.5)
-    if waiting_for("proxy_require.PNG", waiting_time=10):
-        paste_text("huyduc399")
-        pyautogui.press("tab")
-        paste_text("3b4i7mMN")
-        click_to("proxy_signin.PNG", waiting_time=5)
+    # time.sleep(0.5)
+    # if waiting_for("proxy_require.PNG", waiting_time=10):
+    #     paste_text("huyduc399")
+    #     pyautogui.press("tab")
+    #     paste_text("3b4i7mMN")
+    #     click_to("proxy_signin.PNG", waiting_time=5)
     if reload_bar:
         bar_x, bar_y = reload_bar
         bar_y += 0
