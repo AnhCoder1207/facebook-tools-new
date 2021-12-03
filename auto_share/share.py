@@ -500,8 +500,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                 if share_number >= len(groups_share):
                                     update_data['shared'] = True
                                 scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
-                        #else:
-                        #    scheduler_table.delete_one({"video_id": video_id})
+                        else:
+                            scheduler_table.delete_one({"video_id": video_id})
 
                 window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
                 # move via to done folder
