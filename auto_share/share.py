@@ -513,13 +513,11 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 #    logger.error(ex)
 
                 pyautogui.hotkey('ctrl', 'f4')
-                leave = waiting_for("leave.PNG", confidence=0.9, waiting_time=5)
-                if leave:
-                    pyautogui.click(leave)
+                click_to("leave.PNG", confidence=0.9, waiting_time=5)
 
         et = time.time()
         logger.debug(f"share done time consuming: {round((et - st)/60, 1)}")
-        show_desktop()
+        # show_desktop()
     window.write_event_value('-THREAD-', "done")  # put a message into queue for GUI
 
 
