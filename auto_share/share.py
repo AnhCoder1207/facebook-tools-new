@@ -14,6 +14,7 @@ from utils import click_to, click_many, check_exist, paste_text, waiting_for, de
     get_title, scheduler_table, logger, via_shared, video_shared, group_joined
 pyautogui.PAUSE = 0.1
 pyautogui.FAILSAFE = True
+pyautogui.LOG_SCREENSHOTS = True
 
 groups = [
     "https://www.facebook.com/groups/312177843254758/",
