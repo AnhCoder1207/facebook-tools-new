@@ -18,6 +18,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from datetime import datetime
 from bs4 import BeautifulSoup
 import os
 
@@ -93,7 +94,7 @@ def waiting_for_selector(selector):
 
 
 def validate_string(input_txt):
-    return ''.join(e for e in input_txt if e.isalnum())
+    return ''.join(e for e in input_txt if (e.isalnum() or e == " " or e == '.'))
 
 
 def download_video(table_data, current_index, window, ten_phim, pause_download):
@@ -269,18 +270,25 @@ def crawl_movie(page_name, filter_number):
         href_el = parent.select_one("div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a")
         text_video = parent.select_one('div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a > span > span')
         views = parent.select_one("div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(3) > div > div:nth-child(2) > div > div > span > div")
-        if href_el and text_video and views:
-            # if "Views" in views.text:
-            #     view_count = views.text
-            # else:
-            #     continue
+        duration = parent.select_one("div.pu81012h.pmk7jnqg.hzruof5a.pcp91wgn.pby63qed.p8fzw8mz.linoseic.b5fwa0m2.labbqbtg.b6jg2yqc.hp05c5td.bn9qtmzc.s8bnoagg.d6rk862h > span")
+        if href_el and text_video and views and duration:
+
+            try:
+                logger.info(f"{duration.text}")
+                duration_obj = datetime.strptime(duration.text, "%M:%S")
+                if duration_obj.minute > 15:
+                    continue
+            except Exception as ex:
+                logger.error(f"{ex}")
+                continue
+
             view_count = views.text
             href = href_el.get('href')
             if "M" in view_count:
-                view_count_float = view_count.replace("M", "").replace("Views", "").replace("views", "")
+                view_count_float = view_count.replace("M", "").replace("Views", "").replace("views", "").replace(" ", "")
                 view_count = float(view_count_float)*1000000
             elif "K" in view_count:
-                view_count = view_count.replace("K", "").replace("Views", "").replace("views", "")
+                view_count = view_count.replace("K", "").replace("Views", "").replace("views", "").replace(" ", "")
                 view_count = float(view_count)*1000
             else:
                 view_count = view_count.replace("Views", "").replace("views", "")
@@ -393,13 +401,13 @@ if __name__ == '__main__':
                 table_data = main_windows.Element('table').Get()
                 table_data.append([link_input, link_title, link_view, 'waiting'])
                 main_windows.Element('table').Update(values=table_data)
-                link_index = len(table_data) - 1
-                download_data = table_data[0:link_index+1]
+                # link_index = len(table_data) - 1
+                # download_data = table_data[0:link_index+1]
 
-                thread = threading.Thread(target=download_video, args=(download_data, link_index,
-                                                                       main_windows, values.get("ten_phim", "").strip(),
-                                                                       lambda: stop_threads,), daemon=True)
-                thread.start()
+                # thread = threading.Thread(target=download_video, args=(download_data, link_index,
+                #                                                        main_windows, values.get("ten_phim", "").strip(),
+                #                                                        lambda: stop_threads,), daemon=True)
+                # thread.start()
 
                 # close windows
                 add_new_window.close()
