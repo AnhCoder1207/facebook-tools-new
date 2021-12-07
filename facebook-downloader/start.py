@@ -110,20 +110,21 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
             views = validate_string(views)
             ydl_opts = {}
             if status == "waiting":
-                if not os.path.isfile(f'downloaded/{ten_phim}/{views}-{name}.mp4'):
+                filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
+                if not filename:
                     window.write_event_value('-THREAD-', [idx, 'Downloading'])
                     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                         try:
                             info_dict = ydl.extract_info(link, download=False)
                             video_title = info_dict.get('title', None)
                             ext = info_dict.get('ext', None)
-                            ydl_opts = {'outtmpl': f'downloaded/{ten_phim}/{views}-{name}'}
+                            ydl_opts = {'outtmpl': filename, 'format': "22/best"}
                             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                                 ydl.download([link])
                             window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
                         except Exception as ex:
                             print(ex)
-                            filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
+
                             retrying_time = 10
                             for retry in range(retrying_time):
                                 try:
