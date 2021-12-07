@@ -102,7 +102,7 @@ def join_group(via_name):
                                             {"$set": {"groups_joined": groups_joined}})
                 else:
                     pyautogui.click(x, y)
-                    buttons = ["joined.PNG", "answer_question.PNG", "how_to_join_group.PNG"]
+                    buttons = ["joined.PNG", "answer_question.PNG", "how_to_join_group.PNG", "requests_gr.PNG"]
                     decision = deciscion(buttons, waiting_time=20)
                     if decision:
                         x, y, btn_idx = decision
@@ -111,7 +111,7 @@ def join_group(via_name):
                             groups_joined.append(group_href)
                             group_joined.update_one({"via_name": via_name},
                                                     {"$set": {"groups_joined": groups_joined}})
-                        elif btn_idx == 1:
+                        elif btn_idx == 1 or btn_idx == 3:
                             pyautogui.moveTo(x, y)
                             write_an_answer = waiting_for("write_an_answer.PNG", waiting_time=10)
                             while write_an_answer:
