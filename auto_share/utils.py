@@ -29,8 +29,7 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 
-client = pymongo.MongoClient("mongodb+srv://facebook:auft.baff1vawn*WEC@cluster0.dtlfk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
-                             ssl=True,ssl_cert_reqs=ssl.CERT_NONE)
+client = pymongo.MongoClient("mongodb://localhost:27017")
 db = client.thinh
 phone_table = db['phone']
 email_table = db['emails']
@@ -41,6 +40,10 @@ group_table = db['groups']
 via_shared = db['via_shared']
 video_shared = db['video_shared']
 group_joined = db['group_joined']
+
+pyautogui.PAUSE = 0.1
+pyautogui.FAILSAFE = True
+pyautogui.LOG_SCREENSHOTS = True
 
 
 def random_interval():

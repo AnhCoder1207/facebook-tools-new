@@ -13,7 +13,8 @@ from bson import ObjectId
 from utils import click_to, click_many, check_exist, paste_text, waiting_for, deciscion,\
     get_title, scheduler_table, logger, via_shared, video_shared, group_joined
 pyautogui.PAUSE = 0.1
-pyautogui.FAILSAFE = False
+pyautogui.FAILSAFE = True
+pyautogui.LOG_SCREENSHOTS = True
 
 groups = [
     "https://www.facebook.com/groups/312177843254758/",
@@ -157,12 +158,12 @@ def access_video(video_id):
     # if video_id:
     #     waiting_for("dark_logo.PNG", waiting_time=20)
     reload_bar = waiting_for("reload_bar.PNG")
-    time.sleep(0.5)
-    if waiting_for("proxy_require.PNG", waiting_time=10):
-        paste_text("huyduc399")
-        pyautogui.press("tab")
-        paste_text("3b4i7mMN")
-        click_to("proxy_signin.PNG", waiting_time=5)
+    # time.sleep(0.5)
+    # if waiting_for("proxy_require.PNG", waiting_time=10):
+    #     paste_text("huyduc399")
+    #     pyautogui.press("tab")
+    #     paste_text("3b4i7mMN")
+    #     click_to("proxy_signin.PNG", waiting_time=5)
     if reload_bar:
         bar_x, bar_y = reload_bar
         bar_y += 0
@@ -232,6 +233,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
             #     show_desktop()
             for _ in range(3):
                 pyautogui.press('f5')
+                time.sleep(1)
+                pyautogui.moveTo(browser, duration=1)
                 if not pyautogui.locateOnScreen(f"btn/coccoc.PNG", confidence=0.95, region=browser):
                     pyautogui.moveTo(1027, 549)
                     show_desktop()
@@ -497,8 +500,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                 if share_number >= len(groups_share):
                                     update_data['shared'] = True
                                 scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
-                        #else:
-                        #    scheduler_table.delete_one({"video_id": video_id})
+                        else:
+                            scheduler_table.delete_one({"video_id": video_id})
 
                 window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
                 # move via to done folder
@@ -510,13 +513,11 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 #    logger.error(ex)
 
                 pyautogui.hotkey('ctrl', 'f4')
-                leave = waiting_for("leave.PNG", confidence=0.9, waiting_time=5)
-                if leave:
-                    pyautogui.click(leave)
+                click_to("leave.PNG", confidence=0.9, waiting_time=5)
 
         et = time.time()
         logger.debug(f"share done time consuming: {round((et - st)/60, 1)}")
-        show_desktop()
+        # show_desktop()
     window.write_event_value('-THREAD-', "done")  # put a message into queue for GUI
 
 
