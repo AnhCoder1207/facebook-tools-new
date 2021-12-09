@@ -512,7 +512,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 #except Exception as ex:
                 #    logger.error(ex)
 
-                pyautogui.hotkey('ctrl', 'f4')
+                # pyautogui.hotkey('ctrl', 'f4')
+                pyautogui.click(x=1890, y=10)
                 click_to("leave.PNG", confidence=0.9, waiting_time=5)
 
         et = time.time()
