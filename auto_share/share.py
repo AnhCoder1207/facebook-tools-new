@@ -262,6 +262,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                     time.sleep(0.2)
                     pyautogui.press('enter')
                     time.sleep(1)
+                    pyautogui.keyUp('enter')
 
                     if not check_exist("reload_bar.PNG", region=(74, 41, 30, 30)):
                         # not in maximize mod
