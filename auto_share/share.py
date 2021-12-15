@@ -228,6 +228,10 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
         scheduler = list(scheduler)
         if len(scheduler) > 0 or join_group_only_enable:
             via_name = ""
+            if waiting_for("coccoc.PNG", waiting_time=10, confidence=0.9, region=browser) is None:
+                pyautogui.click(1027, 549)
+                show_desktop()
+
             # if not check_exist("coccoc.PNG"):
             #     logger.info("Not found coc coc")
             #     show_desktop()
@@ -235,11 +239,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 pyautogui.press('f5')
                 # time.sleep(1)
                 # pyautogui.moveTo(browser, duration=1)
-                if waiting_for("coccoc.PNG", waiting_time=10, confidence=0.9, region=browser) is None:
-                    pyautogui.click(1027, 549)
-                    show_desktop()
-                click_to("recycle.PNG", waiting_time=10)
-                time.sleep(0.2)
+                # click_to("recycle.PNG", waiting_time=10)
+                # time.sleep(0.2)
                 pyautogui.click(browser)
                 time.sleep(0.2)
                 logger.info(f"click to: {browser}")
@@ -290,13 +291,11 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                     show_full_screen()
 
                 access_video(None)
-                if waiting_for("reload_bar.PNG"):
-                    if check_exist("chan_socket.PNG"):
-                        click_to("chan_socket.PNG")
+                waiting_for("reload_bar.PNG", waiting_time=50)
                 buttons = ["checkpoint_1.PNG",
                            "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
                            "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
-                ret = deciscion(buttons, waiting_time=10)
+                ret = deciscion(buttons, waiting_time=15)
                 if ret:
                     btn_x, btn_y, btn_index = ret
                     logger.info(f"found button: {buttons[btn_index]}")
@@ -503,23 +502,16 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                         else:
                             scheduler_table.delete_one({"video_id": video_id})
 
-                window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
-                # move via to done folder
-                #try:
-                #    home_dir = os.path.expanduser("~")
-                #    os.makedirs(f"{home_dir}\\Desktop\\shared", exist_ok=True)
-                #    os.rename(f"{home_dir}\\Desktop\\{via_name}", f"{home_dir}\\Desktop\\shared\\{via_name}")
-                #except Exception as ex:
-                #    logger.error(ex)
+                # window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
 
-                # pyautogui.hotkey('ctrl', 'f4')
-                pyautogui.click(x=1890, y=10)
+                pyautogui.hotkey('ctrl', 'f4')
+                # pyautogui.click(x=1890, y=10)
                 click_to("leave.PNG", confidence=0.9, waiting_time=5)
 
         et = time.time()
         logger.debug(f"share done time consuming: {round((et - st)/60, 1)}")
         # show_desktop()
-    window.write_event_value('-THREAD-', "done")  # put a message into queue for GUI
+    # window.write_event_value('-THREAD-', "done")  # put a message into queue for GUI
 
 
 def watch_videos():
