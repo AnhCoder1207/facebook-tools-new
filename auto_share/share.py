@@ -228,8 +228,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
         scheduler = list(scheduler)
         if len(scheduler) > 0 or join_group_only_enable:
             via_name = ""
-            browserExe = "chrome.exe"
-            os.system("taskkill /f /im " + browserExe)
+            # browserExe = "chrome.exe"
+            # os.system("taskkill /f /im " + browserExe)
 
             if waiting_for("coccoc.PNG", waiting_time=10, confidence=0.9, region=browser) is None:
                 pyautogui.click(1027, 549)
