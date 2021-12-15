@@ -709,6 +709,8 @@ if __name__ == '__main__':
             browserExe = "chrome.exe"
             os.system("taskkill /f /im " + browserExe)
         elif event == 'Start':
+            browserExe = "chrome.exe"
+            os.system("taskkill /f /im " + browserExe)
             window.Element('Start').Update(text="Sharing")
             stop_threads = False
             current_index = 0
