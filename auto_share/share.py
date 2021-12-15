@@ -236,7 +236,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
             #     logger.info("Not found coc coc")
             #     show_desktop()
             for _ in range(3):
-                pyautogui.press('f5')
+                pyautogui.click(1027, 549)
+                # pyautogui.press('f5')
                 # time.sleep(1)
                 # pyautogui.moveTo(browser, duration=1)
                 # click_to("recycle.PNG", waiting_time=10)
