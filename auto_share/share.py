@@ -271,240 +271,240 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                         break
 
             # time.sleep(2)
-            if check_exist("reload_bar.PNG"):
-                if via_name == "fb.com" or via_name == "" or "Chrome" not in via_name:
-                    pyautogui.hotkey('ctrl', 'f4')
-                    continue
-
-                # check via is shared enough on this day
-                now = datetime.now().strftime("%B %d, %Y")
-                via_history = via_shared.find_one({"date": now})
-                if via_history:
-                    via_share_number = via_history.get(via_name, 0)
-                    if via_share_number >= 4 and not join_group_only_enable:
-                        pyautogui.hotkey('ctrl', 'f4')
-                        logger.info(f"via {via_name} da share du 4 video")
-                        continue
-
-                # pyautogui.press('enter')
-                # click_to("signin.PNG", waiting_time=5)
-
-                pyautogui.moveTo(1027, 549)
-                if not check_exist("reload_bar.PNG", region=(74, 41, 30, 30)):
-                    # not in maximize mod
-                    show_full_screen()
-
-                access_video(None)
-                waiting_for("reload_bar.PNG", waiting_time=50)
-                buttons = ["checkpoint_1.PNG",
-                           "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
-                           "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
-                ret = deciscion(buttons, waiting_time=15)
-                if ret:
-                    btn_x, btn_y, btn_index = ret
-                    logger.info(f"found button: {buttons[btn_index]}")
-                    if btn_index not in [6, 7]:
-                        pyautogui.hotkey('ctrl', 'f4')
-                        continue
-
-                    if enable_join_group or join_group_only_enable:
-                        join_group(via_name)
-
-                    buttons = ["checkpoint_1.PNG",
-                               "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
-                               "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
-                    ret = deciscion(buttons, waiting_time=10)
-                    if ret:
-                        btn_x, btn_y, btn_index = ret
-                        if btn_index not in [6, 7]:
-                            pyautogui.hotkey('ctrl', 'f4')
-                            continue
-
-                    if join_group_only_enable:
-                        pyautogui.hotkey('ctrl', 'f4')
-                        continue
-
-                    scheduler = scheduler[0]
-                    share_number = scheduler.get("share_number", 0)
-                    groups_shared = scheduler.get('groups_shared', [])
-                    video_id = scheduler['video_id']
-                    logger.debug(f"share video {video_id}")
-
-                    if btn_index == 0:
-                        # change theme
-                        click_to("light_dropdown.PNG")
-                        time.sleep(1)
-                        if not check_exist("theme_btn.PNG"):
-                            click_to("light_dropdown.PNG")
-                        click_to("theme_btn.PNG")
-                        time.sleep(1)
-                        if not check_exist("confirm_change.PNG"):
-                            click_to("theme_btn.PNG")
-                        click_to("confirm_change.PNG")
-                        click_to('dark_logo.PNG')
-                        pyautogui.press('f5')
-                        time.sleep(2)
-
-                    waiting_for("reload_bar.PNG")
-                    waiting_for("dark_logo.PNG")
-
-                    if not waiting_for("search_title.PNG", waiting_time=10):
-                        # change language
-                        reload_bar = waiting_for("reload_bar.PNG")
-                        if reload_bar:
-                            bar_x, bar_y = reload_bar
-                            bar_y += 0
-                            pyautogui.click(bar_x + 100, bar_y)
-                            pyautogui.hotkey('ctrl', 'a')
-                            pyautogui.press("backspace")
-                            paste_text("https://www.facebook.com/settings?tab=language")
-                            pyautogui.hotkey('enter')
-                            waiting_for("reload_bar.PNG")
-                            for i in range(2):
-                                click_to("English.PNG")
-                                time.sleep(2)
-                                pyautogui.press('f5')
-                                waiting_for("reload_bar.PNG")
-                                if check_exist("languages_and_regions.PNG"):
-                                    break
-
-                    status = access_video(video_id)
-                    if status:
-
-                        waiting_for("dark_logo.PNG")
-                        waiting_for("reload_bar.PNG")
-                        if not check_exist("not_available.PNG"):
-                            for _ in range(20):
-                                time.sleep(1)
-                                playbtn = check_exist("playbtn.PNG", confidence=0.85)
-                                if playbtn:
-                                    pyautogui.moveTo(playbtn)
-                                    pyautogui.click(playbtn)
-                                playbtn = check_exist("play_btn_2.PNG", confidence=0.85)
-                                if playbtn:
-                                    pyautogui.moveTo(playbtn)
-                                    pyautogui.click(playbtn)
-
-                                buttons = ['share_btn_1.PNG', 'share_btn.PNG']
-                                result = deciscion(buttons, confidence=0.9, waiting_time=1)
-                                if not result:
-                                    pyautogui.click(1484, 604)
-                                    pyautogui.scroll(-100)
-
-                            for _ in range(2):
-                                # click share buttons
-                                pyautogui.moveTo(1027, 549)
-                                buttons = ['share_btn_1.PNG', 'share_btn.PNG']
-                                result = deciscion(buttons, confidence=0.9, waiting_time=10)
-                                if result:
-                                    share_x, share_y, idx = result
-                                    pyautogui.click(share_x, share_y)
-                                else:
-                                    for _ in range(3):
-                                        pyautogui.scroll(-300)
-                                        time.sleep(1)
-                                        buttons = ['share_btn_1.PNG', 'share_btn.PNG']
-                                        result = deciscion(buttons, confidence=0.9, waiting_time=10)
-                                        if result:
-                                            break
-                                    if result:
-                                        share_x, share_y, idx = result
-                                        pyautogui.click(share_x, share_y)
-                                    else:
-                                        continue
-
-                                # click options or share to a group
-                                buttons = ["share_to_group.PNG", "options.PNG"]
-                                result = deciscion(buttons, confidence=0.9)
-                                if result:
-                                    share_x, share_y, idx = result
-                                    pyautogui.click(share_x, share_y, interval=1)
-                                    if idx == 1:
-                                        click_to("share_to_group.PNG", confidence=0.9)
-                                else:
-                                    continue
-
-                                # check group enable
-                                go_enable = scheduler.get("go", True)
-                                co_khi_enable = scheduler.get("co_khi", True)
-                                xay_dung_enable = scheduler.get("xay_dung", True)
-                                options_enable = scheduler.get("options", True)
-                                groups_share = []
-
-                                if go_enable:
-                                    with open("go.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
-                                if co_khi_enable:
-                                    with open("co_khi.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
-                                if xay_dung_enable:
-                                    with open("xay_dung.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
-                                if options_enable:
-                                    with open("tuy_chon.txt", encoding='utf-8') as group_file:
-                                        groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
-
-                                found_group_name = False
-                                for group_name in groups_share:
-                                    group_name = group_name.strip()
-                                    if group_name not in groups_shared:
-                                        # shared_group_name.append(group_name)
-                                        if shared_group_name.count(group_name) > 3:
-                                            # mark group shared
-                                            groups_shared.append(group_name)
-                                            scheduler_table.update_one({"_id": scheduler['_id']},
-                                                                       {"$set": {"groups_shared": groups_shared}})
-                                            break
-
-                                        search_for_group = waiting_for("search_for_group.PNG")
-                                        if search_for_group:
-                                            search_x, search_y = search_for_group
-                                            pyautogui.click(search_x+100, search_y)
-                                            paste_text(group_name)
-                                            if waiting_for("public_group.PNG", waiting_time=10):
-                                                logger.info(f"found group name: {group_name}")
-                                                groups_shared.append(group_name)
-                                                scheduler_table.update_one({"_id": scheduler['_id']},
-                                                                           {"$set": {"groups_shared": groups_shared}})
-                                                click_to("public_group.PNG")
-                                                found_group_name = True
-                                                break
-                                            else:
-                                                pyautogui.hotkey('ctrl', 'a')
-                                                pyautogui.press('backspace')
-                                                logger.error(f"{via_name} not found group :{group_name}")
-
-                                if found_group_name:
-                                    post_btn = waiting_for("post.PNG", confidence=0.8, waiting_time=40)
-                                    if post_btn:
-                                        title = get_title()
-                                        logger.info(title)
-                                        paste_text(title)
-                                        time.sleep(5)
-                                        click_to("post.PNG", confidence=0.8, duration=1, interval=3, waiting_time=10)
-                                        # save via shared +1
-                                        now = datetime.now().strftime("%B %d, %Y")
-                                        via_history = via_shared.find_one({"date": now})
-                                        if via_history:
-                                            via_share_number = via_history.get(via_name, 0)
-                                            via_share_number += 1
-                                            via_history[via_name] = via_share_number
-                                            via_shared.update_one({"_id": via_history['_id']},
-                                                                  {"$set": {via_name: via_share_number}})
-                                        else:
-                                            new_item = {"_id": str(uuid.uuid4()), "date": now, via_name: 1}
-                                            via_shared.insert_one(new_item)
-                                        click_to("post_success.PNG", confidence=0.8, waiting_time=10)
-                                else:
-                                    click_to("close_share_dialog.PNG", waiting_time=10)
-
-                                share_number += 1
-                                update_data = {"share_number": share_number}
-                                if share_number >= len(groups_share):
-                                    update_data['shared'] = True
-                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
-                        else:
-                            scheduler_table.delete_one({"video_id": video_id})
+            # if check_exist("reload_bar.PNG"):
+            #     if via_name == "fb.com" or via_name == "" or "Chrome" not in via_name:
+            #         pyautogui.hotkey('ctrl', 'f4')
+            #         continue
+            #
+            #     # check via is shared enough on this day
+            #     now = datetime.now().strftime("%B %d, %Y")
+            #     via_history = via_shared.find_one({"date": now})
+            #     if via_history:
+            #         via_share_number = via_history.get(via_name, 0)
+            #         if via_share_number >= 4 and not join_group_only_enable:
+            #             pyautogui.hotkey('ctrl', 'f4')
+            #             logger.info(f"via {via_name} da share du 4 video")
+            #             continue
+            #
+            #     # pyautogui.press('enter')
+            #     # click_to("signin.PNG", waiting_time=5)
+            #
+            #     pyautogui.moveTo(1027, 549)
+            #     if not check_exist("reload_bar.PNG", region=(74, 41, 30, 30)):
+            #         # not in maximize mod
+            #         show_full_screen()
+            #
+            #     access_video(None)
+            #     waiting_for("reload_bar.PNG", waiting_time=50)
+            #     buttons = ["checkpoint_1.PNG",
+            #                "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+            #                "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
+            #     ret = deciscion(buttons, waiting_time=15)
+            #     if ret:
+            #         btn_x, btn_y, btn_index = ret
+            #         logger.info(f"found button: {buttons[btn_index]}")
+            #         if btn_index not in [6, 7]:
+            #             pyautogui.hotkey('ctrl', 'f4')
+            #             continue
+            #
+            #         if enable_join_group or join_group_only_enable:
+            #             join_group(via_name)
+            #
+            #         buttons = ["checkpoint_1.PNG",
+            #                    "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+            #                    "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
+            #         ret = deciscion(buttons, waiting_time=10)
+            #         if ret:
+            #             btn_x, btn_y, btn_index = ret
+            #             if btn_index not in [6, 7]:
+            #                 pyautogui.hotkey('ctrl', 'f4')
+            #                 continue
+            #
+            #         if join_group_only_enable:
+            #             pyautogui.hotkey('ctrl', 'f4')
+            #             continue
+            #
+            #         scheduler = scheduler[0]
+            #         share_number = scheduler.get("share_number", 0)
+            #         groups_shared = scheduler.get('groups_shared', [])
+            #         video_id = scheduler['video_id']
+            #         logger.debug(f"share video {video_id}")
+            #
+            #         if btn_index == 0:
+            #             # change theme
+            #             click_to("light_dropdown.PNG")
+            #             time.sleep(1)
+            #             if not check_exist("theme_btn.PNG"):
+            #                 click_to("light_dropdown.PNG")
+            #             click_to("theme_btn.PNG")
+            #             time.sleep(1)
+            #             if not check_exist("confirm_change.PNG"):
+            #                 click_to("theme_btn.PNG")
+            #             click_to("confirm_change.PNG")
+            #             click_to('dark_logo.PNG')
+            #             pyautogui.press('f5')
+            #             time.sleep(2)
+            #
+            #         waiting_for("reload_bar.PNG")
+            #         waiting_for("dark_logo.PNG")
+            #
+            #         if not waiting_for("search_title.PNG", waiting_time=10):
+            #             # change language
+            #             reload_bar = waiting_for("reload_bar.PNG")
+            #             if reload_bar:
+            #                 bar_x, bar_y = reload_bar
+            #                 bar_y += 0
+            #                 pyautogui.click(bar_x + 100, bar_y)
+            #                 pyautogui.hotkey('ctrl', 'a')
+            #                 pyautogui.press("backspace")
+            #                 paste_text("https://www.facebook.com/settings?tab=language")
+            #                 pyautogui.hotkey('enter')
+            #                 waiting_for("reload_bar.PNG")
+            #                 for i in range(2):
+            #                     click_to("English.PNG")
+            #                     time.sleep(2)
+            #                     pyautogui.press('f5')
+            #                     waiting_for("reload_bar.PNG")
+            #                     if check_exist("languages_and_regions.PNG"):
+            #                         break
+            #
+            #         status = access_video(video_id)
+            #         if status:
+            #
+            #             waiting_for("dark_logo.PNG")
+            #             waiting_for("reload_bar.PNG")
+            #             if not check_exist("not_available.PNG"):
+            #                 for _ in range(20):
+            #                     time.sleep(1)
+            #                     playbtn = check_exist("playbtn.PNG", confidence=0.85)
+            #                     if playbtn:
+            #                         pyautogui.moveTo(playbtn)
+            #                         pyautogui.click(playbtn)
+            #                     playbtn = check_exist("play_btn_2.PNG", confidence=0.85)
+            #                     if playbtn:
+            #                         pyautogui.moveTo(playbtn)
+            #                         pyautogui.click(playbtn)
+            #
+            #                     buttons = ['share_btn_1.PNG', 'share_btn.PNG']
+            #                     result = deciscion(buttons, confidence=0.9, waiting_time=1)
+            #                     if not result:
+            #                         pyautogui.click(1484, 604)
+            #                         pyautogui.scroll(-100)
+            #
+            #                 for _ in range(2):
+            #                     # click share buttons
+            #                     pyautogui.moveTo(1027, 549)
+            #                     buttons = ['share_btn_1.PNG', 'share_btn.PNG']
+            #                     result = deciscion(buttons, confidence=0.9, waiting_time=10)
+            #                     if result:
+            #                         share_x, share_y, idx = result
+            #                         pyautogui.click(share_x, share_y)
+            #                     else:
+            #                         for _ in range(3):
+            #                             pyautogui.scroll(-300)
+            #                             time.sleep(1)
+            #                             buttons = ['share_btn_1.PNG', 'share_btn.PNG']
+            #                             result = deciscion(buttons, confidence=0.9, waiting_time=10)
+            #                             if result:
+            #                                 break
+            #                         if result:
+            #                             share_x, share_y, idx = result
+            #                             pyautogui.click(share_x, share_y)
+            #                         else:
+            #                             continue
+            #
+            #                     # click options or share to a group
+            #                     buttons = ["share_to_group.PNG", "options.PNG"]
+            #                     result = deciscion(buttons, confidence=0.9)
+            #                     if result:
+            #                         share_x, share_y, idx = result
+            #                         pyautogui.click(share_x, share_y, interval=1)
+            #                         if idx == 1:
+            #                             click_to("share_to_group.PNG", confidence=0.9)
+            #                     else:
+            #                         continue
+            #
+            #                     # check group enable
+            #                     go_enable = scheduler.get("go", True)
+            #                     co_khi_enable = scheduler.get("co_khi", True)
+            #                     xay_dung_enable = scheduler.get("xay_dung", True)
+            #                     options_enable = scheduler.get("options", True)
+            #                     groups_share = []
+            #
+            #                     if go_enable:
+            #                         with open("go.txt", encoding='utf-8') as group_file:
+            #                             groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
+            #                     if co_khi_enable:
+            #                         with open("co_khi.txt", encoding='utf-8') as group_file:
+            #                             groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
+            #                     if xay_dung_enable:
+            #                         with open("xay_dung.txt", encoding='utf-8') as group_file:
+            #                             groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
+            #                     if options_enable:
+            #                         with open("tuy_chon.txt", encoding='utf-8') as group_file:
+            #                             groups_share.extend([x.strip().split(',')[1] for x in group_file.readlines() if x.strip() != '' and ',' in x])
+            #
+            #                     found_group_name = False
+            #                     for group_name in groups_share:
+            #                         group_name = group_name.strip()
+            #                         if group_name not in groups_shared:
+            #                             # shared_group_name.append(group_name)
+            #                             if shared_group_name.count(group_name) > 3:
+            #                                 # mark group shared
+            #                                 groups_shared.append(group_name)
+            #                                 scheduler_table.update_one({"_id": scheduler['_id']},
+            #                                                            {"$set": {"groups_shared": groups_shared}})
+            #                                 break
+            #
+            #                             search_for_group = waiting_for("search_for_group.PNG")
+            #                             if search_for_group:
+            #                                 search_x, search_y = search_for_group
+            #                                 pyautogui.click(search_x+100, search_y)
+            #                                 paste_text(group_name)
+            #                                 if waiting_for("public_group.PNG", waiting_time=10):
+            #                                     logger.info(f"found group name: {group_name}")
+            #                                     groups_shared.append(group_name)
+            #                                     scheduler_table.update_one({"_id": scheduler['_id']},
+            #                                                                {"$set": {"groups_shared": groups_shared}})
+            #                                     click_to("public_group.PNG")
+            #                                     found_group_name = True
+            #                                     break
+            #                                 else:
+            #                                     pyautogui.hotkey('ctrl', 'a')
+            #                                     pyautogui.press('backspace')
+            #                                     logger.error(f"{via_name} not found group :{group_name}")
+            #
+            #                     if found_group_name:
+            #                         post_btn = waiting_for("post.PNG", confidence=0.8, waiting_time=40)
+            #                         if post_btn:
+            #                             title = get_title()
+            #                             logger.info(title)
+            #                             paste_text(title)
+            #                             time.sleep(5)
+            #                             click_to("post.PNG", confidence=0.8, duration=1, interval=3, waiting_time=10)
+            #                             # save via shared +1
+            #                             now = datetime.now().strftime("%B %d, %Y")
+            #                             via_history = via_shared.find_one({"date": now})
+            #                             if via_history:
+            #                                 via_share_number = via_history.get(via_name, 0)
+            #                                 via_share_number += 1
+            #                                 via_history[via_name] = via_share_number
+            #                                 via_shared.update_one({"_id": via_history['_id']},
+            #                                                       {"$set": {via_name: via_share_number}})
+            #                             else:
+            #                                 new_item = {"_id": str(uuid.uuid4()), "date": now, via_name: 1}
+            #                                 via_shared.insert_one(new_item)
+            #                             click_to("post_success.PNG", confidence=0.8, waiting_time=10)
+            #                     else:
+            #                         click_to("close_share_dialog.PNG", waiting_time=10)
+            #
+            #                     share_number += 1
+            #                     update_data = {"share_number": share_number}
+            #                     if share_number >= len(groups_share):
+            #                         update_data['shared'] = True
+            #                     scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
+            #             else:
+            #                 scheduler_table.delete_one({"video_id": video_id})
 
                 # window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
 
