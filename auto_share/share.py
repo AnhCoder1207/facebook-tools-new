@@ -14,7 +14,7 @@ from utils import click_to, click_many, check_exist, paste_text, waiting_for, de
     get_title, scheduler_table, logger, via_shared, video_shared, group_joined
 pyautogui.PAUSE = 0.1
 pyautogui.FAILSAFE = True
-pyautogui.LOG_SCREENSHOTS = True
+pyautogui.LOG_SCREENSHOTS = False
 
 groups = [
     "https://www.facebook.com/groups/312177843254758/",
@@ -233,10 +233,10 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
             #     show_desktop()
             for _ in range(3):
                 pyautogui.press('f5')
-                time.sleep(1)
-                pyautogui.moveTo(browser, duration=1)
-                if not pyautogui.locateOnScreen(f"btn/coccoc.PNG", confidence=0.95, region=browser):
-                    pyautogui.moveTo(1027, 549)
+                # time.sleep(1)
+                # pyautogui.moveTo(browser, duration=1)
+                if waiting_for("coccoc.PNG", waiting_time=10, confidence=0.9, region=browser) is None:
+                    pyautogui.click(1027, 549)
                     show_desktop()
                 click_to("recycle.PNG", waiting_time=10)
                 time.sleep(0.2)
