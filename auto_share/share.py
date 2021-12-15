@@ -235,7 +235,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
             # if not check_exist("coccoc.PNG"):
             #     logger.info("Not found coc coc")
             #     show_desktop()
-            for _ in range(3):
+            for _ in range(10):
                 pyautogui.click(1027, 549)
                 # pyautogui.press('f5')
                 # time.sleep(1)
