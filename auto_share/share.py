@@ -329,7 +329,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                     video_id = scheduler['video_id']
                     logger.debug(f"share video {video_id}")
 
-                    if btn_index == 0:
+                    if btn_index == 6:
                         # change theme
                         click_to("light_dropdown.PNG")
                         time.sleep(1)
