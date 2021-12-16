@@ -127,7 +127,7 @@ def paste_text(inp_text):
 
 
 def get_title():
-    with open("title.txt") as file:
+    with open("title.txt", encoding='utf-8') as file:
         lines = [line.strip() for line in file.readlines() if line.strip() != ""]
         title = ""
         if len(lines) > 0:
@@ -138,7 +138,7 @@ def get_title():
 
 
 def get_all_titles():
-    with open("title.txt") as file:
+    with open("title.txt", encoding='utf-8') as file:
         return [line.strip() for line in file.readlines() if line.strip() != ""]
 
 
