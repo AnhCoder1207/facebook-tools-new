@@ -1,4 +1,6 @@
 import os
+import random
+
 import cv2
 import datetime
 import subprocess
@@ -7,11 +9,7 @@ from image_similarity_measures.quality_metrics import ssim
 
 
 if __name__ == '__main__':
-    # load the images -- the original, the original + contrast,
-    # and the original + photoshop
-    # Create a VideoCapture object and read from input file
-    # If the input is the camera, pass 0 instead of the video file name
-    root_folder = """downloaded/FamiliadeCalibre"""
+    root_folder = """downloaded"""
     for file in os.listdir(root_folder):
         file_ext = os.path.splitext(file)[1]
         if file_ext != '.mp4':
@@ -23,7 +21,7 @@ if __name__ == '__main__':
         print(f"fps: {fps}")
         time_per_frame = 1/fps
         start_time = 0
-        counting = False
+        counting = True
         prev_frame = None
         similar = None
         # Check if camera opened successfully
@@ -37,6 +35,7 @@ if __name__ == '__main__':
         start_index = 0
         os.makedirs(f'{root_folder}/done', exist_ok=True)
         file_out = f"{root_folder}/done/{os.path.splitext(file)[0]}.mp4"
+        file_out_tmp = f"{root_folder}/done/{os.path.splitext(file)[0]}_raw.mp4"
         # out = cv2.VideoWriter(file_out, cv2.VideoWriter_fourcc('M','J','P','G'), fps, (frame_width, frame_height))
 
         scale_percent = 10  # percent of original img size
@@ -68,29 +67,30 @@ if __name__ == '__main__':
                 prev_frame = frame_resize
 
                 if similar:
-                    # if similar >= 0.85:
-                    #     # if number_frame/fps < 5:
-                    #     number_frame += 1
-                    #     # print(number_frame)
-                    #     if number_frame == 1 and not counting:
-                    #         # print(f"start counting {current_time}")
-                    #         counting = True
-                    #         # out.write(frame)
-                    #         # cv2.imshow('Frame', frame_resize)
-                    #     elif number_frame == 10*int(fps) and counting:
-                    #         counting = False
-                    #         times.append([start_time, current_time])
-                    #         print(f"{start_time}, {current_time}")
-                    if similar < 0.85 and ((total_frame - start_frame) > 5 * fps):
-                        if counting:
-                            counting = False
-                        current_time_format = datetime.datetime.utcfromtimestamp(total_frame / fps).strftime("%H:%M:%S")
-                        remove_frame = (start_frame + (keep_ratio * (total_frame - start_frame))) / fps
-                        current_time_remove = datetime.datetime.utcfromtimestamp(remove_frame).strftime("%H:%M:%S")
-                        start_time_format = datetime.datetime.utcfromtimestamp(start_frame / fps).strftime("%H:%M:%S")
-                        times.append([start_time_format, current_time_remove])
-                        print(f"{start_time_format}, {current_time_remove}, {current_time_format}")
+                    current_time_format = datetime.datetime.utcfromtimestamp(total_frame / fps).strftime("%H:%M:%S")
+                    # print(current_time_format, similar)
+                    if similar < 0.9 and (total_frame - start_frame) > 5 * fps and counting:
+
+                        # if total_frame - start_frame < 5 * fps:
+                        #     continue
+
+                        print(current_time_format, similar)
+
+                        # if (total_frame - start_frame) > 5 * fps and counting:
+                        #     counting = False
+
+                        if random.choice([1, 2]) == 1:  # keep 50%
+                            remove_frame = (start_frame + (keep_ratio * (total_frame - start_frame))) / fps
+                            current_time_remove = datetime.datetime.utcfromtimestamp(remove_frame).strftime("%H:%M:%S")
+                            start_time_format = datetime.datetime.utcfromtimestamp(start_frame / fps).strftime(
+                                "%H:%M:%S")
+                            times.append([start_time_format, current_time_format])
+                            print(f"New Scene: {start_time_format}, {current_time_remove}, {current_time_format}")
                         start_frame = total_frame
+
+                    # elif similar < 0.85 and not counting:
+                    #     counting = True
+                    #     start_frame = total_frame
 
                 total_frame += 1
                 # Press Q on keyboard to  exit
@@ -99,6 +99,9 @@ if __name__ == '__main__':
                 break
 
         # times = [["00:00:00", get_duration(name)]]
+        if os.path.isfile('concatenate.txt'):
+            os.remove('concatenate.txt')
+
         open('concatenate.txt', 'w').close()
         for idx, time in enumerate(times):
             os.makedirs('tmp', exist_ok=True)
@@ -109,15 +112,37 @@ if __name__ == '__main__':
             with open("concatenate.txt", "a") as myfile:
                 myfile.write(f"file {output_filename}\n")
 
-        cmd = ["ffmpeg", "-f", "concat", "-i", "concatenate.txt", "-c", "copy", file_out, "-y"]
+        cmd = ["ffmpeg", "-f", "concat", "-i", "concatenate.txt", "-c", "copy", file_out_tmp, "-y"]
         try:
-            output = subprocess.check_output(cmd).decode("utf-8").strip()
+            subprocess.check_output(cmd).decode("utf-8").strip()
+        except Exception as ex:
+            pass
+
+        cmd = [
+            "ffmpeg",
+            "-i", file_out_tmp,
+            "-vf", "setpts=PTS/1.2,crop=in_w*0.9:in_h*0.9,scale=1080:1080,setdar=1",
+            "-af", "atempo=1.2",
+            "-vcodec", "libx264",
+            "-pix_fmt", "yuv420p",
+            "-r", "30",
+            "-g", "60",
+            "-b:v", "3000k",
+            "-acodec", "libmp3lame",
+            "-ar", "44100",
+            "-crf", "20",
+            "-preset", "ultrafast",
+            file_out,
+            "-y"]
+        try:
+            subprocess.check_output(cmd).decode("utf-8").strip()
         except:
             pass
 
         for file_tmp in os.listdir('tmp'):
             os.remove(f"tmp/{file_tmp}")
-        os.remove('concatenate.txt')
+        if os.path.isfile('concatenate.txt'):
+            os.remove('concatenate.txt')
         # When everything done, release the video capture object
         cap.release()
         # out.release()

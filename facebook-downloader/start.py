@@ -111,7 +111,7 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
             ydl_opts = {}
             if status == "waiting":
                 filename = f'downloaded/{ten_phim}/{views}-{name}.mp4'
-                if not filename:
+                if not os.path.isfile(filename):
                     window.write_event_value('-THREAD-', [idx, 'Downloading'])
                     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                         try:
