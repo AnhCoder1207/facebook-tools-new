@@ -477,20 +477,17 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                     post_btn = waiting_for("post.PNG", confidence=0.8, waiting_time=40)
                                     if post_btn:
                                         all_titles = get_all_titles()
-                                        if len(all_titles) != 0:
-                                            while True:
-                                                title = get_title()
-                                                if len(title_shared) == len(all_titles):
-                                                    title_shared = []
-                                                    scheduler_table.update_one({"_id": scheduler['_id']},
-                                                                               {"$set": {"title_shared": []}})
-                                                if title not in title_shared:
-                                                    title_shared.append(title)
-                                                    scheduler_table.update_one({"_id": scheduler['_id']},
-                                                                               {"$set": {"title_shared": title_shared}})
-                                                    break
-                                        else:
-                                            title = ""
+                                        title = ""
+                                        for idx, title in enumerate(all_titles):
+                                            if idx == len(all_titles) - 1:
+                                                title_shared = []
+                                                scheduler_table.update_one({"_id": scheduler['_id']},
+                                                                           {"$set": {"title_shared": []}})
+                                            if title not in title_shared:
+                                                title_shared.append(title)
+                                                scheduler_table.update_one({"_id": scheduler['_id']},
+                                                                           {"$set": {"title_shared": title_shared}})
+                                                break
 
                                         logger.info(title)
                                         paste_text(title)
