@@ -480,15 +480,15 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                         if len(all_titles) != 0:
                                             while True:
                                                 title = get_title()
+                                                if len(title_shared) == len(all_titles):
+                                                    title_shared = []
+                                                    scheduler_table.update_one({"_id": scheduler['_id']},
+                                                                               {"$set": {"title_shared": []}})
                                                 if title not in title_shared:
                                                     title_shared.append(title)
                                                     scheduler_table.update_one({"_id": scheduler['_id']},
                                                                                {"$set": {"title_shared": title_shared}})
                                                     break
-                                                if len(title_shared) == len(all_titles):
-                                                    title_shared = []
-                                                    scheduler_table.update_one({"_id": scheduler['_id']},
-                                                                               {"$set": {"title_shared": []}})
                                         else:
                                             title = ""
 
