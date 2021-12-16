@@ -44,7 +44,7 @@ group_joined = db['group_joined']
 
 pyautogui.PAUSE = 0.1
 pyautogui.FAILSAFE = True
-pyautogui.LOG_SCREENSHOTS = True
+pyautogui.LOG_SCREENSHOTS = False
 
 
 def random_interval():
