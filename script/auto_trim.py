@@ -79,7 +79,7 @@ if __name__ == '__main__':
                         # if (total_frame - start_frame) > 5 * fps and counting:
                         #     counting = False
 
-                        if random.choice([1, 2]) == 1:  # keep 50%
+                        if random.choice([1, 2, 3]) in [1, 2]:  # keep 66%
                             remove_frame = (start_frame + (keep_ratio * (total_frame - start_frame))) / fps
                             current_time_remove = datetime.datetime.utcfromtimestamp(remove_frame).strftime("%H:%M:%S")
                             start_time_format = datetime.datetime.utcfromtimestamp(start_frame / fps).strftime(

@@ -1,3 +1,4 @@
+import os
 import ssl
 import sys
 
@@ -44,6 +45,7 @@ group_joined = db['group_joined']
 pyautogui.PAUSE = 0.1
 pyautogui.FAILSAFE = True
 pyautogui.LOG_SCREENSHOTS = False
+os.makedirs("debug", exist_ok=True)
 
 
 def random_interval():
@@ -67,6 +69,7 @@ def click_to(btn, confidence=0.8, region=None, waiting_time=20, interval=None, c
 
         time.sleep(0.2)
     logger.error(f"Not found {btn}")
+    pyautogui.screenshot(f"debug/{int(time.time())}.png")
     return None
 
 
@@ -99,6 +102,7 @@ def waiting_for(btn, region=None, confidence=0.8, waiting_time=20):
 
         time.sleep(0.2)
     logger.error(f"Not found {btn}")
+    pyautogui.screenshot(f"debug/{int(time.time())}.png")
     return None
 
 
@@ -113,6 +117,7 @@ def deciscion(btns, region=None, confidence=0.8, waiting_time=20):
             if ret:
                 x, y = ret
                 return x, y, btn_index
+    pyautogui.screenshot(f"debug/{int(time.time())}.png")
     return None
 
 
