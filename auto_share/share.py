@@ -359,7 +359,8 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                             paste_text("https://www.facebook.com/settings?tab=language")
                             pyautogui.hotkey('enter')
                             waiting_for("reload_bar.PNG")
-                            for i in range(2):
+                            for i in range(10):
+                                pyautogui.scroll(-300)
                                 click_to("English.PNG")
                                 time.sleep(2)
                                 pyautogui.press('f5')
