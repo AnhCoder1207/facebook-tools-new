@@ -216,7 +216,7 @@ def show_full_screen():
     pyautogui.press('x')
 
 
-def auto_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable):
+def auto_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable, force_to_share):
     shared_group_name = []
     time.sleep(5)
     logger.debug("start share")
@@ -507,14 +507,20 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                                             new_item = {"_id": str(uuid.uuid4()), "date": now, via_name: 1}
                                             via_shared.insert_one(new_item)
                                         click_to("post_success.PNG", confidence=0.8, waiting_time=10)
+                                        if force_to_share:
+                                            share_number += 1
+                                            update_data = {"share_number": share_number}
+                                            if share_number >= len(groups_share):
+                                                update_data['shared'] = True
+                                            scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                                 else:
                                     click_to("close_share_dialog.PNG", waiting_time=10)
-
-                                share_number += 1
-                                update_data = {"share_number": share_number}
-                                if share_number >= len(groups_share):
-                                    update_data['shared'] = True
-                                scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
+                                if not force_to_share:
+                                    share_number += 1
+                                    update_data = {"share_number": share_number}
+                                    if share_number >= len(groups_share):
+                                        update_data['shared'] = True
+                                    scheduler_table.update_one({"_id": scheduler['_id']}, {"$set": update_data})
                         else:
                             scheduler_table.delete_one({"video_id": video_id})
 
@@ -615,10 +621,10 @@ def watch_videos():
         pyautogui.hotkey('windows', 'd')
 
 
-def start_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable):
+def start_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable, force_to_share):
     logger.debug("Start share")
     try:
-        auto_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable)
+        auto_share(table_data, current_index, window, stop, enable_join_group, join_group_only_enable, force_to_share)
         logger.debug("Done share")
     except Exception as ex:
         logger.error(ex)
@@ -682,7 +688,9 @@ if __name__ == '__main__':
                   sg.Checkbox(
                       'Join group when sharing video', key='join_group', enable_events=False, default=False),
                   sg.Checkbox(
-                      'Join group only', key='join_group_only', enable_events=False, default=False)
+                      'Join group only', key='join_group_only', enable_events=False, default=False),
+                  sg.Checkbox(
+                      'Ignore group if not found', key='force_to_share', enable_events=False, default=False)
               ],
               [
                   sg.Table(values=table_default,
@@ -728,7 +736,8 @@ if __name__ == '__main__':
             thread = threading.Thread(target=start_share,
                                       args=(table_data, current_index, window,
                                             lambda: stop_threads, values.get("join_group", False),
-                                            values.get("join_group_only", False)),
+                                            values.get("join_group_only", False),
+                                            values.get("force_to_share", False)),
                                       daemon=True)
             thread.start()
         elif event == 'Remove':
@@ -737,7 +746,8 @@ if __name__ == '__main__':
             for item in reversed(removed):
                 video_id = table_data[item][0]
                 print(video_id)
-                results = scheduler_table.delete_one({"video_id": str(video_id.strip())})
+                update_data = {"shared": True}
+                scheduler_table.update_one({"video_id": str(video_id.strip())}, {"$set": update_data})
                 table_data.pop(item)
             window.Element('table').Update(values=table_data)
         elif event == '-THREAD-':
@@ -757,12 +767,17 @@ if __name__ == '__main__':
             video_ids = str(values['video_id']).strip().split('\n')
             for video_id in video_ids:
                 if video_id != "":
-                    exist_scheduler = scheduler_table.delete_one({"video_id": video_id})
-                    # if exist_scheduler:
-                    #     scheduler_table.update_one({"_id": exist_scheduler['_id']},
-                    #                                {"$set": {"shared": False, "share_number": 30, "title": text_seo}})
-                    #     sg.Popup('Them that bai, video da co', keep_on_top=True)
-                    # else:
+                    exist_scheduler = scheduler_table.find_one({"video_id": video_id})
+                    if exist_scheduler:
+                        scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
+                            "shared": False,
+                            "go": values.get("groups.go", False),
+                            "co_khi": values.get("groups.co_khi", False),
+                            "xay_dung": values.get("groups.xay_dung", False),
+                            "options": values.get("groups.options", False)
+                        }})
+                        continue
+
                     new_scheduler = {
                         "_id": str(uuid.uuid4()),
                         "video_id": video_id,
