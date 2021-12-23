@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import threading
 import time
 import uuid
@@ -46,18 +47,19 @@ def start_share(main_window, stop_thread):
         options_enable = video_sharing.get('options', False)
 
         # query via live
-        result = connection.execute(db.select([via_share]).where(db.and_(
+        results = connection.execute(db.select([via_share]).where(db.and_(
             via_share.columns.status == 'live',
             via_share.columns.share_number < 4
-        ))).fetchone()
-        if not result:
+        ))).fetchall()
+        if len(results) == 0:
             return True
+
+        result = random.choice(results)
 
         current_date = str(datetime.date(datetime.now()))
         via_data = dict(zip(result.keys(), result))
 
         share_date = via_data.get("date")
-        via_id = via_data.get("date")
         fb_id = via_data.get("fb_id")
         password = via_data.get("password")
         mfa = via_data.get("mfa")
@@ -66,12 +68,12 @@ def start_share(main_window, stop_thread):
         # reset via share counting
         if share_date != current_date:
             query = db.update(via_share).values(date=current_date, share_number=0)
-            query = query.where(via_share.columns.id == via_id)
+            query = query.where(via_share.columns.id == fb_id)
             connection.execute(query)
 
         # mark via running
         query = db.update(via_share).values(status='sharing')
-        query = query.where(via_share.columns.id == via_id)
+        query = query.where(via_share.columns.id == fb_id)
         connection.execute(query)
         # start sharing
         chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
@@ -93,12 +95,7 @@ def start_share(main_window, stop_thread):
                 group_options = get_group_joining_data("group_options")
                 groups_share.extend([x.strip() for x in group_options.split('\n')])
 
-            share_status = chrome_worker.sharing(video_id, groups_share)
-            if share_status:
-                via_share_number += 1
-                query = db.update(via_share).values(status='live', share_number=via_share_number)
-                query = query.where(via_share.columns.id == via_id)
-                connection.execute(query)
+            share_status = chrome_worker.sharing(video_id, groups_share, fb_id, via_share_number)
         except Exception as ex:
             print(ex)
         finally:
@@ -359,9 +356,11 @@ if __name__ == '__main__':
 
             # update new
             query = db.insert(joining_group)
-            ResultProxy = connection.execute(query, groups)
+            if len(groups) > 0:
+                ResultProxy = connection.execute(query, groups)
+                sg.Popup('Successfully', keep_on_top=True)
+                window4.close()
 
-            sg.Popup('Successfully', keep_on_top=True)
         elif event == "delete_via":
             removed = values['via_table']
             table_data = window3.Element('via_table').Get()

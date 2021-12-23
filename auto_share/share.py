@@ -12,6 +12,7 @@ from bson import ObjectId
 
 from utils import click_to, click_many, check_exist, paste_text, waiting_for, deciscion,\
     get_title, scheduler_table, logger, via_shared, video_shared, group_joined, get_all_titles
+
 pyautogui.PAUSE = 0.1
 pyautogui.FAILSAFE = True
 pyautogui.LOG_SCREENSHOTS = False

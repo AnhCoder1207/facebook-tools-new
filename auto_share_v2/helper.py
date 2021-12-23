@@ -1,11 +1,16 @@
+import logging
 import os
 import zipfile
+from datetime import datetime
+
+import pyautogui
 import pyotp
 import time
 import random
 import json
 import sqlalchemy as db
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -13,6 +18,25 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from models import via_share, scheduler_video, connection, joining_group
+
+# create logger with 'spam_application'
+from auto_share_v2.utils import waiting_for, paste_text, check_exist, click_to, deciscion, get_all_titles
+
+logger = logging.getLogger('application')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('app.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 
 class ChromeHelper:
@@ -74,17 +98,18 @@ class ChromeHelper:
         );
         """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
         options = webdriver.ChromeOptions()
-        os.makedirs("UserData", exist_ok=True)
+        #os.makedirs("UserData", exist_ok=True)
+        #os.makedirs("Plugin", exist_ok=True)
         # dir_path = os.path.dirname(os.path.realpath(__file__))
-        options.add_argument(f"user-data-dir=C:\\Users\\thinh\\AppData\\Local\\Google\\Chrome\\User Data")  # Path to your chrome profile
+        options.add_argument(f"user-data-dir=D:\\Chrome")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={fb_id}")
+        options.add_argument(f"--start-maximized")
         options.add_argument("test-type=browser")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("prefs", {
             "profile": {"name": f"{fb_id} - Chrome"}
         })
-        os.makedirs(f"C:\\Users\\thinh\\AppData\\Local\\Google\\Chrome\\User Data\\{fb_id}\\Extensions\\proxy_chrome\\v1.0", exist_ok=True)
-        pluginfile = f'C:\\Users\\thinh\\AppData\\Local\\Google\\Chrome\\User Data\\{fb_id}\\Extensions\\proxy_chrome\\v1.0\\proxy_auth_plugin.zip'
+        pluginfile = f'Plugin/{fb_id}_proxy_auth_plugin.zip'
 
         with zipfile.ZipFile(pluginfile, 'w') as zp:
             zp.writestr("manifest.json", manifest_json)
@@ -140,12 +165,13 @@ class ChromeHelper:
             try:
                 elements = self.driver.find_elements(By.TAG_NAME, tag)
                 for element in elements:
-                    if element.get_attribute(attribute) == text_compare:
+                    if element and element.get_attribute(attribute) and \
+                            element.get_attribute(attribute).lower().strip() == text_compare.lower().strip():
                         print(element.get_attribute(attribute))
                         return element
             except Exception as ex:
                 print(ex)
-            time.sleep(1)
+            time.sleep(2)
         return False
 
     def find_by_text(self, tag, text_compare):
@@ -154,12 +180,12 @@ class ChromeHelper:
             try:
                 elements = self.driver.find_elements(By.TAG_NAME, tag)
                 for element in elements:
-                    if element.text == text_compare:
+                    if element.text and element.text.lower().strip() == text_compare.lower().strip():
                         print(element.text)
                         return element
             except Exception as ex:
                 print(ex)
-            time.sleep(1)
+            time.sleep(2)
         return False
 
     def waiting_for_text(self, tag, text_compare):
@@ -167,13 +193,23 @@ class ChromeHelper:
             try:
                 elements = self.driver.find_elements(By.TAG_NAME, tag)
                 for element in elements:
-                    if element.text == text_compare:
+                    if element.text and element.text.lower().strip() == text_compare.lower().strip():
                         print(element.text)
                         return element
             except Exception as ex:
                 print(ex)
-            time.sleep(1)
+            time.sleep(2)
         return False
+
+    def find_by_css_selector(self, selector):
+        try:
+            element = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+            )
+            return element
+        except Exception as ex:
+            print(ex)
+            return False
 
     def login(self):
         username_xpath = """//*[@id="m_login_email"]"""
@@ -218,7 +254,7 @@ class ChromeHelper:
         element3 = self.find_by_text("span", "Confirm")
         [el.click() for el in [element1, element2, element3] if el]
 
-    def sharing(self, video_id, groups_share):
+    def sharing(self, video_id, groups_share, fb_id, via_share_number):
         # query group share able
         result = connection.execute(db.select([scheduler_video]).
                                     where(db.and_(scheduler_video.columns.video_id == video_id,
@@ -226,45 +262,83 @@ class ChromeHelper:
         if not result:
             return False
 
-        self.driver.get(f"https://facebook.com/{video_id}")
+        self.driver.get(f"https://fb.com/{video_id}")
+
+        not_loggin = self.waiting_for_css_selector("""div.linmgsc8.rq0escxv.cb02d2ww.clqubjjj.bjjun2dj > div > h2 > span > span""")
+        if not_loggin and not_loggin.text.lower() == "not logged in":
+            query = db.update(via_share).values(status="can not login")
+            query = query.where(via_share.columns.fb_id == fb_id)
+            connection.execute(query)
+            return False
+
         time.sleep(20)
-        self.find_by_text("span", "Share").click()
-        self.find_by_text("span", "More Options").click()
-        self.find_by_text("span", "Share to a group").click()
 
-        search_group_inp = self.find_by_attr("input", "aria-label", "Search for groups")
-        search_group_inp.clear()
+        for idx in range(2):
+            self.waiting_for_text("span", "Share").click()
+            self.waiting_for_text("span", "More Options").click()
+            self.waiting_for_text("span", "Share to a group").click()
 
-        video_data = dict(zip(result.keys(), result))
-        groups_shared = json.loads(video_data.get("groups_shared"))
-        share_number = video_data.get("share_number")
-        groups_share_fixed = list(set(groups_share) - set(groups_shared))
-        for group_name in groups_share_fixed:
-            search_group_inp.clear()
-            for _ in range(100):
-                search_group_inp.send_keys(Keys.BACKSPACE)
+            search_group_inp = self.waiting_for_css_selector("div.n851cfcs.wkznzc2l.dhix69tm.n1l5q3vz > div > div > label > input")
+            # search_group_inp.clear()
 
-            search_group_inp.send_keys(group_name)
-            time.sleep(1)
-            found_group = self.find_by_text("span", group_name)
-            if found_group:
-                found_group.click()
-                post_description = self.find_by_attr("div", "aria-label", "Create a public post…")
-                if post_description:
-                    post_description.send_keys("This is the awesome videos")
-                    post_btn = self.find_by_text("span", "Post")
-                    if post_btn:
-                        # post_btn.click()
-                        groups_shared.append(group_name)
-                        share_number += 1
-                        if share_number <= len(groups_share):
-                            query = db.update(scheduler_video).values(groups_shared=json.dumps(groups_shared),
-                                                                      share_number=share_number)
-                        else:
-                            query = db.update(scheduler_video).values(groups_shared=json.dumps(groups_shared),
-                                                                      share_number=share_number,
-                                                                      shared=True)
-                        query = query.where(scheduler_video.columns.video_id == video_id)
-                        connection.execute(query)
-                        return True
+            video_data = dict(zip(result.keys(), result))
+            groups_shared = json.loads(video_data.get("groups_shared"))
+            share_number = video_data.get("share_number")
+            groups_share_fixed = list(set(groups_share) - set(groups_shared))
+            for group_name in groups_share_fixed:
+                if not search_group_inp:
+                    search_group_inp = self.find_by_attr("input", "aria-label", "Search for groups")
+                    search_group_inp.click()
+
+                for _ in range(100):
+                    try:
+                        search_group_inp.send_keys(Keys.BACKSPACE)
+                    except Exception as ex:
+                        raise ex
+
+                try:
+                    search_group_inp.send_keys(group_name)
+                except Exception as ex:
+                    raise ex
+
+                time.sleep(2)
+                elements = self.driver.find_elements(By.CSS_SELECTOR,
+                                                     value="""div.n851cfcs.ozuftl9m.n1l5q3vz.l9j0dhe7.nqmvxvec > div > div > i""")
+                share_btn = None
+                for el in elements:
+                    if "https://static.xx.fbcdn.net/rsrc.php/v3/yy/r/eD06S0y0aJL.png" in el.get_attribute('style'):
+                        try:
+                            el.click()
+                            share_btn = True
+                            break
+                        except WebDriverException:
+                            print("Element is not clickable")
+                            break
+
+                if share_btn:
+                    post_description = self.find_by_attr("div", "aria-label", "Create a public post…")
+                    if post_description:
+                        # post_description.send_keys("This is the awesome videos")
+                        post_btn = self.find_by_text("span", "Post")
+                        if post_btn:
+                            post_btn.click()
+                            time.sleep(5)
+                            groups_shared.append(group_name)
+                            groups_share_fixed.append(group_name)
+                            share_number += 1
+                            if share_number <= len(groups_share):
+                                query = db.update(scheduler_video).values(groups_shared=json.dumps(groups_shared),
+                                                                          share_number=share_number)
+                            else:
+                                query = db.update(scheduler_video).values(groups_shared=json.dumps(groups_shared),
+                                                                          share_number=share_number,
+                                                                          shared=True)
+                            query = query.where(scheduler_video.columns.video_id == video_id)
+                            connection.execute(query)
+                            via_share_number += 1
+                            query = db.update(via_share).values(status='live', share_number=via_share_number)
+                            query = query.where(via_share.columns.id == fb_id)
+                            connection.execute(query)
+                else:
+                    groups_share_fixed.remove(group_name)
         return False
