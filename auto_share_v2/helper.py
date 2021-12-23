@@ -2,7 +2,7 @@ import logging
 import os
 import zipfile
 from datetime import datetime
-
+from statemachine import StateMachine, State
 import pyautogui
 import pyotp
 import time
@@ -20,7 +20,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from models import via_share, scheduler_video, connection, joining_group
 
 # create logger with 'spam_application'
-from auto_share_v2.utils import waiting_for, paste_text, check_exist, click_to, deciscion, get_all_titles
+from utils import waiting_for, paste_text, check_exist, click_to, deciscion, get_all_titles
 
 logger = logging.getLogger('application')
 logger.setLevel(logging.DEBUG)
@@ -101,7 +101,7 @@ class ChromeHelper:
         #os.makedirs("UserData", exist_ok=True)
         #os.makedirs("Plugin", exist_ok=True)
         # dir_path = os.path.dirname(os.path.realpath(__file__))
-        options.add_argument(f"user-data-dir=D:\\Chrome")  # Path to your chrome profile
+        options.add_argument(f"user-data-dir=E:\\Chrome\\User Data")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={fb_id}")
         options.add_argument(f"--start-maximized")
         options.add_argument("test-type=browser")
@@ -109,7 +109,7 @@ class ChromeHelper:
         options.add_experimental_option("prefs", {
             "profile": {"name": f"{fb_id} - Chrome"}
         })
-        pluginfile = f'Plugin/{fb_id}_proxy_auth_plugin.zip'
+        pluginfile = f'E:/Chrome/Plugin/{fb_id}_proxy_auth_plugin.zip'
 
         with zipfile.ZipFile(pluginfile, 'w') as zp:
             zp.writestr("manifest.json", manifest_json)

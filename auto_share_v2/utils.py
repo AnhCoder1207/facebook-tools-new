@@ -29,6 +29,19 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+
+client = pymongo.MongoClient("mongodb://localhost:27017")
+db = client.thinh
+phone_table = db['phone']
+email_table = db['emails']
+cookies_table = db['cookies']
+via_share_table = db['via_share']
+scheduler_table = db['scheduler']
+group_table = db['groups']
+via_shared = db['via_shared']
+video_shared = db['video_shared']
+group_joined = db['group_joined']
+
 pyautogui.PAUSE = 0.1
 pyautogui.FAILSAFE = True
 pyautogui.LOG_SCREENSHOTS = False

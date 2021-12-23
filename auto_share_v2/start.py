@@ -10,6 +10,7 @@ import PySimpleGUI as sg
 import sqlalchemy as db
 import pandas as pd
 
+from auto_share_v2.share import auto_share
 from models import via_share, scheduler_video, connection, joining_group
 from helper import ChromeHelper
 
@@ -285,8 +286,7 @@ if __name__ == '__main__':
             table_data = window1.Element('table').Get()
             for _ in range(1):
                 thread = threading.Thread(
-                    target=start_share,
-                    args=(window1, lambda: stop_threads),
+                    target=auto_share,
                     daemon=True
                 )
                 thread.start()

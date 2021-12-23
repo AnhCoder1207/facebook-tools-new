@@ -94,7 +94,9 @@ def waiting_for_selector(selector):
 
 
 def validate_string(input_txt):
-    return ''.join(e for e in input_txt if (e.isalnum() or e == " " or e == '.'))
+    if type(input_txt) is str:
+        return ''.join(e for e in input_txt if (e.isalnum() or e == " " or e == '.'))
+    return input_txt
 
 
 def download_video(table_data, current_index, window, ten_phim, pause_download):
@@ -118,7 +120,7 @@ def download_video(table_data, current_index, window, ten_phim, pause_download):
                             info_dict = ydl.extract_info(link, download=False)
                             video_title = info_dict.get('title', None)
                             ext = info_dict.get('ext', None)
-                            ydl_opts = {'outtmpl': filename, 'format': "22/best"}
+                            ydl_opts = {'outtmpl': filename}
                             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                                 ydl.download([link])
                             window.write_event_value('-THREAD-', [idx, 'Downloaded'])  # put a message into queue for GUI
@@ -278,6 +280,8 @@ def crawl_movie(page_name, filter_number):
                 logger.info(f"{duration.text}")
                 duration_obj = datetime.strptime(duration.text, "%M:%S")
                 if duration_obj.minute > 15:
+                    continue
+                if duration_obj.minute < 3:
                     continue
             except Exception as ex:
                 logger.error(f"{ex}")
