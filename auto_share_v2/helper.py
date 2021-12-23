@@ -6,6 +6,7 @@ import random
 import json
 import sqlalchemy as db
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -75,16 +76,24 @@ class ChromeHelper:
         options = webdriver.ChromeOptions()
         os.makedirs("UserData", exist_ok=True)
         # dir_path = os.path.dirname(os.path.realpath(__file__))
-        options.add_argument(f"user-data-dir=E:\\Chrome\\User Data")  # Path to your chrome profile
+        options.add_argument(f"user-data-dir=C:\\Users\\thinh\\AppData\\Local\\Google\\Chrome\\User Data")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={fb_id}")
-        options.add_argument("--start-maximized")
-        pluginfile = f'UserData\\proxy_auth_plugin{fb_id}.zip'
+        options.add_argument("test-type=browser")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("prefs", {
+            "profile": {"name": f"{fb_id} - Chrome"}
+        })
+        os.makedirs(f"C:\\Users\\thinh\\AppData\\Local\\Google\\Chrome\\User Data\\{fb_id}\\Extensions\\proxy_chrome\\v1.0", exist_ok=True)
+        pluginfile = f'C:\\Users\\thinh\\AppData\\Local\\Google\\Chrome\\User Data\\{fb_id}\\Extensions\\proxy_chrome\\v1.0\\proxy_auth_plugin.zip'
 
         with zipfile.ZipFile(pluginfile, 'w') as zp:
             zp.writestr("manifest.json", manifest_json)
             zp.writestr("background.js", background_js)
         options.add_extension(pluginfile)
-        self.driver = webdriver.Chrome('./chromedriver.exe', options=options)
+
+        self.driver = webdriver.Chrome(executable_path='./chromedriver.exe', options=options)
+        #self.driver.get("chrome://version/")
+        #print("pass")#
 
     def waiting_for_id(self, id_here):
         try:
