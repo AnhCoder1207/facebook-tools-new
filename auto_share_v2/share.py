@@ -288,7 +288,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
 
         buttons = ["checkpoint_1.PNG",
                    "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
-                   "login_btn.PNG", "site_can_reach.PNG", 'home_light.PNG', 'home_dark.PNG']
+                   "login_btn.PNG", "site_can_reach.PNG", 'home_light.PNG', 'home_dark.PNG', "disabled_1.PNG", "disabled_2.PNG"]
         ret = deciscion(buttons, waiting_time=10)
         if ret:
             btn_x, btn_y, btn_index = ret
