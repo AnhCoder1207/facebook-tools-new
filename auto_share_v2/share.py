@@ -305,17 +305,17 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 chrome_worker.driver.close()
                 continue
 
-            buttons = ["checkpoint_1.PNG",
-                       "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
-                       "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
-            ret = deciscion(buttons, waiting_time=10)
-            if ret:
-                btn_x, btn_y, btn_index = ret
-                if btn_index not in [6, 7]:
-                    query = db.update(via_share).values(status='checkpoint').where(via_share.columns.fb_id == fb_id)
-                    connection.execute(query)
-                    chrome_worker.driver.close()
-                    continue
+            #buttons = ["checkpoint_1.PNG",
+            #           "checkpoint_2.PNG", "cookies_failed.PNG", "disabled.PNG",
+            #           "login_btn.PNG", "site_can_reach.PNG", 'light_logo.PNG', 'dark_logo.PNG']
+            #ret = deciscion(buttons, waiting_time=10)
+            #if ret:
+            #    btn_x, btn_y, btn_index = ret
+            #    if btn_index not in [6, 7]:
+            #        query = db.update(via_share).values(status='checkpoint').where(via_share.columns.fb_id == fb_id)
+            #        connection.execute(query)
+            #        chrome_worker.driver.close()
+            #        continue
 
             scheduler = scheduler[0] if len(scheduler) != 0 else dict()
             share_number = scheduler.get("share_number", 0)

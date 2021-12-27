@@ -10,7 +10,7 @@ import PySimpleGUI as sg
 import sqlalchemy as db
 import pandas as pd
 
-from auto_share_v2.share import auto_share
+from share import auto_share
 from models import via_share, scheduler_video, connection, joining_group
 from helper import ChromeHelper
 
@@ -220,7 +220,10 @@ def via_manage_window(via_data):
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ],
-        [sg.Button('Open in Browser'), sg.Button('Edit'), sg.Button('Delete', key="delete_via")]
+        [sg.Button('Open in Browser'),
+         sg.Button('Edit', key='edit_via_btn'),
+         sg.Button('Export', key="export_checkpoint_via_btn"),
+         sg.Button('Delete', key="delete_via")]
 
     ]
 
@@ -254,6 +257,10 @@ def text_seo_window(text_seo_data):
         [sg.Button('Ok', key="text_seo_modified")]
     ]
     return sg.Window('Share descriptions', layout_text_seo_window, finalize=True)
+
+
+def create_browser():
+    chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
 
 
 if __name__ == '__main__':
@@ -372,6 +379,17 @@ if __name__ == '__main__':
                 # table_data.pop(item)
             table_data = get_via_data()
             window3.Element('via_table').Update(values=table_data)
+        elif event == 'export_checkpoint_via_btn':
+            via_table_data = window3.Element('via_table').Get()
+            if os.path.isfile("checkpoint.txt"):
+                os.remove("checkpoint.txt")
+            with open("checkpoint.txt", mode='w') as cp_via_files:
+                for via_data in via_table_data:
+                    fb_id, password, mfa, email, email_password, proxy_data, status = via_data
+                    if status and status.strip() == 'checkpoint':
+                        cp_via_files.write(f'{fb_id},{password},{mfa},{email},{email_password},{proxy_data}\n')
+            cp_via_files.close()
+
         elif event == 'Start login via':
             file_input = values.get('file_via_input')
             if not os.path.isfile(file_input):
@@ -424,8 +442,16 @@ if __name__ == '__main__':
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
                 via_data = via_table_data[via_idx]
+                try:
+                    chrome_worker.driver.close()
+                except Exception as ex:
+                    logger.error(ex)
+                    pass
+
                 fb_id, password, mfa, email, email_password, proxy_data, status = via_data
                 chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
+                #job_thread = threading.Thread(target=create_browser, daemon=True)
+                #job_thread.start()
                 time.sleep(1)
         elif event == "Edit Share Descriptions":
             share_descriptions = get_group_joining_data('share_descriptions')

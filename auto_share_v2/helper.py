@@ -104,6 +104,7 @@ class ChromeHelper:
         options.add_argument(f"user-data-dir=D:\\Chrome")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={fb_id}")
         options.add_argument(f"--start-maximized")
+        options.add_argument('--disable-gpu')
         options.add_argument("test-type=browser")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("prefs", {
