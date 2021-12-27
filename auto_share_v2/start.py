@@ -217,6 +217,7 @@ def via_manage_window(via_data):
                      display_row_numbers=True,
                      justification='right',
                      auto_size_columns=False,
+                     col_widths=[15, 15, 15, 15, 15, 15, 15],
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ],
@@ -519,9 +520,6 @@ if __name__ == '__main__':
                         break
 
                     via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
-                    if via_exist:
-                        continue
-
                     via_status = "not ready"
                     if values.get('login.options', False):
                         chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
@@ -534,14 +532,24 @@ if __name__ == '__main__':
                             via_status = "can not login"
                             print(ex)
                         chrome_worker.driver.close()
-                    query = db.insert(via_share).values(
-                        fb_id=fb_id, password=password, mfa=mfa,
-                        email=email, email_password=email_password,
-                        proxy=proxy_data, share_number=0,
-                        group_joined=json.dumps([""]), date="",
-                        status=via_status
-                    )
-                    ResultProxy = connection.execute(query)
+
+                    if not via_exist:
+                        query = db.insert(via_share).values(
+                            fb_id=fb_id, password=password, mfa=mfa,
+                            email=email, email_password=email_password,
+                            proxy=proxy_data, share_number=0,
+                            group_joined=json.dumps([""]), date="",
+                            status=via_status
+                        )
+                        ResultProxy = connection.execute(query)
+                    else:
+                        query = db.update(via_share).values(
+                            password=password, mfa=mfa,
+                            email=email, email_password=email_password,
+                            proxy=proxy_data,
+                            status=via_status
+                        ).where(via_share.columns.fb_id == fb_id)
+                        connection.execute(query)
             via_data = get_via_data()
             window3.Element('via_table').Update(values=via_data)
         elif event == "Open in Browser":
