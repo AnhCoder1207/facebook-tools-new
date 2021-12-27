@@ -101,7 +101,7 @@ class ChromeHelper:
         #os.makedirs("UserData", exist_ok=True)
         #os.makedirs("Plugin", exist_ok=True)
         # dir_path = os.path.dirname(os.path.realpath(__file__))
-        options.add_argument(f"user-data-dir=E:\\Chrome\\User Data")  # Path to your chrome profile
+        options.add_argument(f"user-data-dir=D:\\Chrome")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={fb_id}")
         options.add_argument(f"--start-maximized")
         options.add_argument("test-type=browser")
@@ -109,7 +109,7 @@ class ChromeHelper:
         options.add_experimental_option("prefs", {
             "profile": {"name": f"{fb_id} - Chrome"}
         })
-        pluginfile = f'E:/Chrome/Plugin/{fb_id}_proxy_auth_plugin.zip'
+        pluginfile = f'Plugin/{fb_id}_proxy_auth_plugin.zip'
 
         with zipfile.ZipFile(pluginfile, 'w') as zp:
             zp.writestr("manifest.json", manifest_json)
