@@ -259,6 +259,30 @@ def text_seo_window(text_seo_data):
     return sg.Window('Share descriptions', layout_text_seo_window, finalize=True)
 
 
+def edit_via_window(via_data):
+    fb_id, password, mfa, email, email_password, proxy_data, status = via_data
+    layout_edit_via = [
+        [sg.Text('Via ID')],
+        [sg.InputText(fb_id, key="edit_via_id", readonly=True)],
+        [sg.Text('password')],
+        [sg.InputText(password, key="edit_via_password")],
+        [sg.Text('mfa')],
+        [sg.InputText(mfa, key="edit_via_mfa")],
+        [sg.Text('email')],
+        [sg.InputText(email, key="edit_via_email")],
+        [sg.Text('email_password')],
+        [sg.InputText(email_password, key="edit_via_email_password")],
+        [sg.Text('proxy_data')],
+        [sg.InputText(proxy_data, key="edit_via_proxy_data")],
+        [sg.Text('status')],
+        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login'], size=(20, 4), enable_events=False, key='_LIST_VIA_STATUS_')],
+        [sg.Button('Save', key='edit_via_save')]
+    ]
+    window = sg.Window('Edit Via Data', layout_edit_via, finalize=True)
+
+    return window
+
+
 def create_browser():
     chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
 
@@ -270,7 +294,7 @@ if __name__ == '__main__':
     sg.theme('DarkAmber')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
-    window1, window2, window3, window4, window5 = make_main_window(table_data), None, None, None, None
+    window1, window2, window3, window4, window5, window6 = make_main_window(table_data), None, None, None, None, None
 
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
@@ -389,6 +413,60 @@ if __name__ == '__main__':
                     if status and status.strip() == 'checkpoint':
                         cp_via_files.write(f'{fb_id},{password},{mfa},{email},{email_password},{proxy_data}\n')
             cp_via_files.close()
+        elif event == 'edit_via_btn':
+            selected = values['via_table']
+            table_data = window3.Element('via_table').Get()
+            for idx in selected:
+                via_data = table_data[idx]
+                window6 = edit_via_window(via_data)
+                break
+
+        elif event == 'edit_via_save':
+            """
+            {'edit_via_id': '100062931873023', 
+            'edit_via_password': 'kaxcsvrurs', 
+            'edit_via_mfa': 'KXAWBLA5SQAHAOXUQ654F7KOIV2Z5HUM',
+            'edit_via_email': 'eileendawnlew@hotmail.com', 
+            'edit_via_email_password': 'wAvrbwjwvo7', 
+            'edit_via_proxy_data': '107.181.160.6:21516:huyduc399:3b4i7mMN', 
+            '_LIST_VIA_STATUS_': ['can not login']}
+            """
+            if not window3:
+                continue
+
+            table_data = window3.Element('via_table').Get()
+            table_data_copy = table_data
+            edit_via_id = values.get("edit_via_id", "").strip()
+            edit_via_password = values.get("edit_via_password", "").strip()
+            edit_via_mfa = values.get("edit_via_mfa", "").strip()
+            edit_via_email = values.get("edit_via_email", "").strip()
+            edit_via_email_password = values.get("edit_via_email_password", "").strip()
+            edit_via_proxy_data = values.get("edit_via_proxy_data", "").strip()
+            edit_via_status = values.get("_LIST_VIA_STATUS_", [])
+            if len(edit_via_status) == 0:
+                status_via = 'can not login'
+            else:
+                status_via = edit_via_status[0].strip()
+
+            via_idx = 0
+            for via_idx, via_data in enumerate(table_data):
+                fb_id, password, mfa, email, email_password, proxy_data, status = via_data
+                if fb_id == edit_via_id:
+                    new_via_data = edit_via_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via
+                    table_data_copy[via_idx] = [fb_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via]
+                    query = db.update(via_share).values(
+                        password=edit_via_password, mfa=edit_via_mfa,
+                        email=edit_via_email, email_password=edit_via_email_password,
+                        proxy=edit_via_proxy_data,
+                        status=status_via
+                    ).where(via_share.columns.fb_id == fb_id)
+                    connection.execute(query)
+                    break
+
+            window3.Element('via_table').Update(values=table_data_copy, select_rows=[via_idx])
+
+            if window6:
+                window6.close()
 
         elif event == 'Start login via':
             file_input = values.get('file_via_input')
@@ -467,6 +545,6 @@ if __name__ == '__main__':
             # update new
             query = db.insert(joining_group)
             ResultProxy = connection.execute(query, groups)
-    for window in [window1, window2, window3, window4]:
+    for window in [window1, window2, window3, window4, window5, window6]:
         if window:
             window.close()

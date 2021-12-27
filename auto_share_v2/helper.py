@@ -101,7 +101,14 @@ class ChromeHelper:
         #os.makedirs("UserData", exist_ok=True)
         #os.makedirs("Plugin", exist_ok=True)
         # dir_path = os.path.dirname(os.path.realpath(__file__))
-        options.add_argument(f"user-data-dir=D:\\Chrome")  # Path to your chrome profile
+        user_data_dir = "D:\\Chrome"
+        if os.path.isfile("config.txt"):
+            with open("config.txt") as config_file:
+                for line in config_file.readlines():
+                    user_data_dir = line.strip()
+                    break
+
+        options.add_argument(f"user-data-dir={user_data_dir}")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={fb_id}")
         options.add_argument(f"--start-maximized")
         options.add_argument('--disable-gpu')
