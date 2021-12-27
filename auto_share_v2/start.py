@@ -222,6 +222,7 @@ def via_manage_window(via_data):
         ],
         [sg.Button('Open in Browser'),
          sg.Button('Edit', key='edit_via_btn'),
+         sg.Button('Start Login', key='login_via_manual'),
          sg.Button('Export', key="export_checkpoint_via_btn"),
          sg.Button('Delete', key="delete_via")]
 
@@ -413,6 +414,7 @@ if __name__ == '__main__':
                     if status and status.strip() == 'checkpoint':
                         cp_via_files.write(f'{fb_id},{password},{mfa},{email},{email_password},{proxy_data}\n')
             cp_via_files.close()
+            sg.Popup('Exported, file checkpoint.txt in your code directory.', keep_on_top=True)
         elif event == 'edit_via_btn':
             selected = values['via_table']
             table_data = window3.Element('via_table').Get()
@@ -420,6 +422,33 @@ if __name__ == '__main__':
                 via_data = table_data[idx]
                 window6 = edit_via_window(via_data)
                 break
+        elif event == 'login_via_manual':
+            """Open single via and login manual"""
+            selected = values['via_table']
+            table_data = window3.Element('via_table').Get()
+            for idx in selected:
+                via_data = table_data[idx]
+                fb_id, password, mfa, email, email_password, proxy_data, status = via_data
+                via_status = "not ready"
+                # force close drive
+                try:
+                    chrome_worker.driver.close()
+                except:
+                    pass
+
+                chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
+                try:
+                    chrome_worker.login()
+                    # login success
+                    via_status = "live"
+                    query = db.update(via_share).values(
+                        status=via_status
+                    ).where(via_share.columns.fb_id == fb_id)
+                    connection.execute(query)
+                except Exception as ex:
+                    via_status = "can not login"
+                    print(ex)
+                chrome_worker.driver.close()
 
         elif event == 'edit_via_save':
             """
