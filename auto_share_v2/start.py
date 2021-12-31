@@ -4,32 +4,14 @@ import random
 import threading
 import time
 import uuid
-import logging
 from datetime import datetime
 import PySimpleGUI as sg
 import sqlalchemy as db
 import pandas as pd
 
-from share import auto_share
 from models import via_share, scheduler_video, connection, joining_group
 from helper import ChromeHelper
-
-# create logger with 'spam_application'
-logger = logging.getLogger('application')
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('app.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(fh)
-logger.addHandler(ch)
+from utils import logger
 
 
 def start_share(main_window, stop_thread):
@@ -69,17 +51,17 @@ def start_share(main_window, stop_thread):
         # reset via share counting
         if share_date != current_date:
             query = db.update(via_share).values(date=current_date, share_number=0)
-            query = query.where(via_share.columns.id == fb_id)
+            query = query.where(via_share.columns.fb_id == fb_id)
             connection.execute(query)
 
         # mark via running
         query = db.update(via_share).values(status='sharing')
-        query = query.where(via_share.columns.id == fb_id)
+        query = query.where(via_share.columns.fb_id == fb_id)
         connection.execute(query)
         # start sharing
-        chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
+        chrome_worker = ChromeHelper()
+        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
         try:
-
             # get list group share
             groups_share = []
 
@@ -95,14 +77,14 @@ def start_share(main_window, stop_thread):
             if options_enable:
                 group_options = get_group_joining_data("group_options")
                 groups_share.extend([x.strip() for x in group_options.split('\n')])
-
             share_status = chrome_worker.sharing(video_id, groups_share, fb_id, via_share_number)
         except Exception as ex:
-            print(ex)
+            logger.error(f"share video errors {ex}")
         finally:
+            query = db.update(via_share).values(status='live')
+            query = query.where(via_share.columns.fb_id == fb_id)
+            connection.execute(query)
             chrome_worker.driver.close()
-
-        time.sleep(1)
 
 
 def mapping_table(item):
@@ -236,18 +218,20 @@ def group_to_join_window(join_group, group_go, group_co_khi, group_xay_dung):
     layout_group_to_join = [
         [
             [
-                sg.Text('Gỗ'),
-                sg.Multiline(size=(40, 10), key="group_go", default_text=group_go),
-                sg.Text('Cơ khí'),
-                sg.Multiline(size=(40, 10), key="group_co_khi", default_text=group_co_khi),
-                sg.Text('Xây Dựng'),
-                sg.Multiline(size=(40, 10), key="group_xay_dung", default_text=group_xay_dung),
-                sg.Text('Join khi share'),
-                sg.Multiline(size=(40, 10), key="group_join", default_text=join_group)
-            ],
+                [sg.Text('Gỗ')],
+                [sg.Multiline(size=(100, 10), key="group_go", default_text=group_go)],
+                [sg.Text('Cơ khí')],
+                [sg.Multiline(size=(100, 10), key="group_co_khi", default_text=group_co_khi)]
+             ],
+            [
+                [sg.Text('Xây Dựng')],
+                [sg.Multiline(size=(100, 10), key="group_xay_dung", default_text=group_xay_dung)],
+                [sg.Text('Group for joining')],
+                [sg.Multiline(size=(100, 10), key="group_join", default_text=join_group)]
+            ]
         ],
         [
-            sg.Button('Ok', key="group_modified")
+            sg.Button('Save', key="group_modified")
         ]
     ]
     return sg.Window('Group Join', layout_group_to_join, finalize=True)
@@ -255,8 +239,8 @@ def group_to_join_window(join_group, group_go, group_co_khi, group_xay_dung):
 
 def text_seo_window(text_seo_data):
     layout_text_seo_window = [
-        [sg.Multiline(size=(40, 10), key="share_description_data", default_text=text_seo_data)],
-        [sg.Button('Ok', key="text_seo_modified")]
+        [sg.Multiline(size=(200, 20), key="share_description_data", default_text=text_seo_data)],
+        [sg.Button('Save', key="text_seo_modified")]
     ]
     return sg.Window('Share descriptions', layout_text_seo_window, finalize=True)
 
@@ -285,10 +269,6 @@ def edit_via_window(via_data):
     return window
 
 
-def create_browser():
-    chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
-
-
 if __name__ == '__main__':
     # time.sleep(2)
     # print(pyautogui.position())
@@ -297,6 +277,7 @@ if __name__ == '__main__':
     # All the stuff inside your window.
     table_data = get_scheduler_data()
     window1, window2, window3, window4, window5, window6 = make_main_window(table_data), None, None, None, None, None
+    chrome_worker = ChromeHelper()
 
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
@@ -317,13 +298,6 @@ if __name__ == '__main__':
             window1.Element('Start share').Update(text="Sharing")
             stop_threads = False
             table_data = window1.Element('table').Get()
-            for _ in range(1):
-                thread = threading.Thread(
-                    target=auto_share,
-                    daemon=True
-                )
-                thread.start()
-                time.sleep(5)
         elif event == 'Remove':
             removed = values['table']
             table_data = window1.Element('table').Get()
@@ -433,12 +407,7 @@ if __name__ == '__main__':
                 via_status = "not ready"
                 # force close drive
                 try:
-                    chrome_worker.driver.close()
-                except:
-                    pass
-
-                chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
-                try:
+                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                     chrome_worker.login()
                     # login success
                     via_status = "live"
@@ -449,7 +418,6 @@ if __name__ == '__main__':
                 except Exception as ex:
                     via_status = "can not login"
                     print(ex)
-                chrome_worker.driver.close()
 
         elif event == 'edit_via_save':
             """
@@ -504,7 +472,7 @@ if __name__ == '__main__':
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
             with open(file_input) as via_files:
-                for via in via_files:
+                for via_idx, via in enumerate(via_files):
                     user_data = via.strip().split('|')
                     if len(user_data) != 6:
                         sg.Popup(
@@ -512,6 +480,7 @@ if __name__ == '__main__':
                             keep_on_top=True)
                         break
                     fb_id, password, mfa, email, email_password, proxy_data = user_data
+                    logger.info(f"login via {via_idx} {fb_id}")
                     proxy_data_split = proxy_data.split(":")
                     if len(proxy_data_split) != 4:
                         sg.Popup(
@@ -522,7 +491,7 @@ if __name__ == '__main__':
                     via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
                     via_status = "not ready"
                     if values.get('login.options', False):
-                        chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
+                        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                         try:
                             chrome_worker.login()
                             # login success
@@ -531,7 +500,6 @@ if __name__ == '__main__':
                         except Exception as ex:
                             via_status = "can not login"
                             print(ex)
-                        chrome_worker.driver.close()
 
                     if not via_exist:
                         query = db.insert(via_share).values(
@@ -557,17 +525,13 @@ if __name__ == '__main__':
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
                 via_data = via_table_data[via_idx]
-                try:
-                    chrome_worker.driver.close()
-                except Exception as ex:
-                    logger.error(ex)
-                    pass
-
                 fb_id, password, mfa, email, email_password, proxy_data, status = via_data
-                chrome_worker = ChromeHelper(fb_id, password, mfa, proxy_data)
-                #job_thread = threading.Thread(target=create_browser, daemon=True)
-                #job_thread.start()
-                time.sleep(1)
+                # chrome_worker = get_free_worker()
+                try:
+                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                    break
+                except Exception as ex:
+                    logger.error(f"Can not open browser {ex}")
         elif event == "Edit Share Descriptions":
             share_descriptions = get_group_joining_data('share_descriptions')
             window5 = text_seo_window(share_descriptions)
@@ -582,6 +546,8 @@ if __name__ == '__main__':
             # update new
             query = db.insert(joining_group)
             ResultProxy = connection.execute(query, groups)
+            sg.Popup('Luu Thanh Cong')
+            window5.close()
     for window in [window1, window2, window3, window4, window5, window6]:
         if window:
             window.close()

@@ -1,8 +1,8 @@
-import logging
 import os
 import zipfile
-from datetime import datetime
-from statemachine import StateMachine, State
+from datetime import datetime, timedelta
+from functools import wraps
+
 import pyautogui
 import pyotp
 import time
@@ -19,114 +19,18 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from models import via_share, scheduler_video, connection, joining_group
 
-# create logger with 'spam_application'
-from utils import waiting_for, paste_text, check_exist, click_to, deciscion, get_all_titles
-
-logger = logging.getLogger('application')
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('app.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(fh)
-logger.addHandler(ch)
+from utils import logger
 
 
 class ChromeHelper:
-    def __init__(self, fb_id, password, mfa, proxy_data):
-        self.fb_id = fb_id
-        self.password = password
-        self.mfa = mfa
-        PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = proxy_data.split(":")
-
-        manifest_json = """
-        {
-            "version": "1.0.0",
-            "manifest_version": 2,
-            "name": "Chrome Proxy",
-            "permissions": [
-                "proxy",
-                "tabs",
-                "unlimitedStorage",
-                "storage",
-                "<all_urls>",
-                "webRequest",
-                "webRequestBlocking"
-            ],
-            "background": {
-                "scripts": ["background.js"]
-            },
-            "minimum_chrome_version":"22.0.0"
-        }
-        """
-
-        background_js = """
-        var config = {
-                mode: "fixed_servers",
-                rules: {
-                singleProxy: {
-                    scheme: "http",
-                    host: "%s",
-                    port: parseInt(%s)
-                },
-                bypassList: ["localhost"]
-                }
-            };
-
-        chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
-
-        function callbackFn(details) {
-            return {
-                authCredentials: {
-                    username: "%s",
-                    password: "%s"
-                }
-            };
-        }
-
-        chrome.webRequest.onAuthRequired.addListener(
-                    callbackFn,
-                    {urls: ["<all_urls>"]},
-                    ['blocking']
-        );
-        """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
-        options = webdriver.ChromeOptions()
-        #os.makedirs("UserData", exist_ok=True)
-        #os.makedirs("Plugin", exist_ok=True)
-        # dir_path = os.path.dirname(os.path.realpath(__file__))
-        user_data_dir = "D:\\Chrome"
-        if os.path.isfile("config.txt"):
-            with open("config.txt") as config_file:
-                for line in config_file.readlines():
-                    user_data_dir = line.strip()
-                    break
-
-        options.add_argument(f"user-data-dir={user_data_dir}")  # Path to your chrome profile
-        options.add_argument(f"--profile-directory={fb_id}")
-        options.add_argument(f"--start-maximized")
-        options.add_argument('--disable-gpu')
-        options.add_argument("test-type=browser")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option("prefs", {
-            "profile": {"name": f"{fb_id} - Chrome"}
-        })
-        pluginfile = f'Plugin/{fb_id}_proxy_auth_plugin.zip'
-
-        with zipfile.ZipFile(pluginfile, 'w') as zp:
-            zp.writestr("manifest.json", manifest_json)
-            zp.writestr("background.js", background_js)
-        options.add_extension(pluginfile)
-
-        self.driver = webdriver.Chrome(executable_path='./chromedriver.exe', options=options)
-        #self.driver.get("chrome://version/")
-        #print("pass")#
+    def __init__(self):
+        self.fb_id = None
+        self.password = None
+        self.mfa = None
+        self.driver = None
+        self.proxy_data = None
+        self.in_use = False
+        self.last_active = datetime.now()
 
     def waiting_for_id(self, id_here):
         try:
@@ -135,7 +39,8 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            print(ex)
+            # print(ex)
+            logger.error(f"Can not find {id_here}")
             return False
 
     def waiting_for_class(self, class_here):
@@ -145,7 +50,7 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            print(ex)
+            logger.error(f"Can not find {class_here}")
             return False
 
     def waiting_for_xpath(self, xpath):
@@ -155,7 +60,7 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            print(ex)
+            logger.error(f"Can not find {xpath}")
             return False
 
     def waiting_for_css_selector(self, selector):
@@ -165,7 +70,7 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            print(ex)
+            # print(ex)
             return False
 
     def find_by_attr(self, tag, attribute, text_compare):
@@ -178,7 +83,7 @@ class ChromeHelper:
                         print(element.get_attribute(attribute))
                         return element
             except Exception as ex:
-                print(ex)
+                logger.error(f"Can not find {text_compare}")
             time.sleep(2)
         return False
 
@@ -192,7 +97,7 @@ class ChromeHelper:
                         print(element.text)
                         return element
             except Exception as ex:
-                print(ex)
+                logger.error(f"Can not find {text_compare}")
             time.sleep(2)
         return False
 
@@ -205,7 +110,7 @@ class ChromeHelper:
                         print(element.text)
                         return element
             except Exception as ex:
-                print(ex)
+                logger.error(f"Can not find {text_compare}")
             time.sleep(2)
         return False
 
@@ -216,7 +121,7 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            print(ex)
+            logger.error(f"Can not find {selector}")
             return False
 
     def login(self):
@@ -226,8 +131,8 @@ class ChromeHelper:
         mfa_inp_xpath = """//*[@id="approvals_code"]"""
         submit_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
         continue_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
-        self.driver.get("https://m.facebook.com/")
         self.driver.set_window_size(375, 812)
+        self.driver.get("https://m.facebook.com/")
         login_btn = self.waiting_for_xpath(login_btn_xpath)
         username_inp = self.waiting_for_xpath(username_xpath)
         password_inp = self.waiting_for_xpath(password_xpath)
@@ -350,3 +255,106 @@ class ChromeHelper:
                 else:
                     groups_share_fixed.remove(group_name)
         return False
+
+    @staticmethod
+    def check_state(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            """A wrapper function"""
+
+            # Extend some capabilities of func
+            func()
+
+        return wrapper
+
+    def open_chrome(self, fb_id, password, mfa, proxy_data):
+        self.in_use = True
+        self.fb_id = fb_id
+        self.password = password
+        self.mfa = mfa
+        if self.driver:
+            try:
+                self.driver.close()
+            except Exception as ex:
+                logger.error(f"can not close drive {ex}")
+
+        self.proxy_data = proxy_data
+
+        PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = self.proxy_data.split(":")
+        manifest_json = """
+                    {
+                        "version": "1.0.0",
+                        "manifest_version": 2,
+                        "name": "Chrome Proxy",
+                        "permissions": [
+                            "proxy",
+                            "tabs",
+                            "unlimitedStorage",
+                            "storage",
+                            "<all_urls>",
+                            "webRequest",
+                            "webRequestBlocking"
+                        ],
+                        "background": {
+                            "scripts": ["background.js"]
+                        },
+                        "minimum_chrome_version":"22.0.0"
+                    }
+                    """
+        background_js = """
+                    var config = {
+                            mode: "fixed_servers",
+                            rules: {
+                            singleProxy: {
+                                scheme: "http",
+                                host: "%s",
+                                port: parseInt(%s)
+                            },
+                            bypassList: ["localhost"]
+                            }
+                        };
+
+                    chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
+
+                    function callbackFn(details) {
+                        return {
+                            authCredentials: {
+                                username: "%s",
+                                password: "%s"
+                            }
+                        };
+                    }
+
+                    chrome.webRequest.onAuthRequired.addListener(
+                                callbackFn,
+                                {urls: ["<all_urls>"]},
+                                ['blocking']
+                    );
+                    """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
+        options = webdriver.ChromeOptions()
+        user_data_dir = "User Data"
+        if os.path.isfile("config.txt"):
+            with open("config.txt") as config_file:
+                for line in config_file.readlines():
+                    user_data_dir = line.strip()
+                    break
+
+        os.makedirs("Plugin", exist_ok=True)
+
+        options.add_argument(f"user-data-dir={user_data_dir}/{self.fb_id}")  # Path to your chrome profile
+        options.add_argument(f"--profile-directory={self.fb_id}")
+        options.add_argument(f"--start-maximized")
+        options.add_argument('--disable-gpu')
+        options.add_argument("test-type=browser")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("prefs", {
+            "profile": {"name": f"{self.fb_id} - Chrome"}
+        })
+        pluginfile = f'Plugin/{self.fb_id}_proxy_auth_plugin.zip'
+
+        with zipfile.ZipFile(pluginfile, 'w') as zp:
+            zp.writestr("manifest.json", manifest_json)
+            zp.writestr("background.js", background_js)
+        options.add_extension(pluginfile)
+
+        self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
