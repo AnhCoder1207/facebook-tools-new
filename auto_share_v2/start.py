@@ -442,6 +442,7 @@ if __name__ == '__main__':
                             keep_on_top=True)
                         break
                     fb_id, password, mfa, email, email_password, proxy_data = user_data
+                    mfa = mfa.replace(" ", '')
                     logger.info(f"login via {via_idx} {fb_id}")
                     proxy_data_split = proxy_data.split(":")
                     if len(proxy_data_split) != 4:
