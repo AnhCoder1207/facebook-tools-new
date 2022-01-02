@@ -7,28 +7,23 @@ import uuid
 from datetime import datetime
 import PySimpleGUI as sg
 import sqlalchemy as db
-import pandas as pd
 
 from models import via_share, scheduler_video, connection, joining_group
 from helper import ChromeHelper
-from utils import logger
+from utils import logger, get_scheduler_data, get_via_data, get_group_joining_data, scheduler_table
+from controller import thread_join_group
 
 
 def start_share(main_window, stop_thread):
     # Step 1 query all via live
-    while True:
-        video_sharing = connection.execute(db.select([scheduler_video]).where(scheduler_video.columns.shared == False)).fetchone()
+    print("start share")
+    while not stop_thread():
+        video_sharing = scheduler_table.find_one({"shared": False})
         if not video_sharing:
-            return True
-        video_sharing = dict(zip(video_sharing.keys(), video_sharing))
-        video_id = video_sharing.get('video_id')
-        groups_shared = video_sharing.get('groups_shared', None)
-        shared = video_sharing.get('shared', False)
-        go_enable = video_sharing.get('go', False)
-        co_khi_enable = video_sharing.get('co_khi', False)
-        xay_dung_enable = video_sharing.get('xay_dung', False)
-        options_enable = video_sharing.get('options', False)
+            time.sleep(1)
+            continue
 
+        video_sharing_id = video_sharing.get("video_id", "")
         # query via live
         results = connection.execute(db.select([via_share]).where(db.and_(
             via_share.columns.status == 'live',
@@ -38,7 +33,6 @@ def start_share(main_window, stop_thread):
             return True
 
         result = random.choice(results)
-
         current_date = str(datetime.date(datetime.now()))
         via_data = dict(zip(result.keys(), result))
 
@@ -62,83 +56,16 @@ def start_share(main_window, stop_thread):
         chrome_worker = ChromeHelper()
         chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
         try:
-            # get list group share
-            groups_share = []
-
-            if go_enable:
-                groups_go = get_group_joining_data("group_go")
-                groups_share.extend([x.strip() for x in groups_go.split('\n')])
-            if co_khi_enable:
-                groups_co_khi = get_group_joining_data("group_co_khi")
-                groups_share.extend([x.strip() for x in groups_co_khi.split('\n')])
-            if xay_dung_enable:
-                groups_xay_dung = get_group_joining_data("group_xay_dung")
-                groups_share.extend([x.strip() for x in groups_xay_dung.split('\n')])
-            if options_enable:
-                group_options = get_group_joining_data("group_options")
-                groups_share.extend([x.strip() for x in group_options.split('\n')])
-            share_status = chrome_worker.sharing(video_id, groups_share, fb_id, via_share_number)
+            share_status = chrome_worker.sharing(video_sharing_id, fb_id, via_share_number)
         except Exception as ex:
+            raise ex
             logger.error(f"share video errors {ex}")
         finally:
             query = db.update(via_share).values(status='live')
             query = query.where(via_share.columns.fb_id == fb_id)
             connection.execute(query)
             chrome_worker.driver.close()
-
-
-def mapping_table(item):
-    return [
-        item.get('video_id', ''),
-        item.get('share_number', 0),
-        item.get('shared', False),
-        item.get('go', False),
-        item.get('co_khi', False),
-        item.get('xay_dung', False),
-        item.get('options', False),
-    ]
-
-
-def mapping_via_table(item):
-    # # 'id', 'password', '2fa', "email", "email password", "proxy", "status"
-    return [
-        item.get('fb_id', ''),
-        item.get('password', ''),
-        item.get('mfa', ''),
-        item.get('email', ''),
-        item.get('email_password', ''),
-        item.get('proxy', ''),
-        item.get('status', ''),
-    ]
-
-
-def get_scheduler_data():
-    results = connection.execute(db.select([scheduler_video])).fetchall()
-    if len(results) == 0:
-        return []
-    df = pd.DataFrame(results)
-    df.columns = results[0].keys()
-    table_default = list(map(mapping_table, df.to_dict(orient='records')))
-    return table_default
-
-
-def get_group_joining_data(group_type):
-    results = connection.execute(
-        db.select([joining_group]).where(joining_group.columns.group_type == group_type)).fetchall()
-    groups = [result.name for result in results if result.name.strip() != '']
-    data_group_join = "\n".join(groups)
-    return data_group_join
-
-
-def get_via_data():
-    # 'id', 'password', '2fa', "email", "email password", "proxy", "status"
-    results = connection.execute(db.select([via_share])).fetchall()
-    if len(results) == 0:
-        return []
-    df = pd.DataFrame(results)
-    df.columns = results[0].keys()
-    table_default = list(map(mapping_via_table, df.to_dict(orient='records')))
-    return table_default
+            main_window.write_event_value('-THREAD-', "")
 
 
 def make_main_window(table_data):
@@ -150,8 +77,8 @@ def make_main_window(table_data):
             sg.Button('Add New Video'),
             sg.Button('Kill Chrome'),
             sg.Button('Via Management'),
-            sg.Checkbox('Join group when sharing video', key='join_group', enable_events=False, default=False),
             sg.Button('Edit list group'),
+            sg.Button('Start Join Group'),
             sg.Button('Edit Share Descriptions')
         ],
         [
@@ -160,7 +87,7 @@ def make_main_window(table_data):
                      display_row_numbers=True,
                      justification='right',
                      auto_size_columns=False,
-                     col_widths=[20, 20, 15],
+                     col_widths=[20, 20, 15, 15, 15, 15, 15],
                      vertical_scroll_only=False,
                      num_rows=24, key='table')
         ]
@@ -208,7 +135,6 @@ def via_manage_window(via_data):
          sg.Button('Start Login', key='login_via_manual'),
          sg.Button('Export', key="export_checkpoint_via_btn"),
          sg.Button('Delete', key="delete_via")]
-
     ]
 
     return sg.Window('Via Management', layout_via_manage_video, finalize=True)
@@ -278,7 +204,9 @@ if __name__ == '__main__':
     table_data = get_scheduler_data()
     window1, window2, window3, window4, window5, window6 = make_main_window(table_data), None, None, None, None, None
     chrome_worker = ChromeHelper()
-
+    stop_join_group = False
+    sharing = False
+    joining = False
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         window, event, values = sg.read_all_windows()
@@ -289,23 +217,29 @@ if __name__ == '__main__':
             else:
                 break
         elif event == 'Kill Chrome':
-            #chromedriver.exe
             browserExe = "chrome.exe"
             os.system("taskkill /f /im " + browserExe)
             browserExe = "chromedriver.exe"
             os.system("taskkill /f /im " + browserExe)
         elif event == 'Start share':
-            window1.Element('Start share').Update(text="Sharing")
-            stop_threads = False
-            table_data = window1.Element('table').Get()
+            if not sharing:
+                sharing = True
+                window1.Element('Start share').Update(text="Stop Share")
+                stop_threads = False
+                thread = threading.Thread(target=start_share,
+                                          args=(window1, lambda: stop_threads), daemon=True)
+                thread.start()
+            else:
+                stop_threads = True
+                sharing = False
+                window1.Element('Start share').Update(text="Start share")
         elif event == 'Remove':
             removed = values['table']
             table_data = window1.Element('table').Get()
             for idx in reversed(removed):
                 video_id = table_data[idx][0]
                 # print(video_id)
-                query = db.delete(scheduler_video).where(scheduler_video.columns.video_id == video_id)
-                results = connection.execute(query)
+                scheduler_table.delete_one({"video_id": video_id})
                 # table_data.pop(item)
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
@@ -317,18 +251,46 @@ if __name__ == '__main__':
             video_ids = str(values['video_id']).strip().split('\n')
             for video_id in video_ids:
                 if video_id != "":
-                    query = db.delete(scheduler_video).where(scheduler_video.columns.video_id == video_id)
-                    results = connection.execute(query)
-                    query = db.insert(scheduler_video).values(
-                        video_id=video_id, created_date=int(time.time()),
-                        go=values.get("groups.go", False), co_khi=values.get("groups.co_khi", False),
-                        xay_dung=values.get("groups.xay_dung", False), options=values.get("groups.options", False),
-                        groups_shared=json.dumps([])
-                    )
-                    ResultProxy = connection.execute(query)
+                    # query = db.delete(scheduler_video).where(scheduler_video.columns.video_id == video_id)
+                    # results = connection.execute(query)
+                    # query = db.insert(scheduler_video).values(
+                    #     video_id=video_id, created_date=int(time.time()),
+                    #     go=values.get("groups.go", False), co_khi=values.get("groups.co_khi", False),
+                    #     xay_dung=values.get("groups.xay_dung", False), options=values.get("groups.options", False),
+                    #     groups_shared=json.dumps([])
+                    # )
+                    # ResultProxy = connection.execute(query)
+                    exist_scheduler = scheduler_table.find_one({"video_id": video_id})
+                    if exist_scheduler:
+                        scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
+                            "shared": False,
+                            "go_enable": values.get("groups.go", False),
+                            "co_khi_enable": values.get("groups.co_khi", False),
+                            "xay_dung_enable": values.get("groups.xay_dung", False),
+                            "options_enable": values.get("groups.options", False)
+                        }})
+                        continue
+
+                    new_scheduler = {
+                        "_id": str(uuid.uuid4()),
+                        "video_id": video_id,
+                        "scheduler_time": datetime.now().timestamp(),
+                        "create_date": datetime.now().timestamp(),
+                        "shared": False,
+                        "share_number": 0,
+                        "title_shared": [],
+                        "groups_shared": [],
+                        "go_enable": values.get("groups.go", False),
+                        "co_khi_enable": values.get("groups.co_khi", False),
+                        "xay_dung_enable": values.get("groups.xay_dung", False),
+                        "options_enable": values.get("groups.options", False)
+                    }
+
+                    result = scheduler_table.insert_one(new_scheduler)
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
             sg.Popup('Them thanh cong', keep_on_top=True)
+            window2.close()
         elif event == "Add New Video":
             window2 = add_vid_window()
         elif event == "Via Management":
@@ -506,7 +468,7 @@ if __name__ == '__main__':
                             fb_id=fb_id, password=password, mfa=mfa,
                             email=email, email_password=email_password,
                             proxy=proxy_data, share_number=0,
-                            group_joined=json.dumps([""]), date="",
+                            group_joined=json.dumps(list()), date="",
                             status=via_status
                         )
                         ResultProxy = connection.execute(query)
@@ -548,6 +510,13 @@ if __name__ == '__main__':
             ResultProxy = connection.execute(query, groups)
             sg.Popup('Luu Thanh Cong')
             window5.close()
+        elif event == 'Start Join Group':
+            stop_join_group = False
+            thread_join_gr = threading.Thread(target=thread_join_group,
+                                              args=(lambda: stop_join_group,), daemon=False)
+            thread_join_gr.start()
+            window1.Element('Start Join Group').Update(text="Stop Join Group")
+
     for window in [window1, window2, window3, window4, window5, window6]:
         if window:
             window.close()
