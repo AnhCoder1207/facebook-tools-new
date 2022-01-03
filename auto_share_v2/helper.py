@@ -157,7 +157,11 @@ class ChromeHelper:
         continue_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
         homepage = "#search_jewel > a > span._7iz_"
         self.driver.set_window_size(375, 812)
-        self.driver.get("https://m.facebook.com/")
+        try:
+            self.driver.get("https://m.facebook.com/")
+        except Exception as ex:
+            logger.error(f"{self.fb_id} can not reach internet")
+
         search_header = self.waiting_for_css_selector(homepage)
         if search_header:
             return True
@@ -363,7 +367,7 @@ class ChromeHelper:
                     post_btn = self.waiting_for_text_by_css("div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span", "Post", waiting_time=10)
 
                     if post_btn:
-                        # post_btn.click()
+                        post_btn.click()
                         logger.info(f"{video_id} Share done")
                         time.sleep(5)
                         groups_shared.append(group)

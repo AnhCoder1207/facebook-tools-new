@@ -110,7 +110,7 @@ def via_manage_window(via_data):
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ],
-        [sg.Button('Open Via in Browser'),
+        [sg.Button('Open Via in Browser', key='open_via_in_browser'),
          sg.Button('Edit Via', key='edit_via_btn'),
          sg.Button('Export Via Checkpoint', key="export_checkpoint_via_btn"),
          sg.Button('Delete Via', key="delete_via")]
@@ -119,27 +119,27 @@ def via_manage_window(via_data):
     return sg.Window('Via Management', layout_via_manage_video, finalize=True)
 
 
-def group_to_join_window(join_group, group_go, group_co_khi, group_xay_dung):
+def group_to_join_window(group_options, group_go, group_co_khi, group_xay_dung, group_join_auto):
     layout_group_to_join = [
         [
             [
-                [sg.Text('Gỗ')],
-                [sg.Multiline(size=(100, 10), key="group_go", default_text=group_go)],
-                [sg.Text('Cơ khí')],
-                [sg.Multiline(size=(100, 10), key="group_co_khi", default_text=group_co_khi)]
-             ],
+                sg.Column([[sg.Text('Gỗ')], [sg.Multiline(size=(100, 10), key="group_go", default_text=group_go)]]),
+                sg.Column([[sg.Text('Cơ khí')], [sg.Multiline(size=(100, 10), key="group_co_khi", default_text=group_co_khi)]])
+            ],
             [
-                [sg.Text('Xây Dựng')],
-                [sg.Multiline(size=(100, 10), key="group_xay_dung", default_text=group_xay_dung)],
-                [sg.Text('Group for joining')],
-                [sg.Multiline(size=(100, 10), key="group_join", default_text=join_group)]
+                sg.Column([[sg.Text('Xây Dựng')], [sg.Multiline(size=(100, 10), key="group_xay_dung", default_text=group_xay_dung)]]),
+                sg.Column([[sg.Text('Tùy Chọn')], [sg.Multiline(size=(100, 10), key="group_options", default_text=group_options)]])
+            ],
+            [
+                sg.Column([[sg.Text('Group Join Auto')],
+                           [sg.Multiline(size=(100, 10), key="group_join_auto", default_text=group_join_auto)]])
             ]
         ],
         [
             sg.Button('Save', key="group_modified")
         ]
     ]
-    return sg.Window('Group Join', layout_group_to_join, finalize=True)
+    return sg.Window('Group View', layout_group_to_join, finalize=True)
 
 
 def text_seo_window(text_seo_data):
@@ -166,7 +166,7 @@ def edit_via_window(via_data):
         [sg.Text('proxy_data')],
         [sg.InputText(proxy_data, key="edit_via_proxy_data")],
         [sg.Text('status')],
-        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login', 'disable', 'join group'], size=(20, 5), enable_events=False, key='_LIST_VIA_STATUS_')],
+        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login', 'disable', 'join group', 'die proxy'], size=(42, 6), enable_events=False, key='_LIST_VIA_STATUS_')],
         [sg.Button('Save', key='edit_via_save')]
     ]
     window = sg.Window('Edit Via Data', layout_edit_via, finalize=True)
@@ -229,9 +229,7 @@ if __name__ == '__main__':
             table_data = window1.Element('table').Get()
             for idx in reversed(removed):
                 video_id = table_data[idx][0]
-                # print(video_id)
-                scheduler_table.delete_one({"video_id": video_id})
-                # table_data.pop(item)
+                scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
         elif event == '-THREAD-':
@@ -309,14 +307,15 @@ if __name__ == '__main__':
             via_data = get_via_data()
             window3 = via_manage_window(via_data)
         elif event == "Edit list group":
-            join_group = get_group_joining_data('join_group')
+            group_options = get_group_joining_data('group_options')
             group_go = get_group_joining_data('group_go')
             group_co_khi = get_group_joining_data('group_co_khi')
             group_xay_dung = get_group_joining_data('group_xay_dung')
-            window4 = group_to_join_window(join_group, group_go, group_co_khi, group_xay_dung)
+            group_join_auto = get_group_joining_data('group_join_auto')
+            window4 = group_to_join_window(group_options, group_go, group_co_khi, group_xay_dung, group_join_auto)
         elif event == "group_modified":
-            group_join = values.get("group_join", "").split('\n')
-            groups = [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "join_group"} for group in group_join if
+            group_options = values.get("group_options", "").split('\n')
+            groups = [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_options"} for group in group_options if
                       group.strip() != '']
 
             group_go = values.get("group_go", "").split('\n')
@@ -333,13 +332,21 @@ if __name__ == '__main__':
                 [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_xay_dung"} for group in group_xay_dung if
                            group.strip() != ''])
 
+            group_join_auto = values.get("group_join_auto", "").split('\n')
+            groups.extend(
+                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_join_auto"} for group in group_join_auto if
+                           group.strip() != ''])
+
+            #group_join_auto
+
             # remove all exist
             # query = db.delete(joining_group).where(joining_group.columns.group_type != "share_description_data")
             # results = connection.execute(query)
-            joining_group.delete_many({"group_type": "join_group"})
+            joining_group.delete_many({"group_type": "group_options"})
             joining_group.delete_many({"group_type": "group_go"})
             joining_group.delete_many({"group_type": "group_co_khi"})
             joining_group.delete_many({"group_type": "group_xay_dung"})
+            joining_group.delete_many({"group_type": "group_join_auto"})
 
             # update new
             joining_group.insert_many(groups)
@@ -466,7 +473,7 @@ if __name__ == '__main__':
             start_login_thread = threading.Thread(target=start_login_via,
                                                   args=(window3, file_input, values.get('login.options', False)), daemon=True)
             start_login_thread.start()
-        elif event == "Open in Browser":
+        elif event == "open_via_in_browser":
             via_selected = values.get('via_table')
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
@@ -488,18 +495,13 @@ if __name__ == '__main__':
                       name.strip() != '']
             # remove all exist
             joining_group.delete_many({"group_type": "share_descriptions"})
-            # query = db.delete(joining_group).where(joining_group.columns.group_type == "share_description_data")
-            # results = connection.execute(query)
-
-            # update new
-            # query = db.insert(joining_group)
-            # ResultProxy = connection.execute(query, groups)
             joining_group.insert_many(groups)
             sg.Popup('Luu Thanh Cong')
             window5.close()
         elif event == 'Start Join Group':
             if not joining:
                 stop_join_group = False
+                joining = True
                 joining_threads = []
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
                 for _ in range(5):
@@ -512,6 +514,7 @@ if __name__ == '__main__':
                 window1.Element('Start Join Group').Update(text="Stop Join Group")
             else:
                 stop_join_group = True
+                joining = False
                 window1.Element('Start Join Group').Update(text="Start Join Group")
         elif event == 'new_via_login':
             if window3:

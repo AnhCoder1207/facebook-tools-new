@@ -37,10 +37,17 @@ def thread_join_group(stop_joining):
         group_joined = via_data.get("group_joined")
         chrome_worker = ChromeHelper()  # init worker
         chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-        join_group = get_group_joining_data("join_group").split('\n')
+        join_group = get_group_joining_data("group_join_auto").split('\n')
         groups_share_fixed = list(set(join_group) - set(group_joined))
 
-        chrome_worker.driver.get("https://facebook.com")
+        try:
+            chrome_worker.driver.get("https://facebook.com")
+        except Exception as ex:
+            logger.error(f"{fb_id} can not reach internet")
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+            chrome_worker.driver.close()
+            continue
+
         # check disable
         is_disable = chrome_worker.waiting_for_selector(disable_1, waiting_time=1)
         if is_disable:
@@ -84,7 +91,7 @@ def thread_join_group(stop_joining):
             time.sleep(10)
 
         join_number = 0
-        for group in groups_share_fixed:
+        for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
             if join_number >= 4:
                 break
 
