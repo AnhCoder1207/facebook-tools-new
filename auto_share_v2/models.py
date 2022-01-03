@@ -1,11 +1,11 @@
 import json
 import time
 
-import sqlalchemy as db
+# import sqlalchemy as db
 
-engine = db.create_engine('sqlite:///db.sqlite', connect_args={'check_same_thread': False})  # Create test.sqlite automatically
-connection = engine.connect()
-metadata = db.MetaData()
+# engine = db.create_engine('sqlite:///db.sqlite', connect_args={'check_same_thread': True})  # Create test.sqlite automatically
+# connection = engine.connect()
+# metadata = db.MetaData()
 
 scheduler_video = db.Table(
     'scheduler_video', metadata,

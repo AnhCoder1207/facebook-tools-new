@@ -6,12 +6,96 @@ import time
 import uuid
 from datetime import datetime
 import PySimpleGUI as sg
+import pyautogui
 import sqlalchemy as db
 
-from models import via_share, scheduler_video, connection, joining_group
+# from models import via_share, scheduler_video, connection, joining_group
+from bson import ObjectId
+
 from helper import ChromeHelper
-from utils import logger, get_scheduler_data, get_via_data, get_group_joining_data, scheduler_table
+from utils import logger, get_scheduler_data, get_via_data, \
+    get_group_joining_data, scheduler_table, via_share, joining_group
 from controller import thread_join_group
+
+
+def start_login_via(main_windows, file_input):
+    with open(file_input) as via_files:
+        for via_idx, via in enumerate(via_files):
+            user_data = via.strip().split('|')
+            if len(user_data) != 6:
+                sg.Popup(
+                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                    keep_on_top=True)
+                break
+            fb_id, password, mfa, email, email_password, proxy_data = user_data
+            mfa = mfa.replace(" ", '')
+            logger.info(f"login via {via_idx} {fb_id}")
+            proxy_data_split = proxy_data.split(":")
+            if len(proxy_data_split) != 4:
+                sg.Popup(
+                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                    keep_on_top=True)
+                break
+
+            # via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
+            via_exist = via_share.find_one({"fb_id": fb_id})
+            if not via_exist:
+                via_status = "not ready"
+                if values.get('login.options', False):
+                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                    try:
+                        login_status = chrome_worker.login()
+                        # login success
+                        if login_status:
+                            via_status = "live"
+                        else:
+                            via_status = "can not login"
+                    except Exception as ex:
+                        via_status = "can not login"
+                        logger.error(ex)
+                # query = db.insert(via_share).values(
+                #     fb_id=fb_id, password=password, mfa=mfa,
+                #     email=email, email_password=email_password,
+                #     proxy=proxy_data, share_number=0,
+                #     group_joined=json.dumps(list()), date="",
+                #     status=via_status
+                # )
+                # ResultProxy = connection.execute(query)
+                via_share.insert_one(
+                    {
+                        "fb_id": fb_id,
+                        "password": password,
+                        "mfa": mfa,
+                        "email": email,
+                        "email_password": email_password,
+                        "proxy": proxy_data,
+                        "share_number": 0,
+                        "group_joined": [],
+                        "date": "",
+                        "status": via_status
+                    }
+                )
+                main_windows.write_event_value('new_via_login', "")
+            # else:
+                # query = db.update(via_share).values(
+                #     password=password, mfa=mfa,
+                #     email=email, email_password=email_password,
+                #     proxy=proxy_data,
+                #     status=via_status
+                # ).where(via_share.columns.fb_id == fb_id)
+                # connection.execute(query)
+            #     via_share.update_one(
+            #         {"fb_id": fb_id},
+            #         {"$set": {
+            #             "password": password,
+            #             "mfa": mfa,
+            #             "email": email,
+            #             "email_password": email_password,
+            #             "proxy": proxy_data,
+            #             "status": via_status
+            #         }}
+            #     )
+            # main_windows.write_event_value('new_via_login', "")
 
 
 def start_share(main_window, stop_thread):
@@ -25,16 +109,18 @@ def start_share(main_window, stop_thread):
 
         video_sharing_id = video_sharing.get("video_id", "")
         # query via live
-        results = connection.execute(db.select([via_share]).where(db.and_(
-            via_share.columns.status == 'live',
-            via_share.columns.share_number < 4
-        ))).fetchall()
+        # results = connection.execute(db.select([via_share]).where(db.and_(
+        #     via_share.columns.status == 'live',
+        #     via_share.columns.share_number < 4
+        # ))).fetchall()
+        results = via_share.find({"status": 'live', "share_number": {"$lte": 4}})
+        results = list(results)
         if len(results) == 0:
-            return True
+            continue
 
-        result = random.choice(results)
+        via_data = random.choice(results)
         current_date = str(datetime.date(datetime.now()))
-        via_data = dict(zip(result.keys(), result))
+        # via_data = dict(zip(result.keys(), result))
 
         share_date = via_data.get("date")
         fb_id = via_data.get("fb_id")
@@ -44,28 +130,35 @@ def start_share(main_window, stop_thread):
         via_share_number = via_data.get("share_number")
         # reset via share counting
         if share_date != current_date:
-            query = db.update(via_share).values(date=current_date, share_number=0)
-            query = query.where(via_share.columns.fb_id == fb_id)
-            connection.execute(query)
+            # query = db.update(via_share).values(date=current_date, share_number=0)
+            # query = query.where(via_share.columns.fb_id == fb_id)
+            # connection.execute(query)
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
 
         # mark via running
-        query = db.update(via_share).values(status='sharing')
-        query = query.where(via_share.columns.fb_id == fb_id)
-        connection.execute(query)
+        # query = db.update(via_share).values(status='sharing')
+        # query = query.where(via_share.columns.fb_id == fb_id)
+        # connection.execute(query)
+        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'sharing'}})
         # start sharing
         chrome_worker = ChromeHelper()
         chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
         try:
             share_status = chrome_worker.sharing(video_sharing_id, fb_id, via_share_number)
         except Exception as ex:
-            raise ex
+            # raise ex
             logger.error(f"share video errors {ex}")
         finally:
-            query = db.update(via_share).values(status='live')
-            query = query.where(via_share.columns.fb_id == fb_id)
-            connection.execute(query)
-            chrome_worker.driver.close()
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+            # query = db.update(via_share).values(status='live')
+            # query = query.where(via_share.columns.fb_id == fb_id)
+            # connection.execute(query)
             main_window.write_event_value('-THREAD-', "")
+
+        try:
+            chrome_worker.driver.close()
+        except Exception as ex:
+            pass
 
 
 def make_main_window(table_data):
@@ -187,7 +280,7 @@ def edit_via_window(via_data):
         [sg.Text('proxy_data')],
         [sg.InputText(proxy_data, key="edit_via_proxy_data")],
         [sg.Text('status')],
-        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login'], size=(20, 4), enable_events=False, key='_LIST_VIA_STATUS_')],
+        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login', 'disable', 'join group'], size=(20, 5), enable_events=False, key='_LIST_VIA_STATUS_')],
         [sg.Button('Save', key='edit_via_save')]
     ]
     window = sg.Window('Edit Via Data', layout_edit_via, finalize=True)
@@ -226,9 +319,14 @@ if __name__ == '__main__':
                 sharing = True
                 window1.Element('Start share').Update(text="Stop Share")
                 stop_threads = False
-                thread = threading.Thread(target=start_share,
-                                          args=(window1, lambda: stop_threads), daemon=True)
-                thread.start()
+                threads = []
+                via_share.update({"status": 'sharing'}, {"$set": {"status": "live"}})
+                for _ in range(5):
+                    thread = threading.Thread(target=start_share,
+                                              args=(window1, lambda: stop_threads), daemon=True)
+                    threads.append(thread)
+                for thread in threads:
+                    thread.start()
             else:
                 stop_threads = True
                 sharing = False
@@ -304,40 +402,49 @@ if __name__ == '__main__':
             window4 = group_to_join_window(join_group, group_go, group_co_khi, group_xay_dung)
         elif event == "group_modified":
             group_join = values.get("group_join", "").split('\n')
-            groups = [{"name": group.strip(), "group_type": "join_group"} for group in group_join if
+            groups = [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "join_group"} for group in group_join if
                       group.strip() != '']
 
             group_go = values.get("group_go", "").split('\n')
             groups.extend(
-                [{"name": group.strip(), "group_type": "group_go"} for group in group_go if group.strip() != ''])
+                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_go"} for group in group_go if group.strip() != ''])
 
             group_co_khi = values.get("group_co_khi", "").split('\n')
-            groups.extend([{"name": group.strip(), "group_type": "group_co_khi"} for group in group_co_khi if
+            groups.extend(
+                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_co_khi"} for group in group_co_khi if
                            group.strip() != ''])
 
             group_xay_dung = values.get("group_xay_dung", "").split('\n')
-            groups.extend([{"name": group.strip(), "group_type": "group_xay_dung"} for group in group_xay_dung if
+            groups.extend(
+                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_xay_dung"} for group in group_xay_dung if
                            group.strip() != ''])
 
             # remove all exist
-            query = db.delete(joining_group).where(joining_group.columns.group_type != "share_description_data")
-            results = connection.execute(query)
+            # query = db.delete(joining_group).where(joining_group.columns.group_type != "share_description_data")
+            # results = connection.execute(query)
+            joining_group.delete_many({"group_type": "join_group"})
+            joining_group.delete_many({"group_type": "group_go"})
+            joining_group.delete_many({"group_type": "group_co_khi"})
+            joining_group.delete_many({"group_type": "group_xay_dung"})
 
             # update new
-            query = db.insert(joining_group)
-            if len(groups) > 0:
-                ResultProxy = connection.execute(query, groups)
-                sg.Popup('Successfully', keep_on_top=True)
-                window4.close()
+            joining_group.insert_many(groups)
+            sg.Popup('Successfully', keep_on_top=True)
+            window4.close()
 
         elif event == "delete_via":
             removed = values['via_table']
             table_data = window3.Element('via_table').Get()
+            label = pyautogui.confirm(text='Are you sure?', title='', buttons=["yes", "no"])
+            if label == "no":
+                continue
+
             for idx in reversed(removed):
                 fb_id = table_data[idx][0]
                 # print(video_id)
-                query = db.delete(via_share).where(via_share.columns.fb_id == fb_id)
-                results = connection.execute(query)
+                via_share.delete_one({"fb_id": fb_id})
+                # query = db.delete(via_share).where(via_share.columns.fb_id == fb_id)
+                # results = connection.execute(query)
                 # table_data.pop(item)
             table_data = get_via_data()
             window3.Element('via_table').Update(values=table_data)
@@ -348,8 +455,8 @@ if __name__ == '__main__':
             with open("checkpoint.txt", mode='w') as cp_via_files:
                 for via_data in via_table_data:
                     fb_id, password, mfa, email, email_password, proxy_data, status = via_data
-                    if status and status.strip() == 'checkpoint':
-                        cp_via_files.write(f'{fb_id},{password},{mfa},{email},{email_password},{proxy_data}\n')
+                    if status and status.strip() not in ['live', 'sharing', 'join group']:
+                        cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
             cp_via_files.close()
             sg.Popup('Exported, file checkpoint.txt in your code directory.', keep_on_top=True)
         elif event == 'edit_via_btn':
@@ -373,10 +480,11 @@ if __name__ == '__main__':
                     chrome_worker.login()
                     # login success
                     via_status = "live"
-                    query = db.update(via_share).values(
-                        status=via_status
-                    ).where(via_share.columns.fb_id == fb_id)
-                    connection.execute(query)
+                    # query = db.update(via_share).values(
+                    #     status=via_status
+                    # ).where(via_share.columns.fb_id == fb_id)
+                    # connection.execute(query)
+                    via_share.update_one({"fb_id": fb_id}, {"status": via_status})
                 except Exception as ex:
                     via_status = "can not login"
                     print(ex)
@@ -414,13 +522,24 @@ if __name__ == '__main__':
                 if fb_id == edit_via_id:
                     new_via_data = edit_via_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via
                     table_data_copy[via_idx] = [fb_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via]
-                    query = db.update(via_share).values(
-                        password=edit_via_password, mfa=edit_via_mfa,
-                        email=edit_via_email, email_password=edit_via_email_password,
-                        proxy=edit_via_proxy_data,
-                        status=status_via
-                    ).where(via_share.columns.fb_id == fb_id)
-                    connection.execute(query)
+                    # query = db.update(via_share).values(
+                    #     password=edit_via_password, mfa=edit_via_mfa,
+                    #     email=edit_via_email, email_password=edit_via_email_password,
+                    #     proxy=edit_via_proxy_data,
+                    #     status=status_via
+                    # ).where(via_share.columns.fb_id == fb_id)
+                    # connection.execute(query)
+                    via_share.update_one(
+                        {"fb_id": fb_id},
+                        {"$set": {
+                            "password": edit_via_password,
+                            "mfa": edit_via_mfa,
+                            "email": edit_via_email,
+                            "email_password": edit_via_email_password,
+                            "proxy": edit_via_proxy_data,
+                            "status": status_via
+                        }}
+                    )
                     break
 
             window3.Element('via_table').Update(values=table_data_copy, select_rows=[via_idx])
@@ -433,56 +552,9 @@ if __name__ == '__main__':
             if not os.path.isfile(file_input):
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
-            with open(file_input) as via_files:
-                for via_idx, via in enumerate(via_files):
-                    user_data = via.strip().split('|')
-                    if len(user_data) != 6:
-                        sg.Popup(
-                            f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                            keep_on_top=True)
-                        break
-                    fb_id, password, mfa, email, email_password, proxy_data = user_data
-                    mfa = mfa.replace(" ", '')
-                    logger.info(f"login via {via_idx} {fb_id}")
-                    proxy_data_split = proxy_data.split(":")
-                    if len(proxy_data_split) != 4:
-                        sg.Popup(
-                            f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                            keep_on_top=True)
-                        break
-
-                    via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
-                    via_status = "not ready"
-                    if values.get('login.options', False):
-                        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                        try:
-                            chrome_worker.login()
-                            # login success
-                            via_status = "live"
-
-                        except Exception as ex:
-                            via_status = "can not login"
-                            print(ex)
-
-                    if not via_exist:
-                        query = db.insert(via_share).values(
-                            fb_id=fb_id, password=password, mfa=mfa,
-                            email=email, email_password=email_password,
-                            proxy=proxy_data, share_number=0,
-                            group_joined=json.dumps(list()), date="",
-                            status=via_status
-                        )
-                        ResultProxy = connection.execute(query)
-                    else:
-                        query = db.update(via_share).values(
-                            password=password, mfa=mfa,
-                            email=email, email_password=email_password,
-                            proxy=proxy_data,
-                            status=via_status
-                        ).where(via_share.columns.fb_id == fb_id)
-                        connection.execute(query)
-            via_data = get_via_data()
-            window3.Element('via_table').Update(values=via_data)
+            start_login_thread = threading.Thread(target=start_login_via,
+                                                  args=(window3, file_input), daemon=True)
+            start_login_thread.start()
         elif event == "Open in Browser":
             via_selected = values.get('via_table')
             via_table_data = window3.Element('via_table').Get()
@@ -500,23 +572,39 @@ if __name__ == '__main__':
             window5 = text_seo_window(share_descriptions)
         elif event == "text_seo_modified":
             share_description = values.get("share_description_data", "").split('\n')
-            groups = [{"name": name.strip(), "group_type": "share_descriptions"} for name in share_description if
+            groups = [{"_id": str(ObjectId()), "name": name.strip(), "group_type": "share_descriptions"} for name in share_description if
                       name.strip() != '']
             # remove all exist
-            query = db.delete(joining_group).where(joining_group.columns.group_type == "share_description_data")
-            results = connection.execute(query)
+            joining_group.delete_many({"group_type": "share_descriptions"})
+            # query = db.delete(joining_group).where(joining_group.columns.group_type == "share_description_data")
+            # results = connection.execute(query)
 
             # update new
-            query = db.insert(joining_group)
-            ResultProxy = connection.execute(query, groups)
+            # query = db.insert(joining_group)
+            # ResultProxy = connection.execute(query, groups)
+            joining_group.insert_many(groups)
             sg.Popup('Luu Thanh Cong')
             window5.close()
         elif event == 'Start Join Group':
-            stop_join_group = False
-            thread_join_gr = threading.Thread(target=thread_join_group,
-                                              args=(lambda: stop_join_group,), daemon=False)
-            thread_join_gr.start()
-            window1.Element('Start Join Group').Update(text="Stop Join Group")
+            if not joining:
+                stop_join_group = False
+                joining_threads = []
+                via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
+                for _ in range(5):
+                    thread_join_gr = threading.Thread(target=thread_join_group,
+                                                      args=(lambda: stop_join_group,), daemon=True)
+                    joining_threads.append(thread_join_gr)
+
+                for thread_join_gr in joining_threads:
+                    thread_join_gr.start()
+                window1.Element('Start Join Group').Update(text="Stop Join Group")
+            else:
+                stop_join_group = True
+                window1.Element('Start Join Group').Update(text="Start Join Group")
+        elif event == 'new_via_login':
+            if window3:
+                via_data = get_via_data()
+                window3.Element('via_table').Update(values=via_data)
 
     for window in [window1, window2, window3, window4, window5, window6]:
         if window:
