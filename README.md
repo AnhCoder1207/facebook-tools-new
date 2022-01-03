@@ -19,3 +19,5 @@ db.createUser(
     pwd: "ThinhMinh1234",
     roles: [ { role: "readWrite", db: "minh" } ]
   }
+
+client = MongoClient("mongodb://minh:ThinhMinh1234@45.77.38.64:27017/?authSource=minh")

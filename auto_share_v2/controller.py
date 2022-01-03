@@ -2,7 +2,7 @@ import json
 import random
 import time
 from datetime import datetime
-
+import PySimpleGUI as sg
 import sqlalchemy as db
 from selenium.webdriver.common.by import By
 
@@ -147,6 +147,149 @@ def thread_join_group(stop_joining):
                 # connection.execute(query)
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
         chrome_worker.driver.close()
+
+
+def start_login_via(main_windows, file_input, login_existed):
+    with open(file_input) as via_files:
+        for via_idx, via in enumerate(via_files):
+            user_data = via.strip().split('|')
+            if len(user_data) != 6:
+                sg.Popup(
+                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                    keep_on_top=True)
+                break
+            fb_id, password, mfa, email, email_password, proxy_data = user_data
+            mfa = mfa.replace(" ", '')
+            logger.info(f"login via {via_idx} {fb_id}")
+            proxy_data_split = proxy_data.split(":")
+            if len(proxy_data_split) != 4:
+                sg.Popup(
+                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                    keep_on_top=True)
+                break
+
+            # via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
+            via_exist = via_share.find_one({"fb_id": fb_id})
+            chrome_worker = ChromeHelper()
+            if not via_exist:
+                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                try:
+                    login_status = chrome_worker.login()
+                    # login success
+                    if login_status:
+                        via_status = "live"
+                    else:
+                        via_status = "can not login"
+                except Exception as ex:
+                    via_status = "can not login"
+                    logger.error(ex)
+                via_share.insert_one(
+                    {
+                        "fb_id": fb_id,
+                        "password": password,
+                        "mfa": mfa,
+                        "email": email,
+                        "email_password": email_password,
+                        "proxy": proxy_data,
+                        "share_number": 0,
+                        "group_joined": [],
+                        "date": "",
+                        "status": via_status
+                    }
+                )
+            if login_existed and via_exist:
+                try:
+                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                    login_status = chrome_worker.login()
+                    # login success
+                    if login_status:
+                        via_status = "live"
+                    else:
+                        via_status = "can not login"
+
+                except Exception as ex:
+                    via_status = "can not login"
+                    logger.error(ex)
+                via_share.update_one(
+                    {"fb_id": fb_id},
+                    {"$set": {
+                        "password": password,
+                        "mfa": mfa,
+                        "email": email,
+                        "email_password": email_password,
+                        "proxy": proxy_data,
+                        "status": via_status
+                    }}
+                )
+            try:
+                chrome_worker.driver.close()
+            except Exception as ex:
+                logger.error(f"can not close drive")
+            main_windows.write_event_value('new_via_login', "")
+
+
+def start_share(main_window, stop_thread):
+    # Step 1 query all via live
+    print("start share")
+    while not stop_thread():
+        video_sharing = scheduler_table.find_one({"shared": False})
+        if not video_sharing:
+            time.sleep(10)
+            continue
+
+        video_sharing_id = video_sharing.get("video_id", "")
+        logger.info(f"Share video : {video_sharing_id}")
+        # query via live
+        # results = connection.execute(db.select([via_share]).where(db.and_(
+        #     via_share.columns.status == 'live',
+        #     via_share.columns.share_number < 4
+        # ))).fetchall()
+        results = via_share.find({"status": 'live', "share_number": {"$lte": 4}})
+        results = list(results)
+        if len(results) == 0:
+            continue
+
+        via_data = random.choice(results)
+        current_date = str(datetime.date(datetime.now()))
+        # via_data = dict(zip(result.keys(), result))
+
+        share_date = via_data.get("date")
+        fb_id = via_data.get("fb_id")
+        password = via_data.get("password")
+        mfa = via_data.get("mfa")
+        proxy_data = via_data.get("proxy")
+        via_share_number = via_data.get("share_number")
+        # reset via share counting
+        if share_date != current_date:
+            # query = db.update(via_share).values(date=current_date, share_number=0)
+            # query = query.where(via_share.columns.fb_id == fb_id)
+            # connection.execute(query)
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
+
+        # mark via running
+        # query = db.update(via_share).values(status='sharing')
+        # query = query.where(via_share.columns.fb_id == fb_id)
+        # connection.execute(query)
+        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'sharing'}})
+        # start sharing
+        chrome_worker = ChromeHelper()
+        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+        try:
+            share_status = chrome_worker.sharing(video_sharing_id, fb_id, via_share_number)
+        except Exception as ex:
+            # raise ex
+            logger.error(f"share video errors {ex}")
+        finally:
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+            # query = db.update(via_share).values(status='live')
+            # query = query.where(via_share.columns.fb_id == fb_id)
+            # connection.execute(query)
+            main_window.write_event_value('-THREAD-', "")
+
+        try:
+            chrome_worker.driver.close()
+        except Exception as ex:
+            pass
 
 
 if __name__ == '__main__':

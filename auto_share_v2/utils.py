@@ -14,7 +14,7 @@ from pymongo import MongoClient
 logger = logging.getLogger('application')
 logger.setLevel(logging.DEBUG)
 # create file handler which logs even debug messages
-fh = logging.FileHandler('app.log')
+fh = logging.FileHandler('app.log', encoding="UTF-8")
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
@@ -27,7 +27,7 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-client = MongoClient("mongodb://minh:ThinhMinh1234@45.77.38.64:27017/?authSource=minh")
+client = MongoClient("mongodb://localhost:27017")
 mongo_client = client['minh']
 videos_table = mongo_client['videos']
 scheduler_table = mongo_client['scheduler_table']

@@ -1,163 +1,16 @@
-import json
 import os
-import random
 import threading
-import time
 import uuid
-from datetime import datetime
+
 import PySimpleGUI as sg
 import pyautogui
-import sqlalchemy as db
 
-# from models import via_share, scheduler_video, connection, joining_group
 from bson import ObjectId
-
+from datetime import datetime
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
     get_group_joining_data, scheduler_table, via_share, joining_group
-from controller import thread_join_group
-
-
-def start_login_via(main_windows, file_input, login_existed):
-    with open(file_input) as via_files:
-        for via_idx, via in enumerate(via_files):
-            user_data = via.strip().split('|')
-            if len(user_data) != 6:
-                sg.Popup(
-                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                    keep_on_top=True)
-                break
-            fb_id, password, mfa, email, email_password, proxy_data = user_data
-            mfa = mfa.replace(" ", '')
-            logger.info(f"login via {via_idx} {fb_id}")
-            proxy_data_split = proxy_data.split(":")
-            if len(proxy_data_split) != 4:
-                sg.Popup(
-                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                    keep_on_top=True)
-                break
-
-            # via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
-            via_exist = via_share.find_one({"fb_id": fb_id})
-            chrome_worker = ChromeHelper()
-            if not via_exist:
-                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                try:
-                    login_status = chrome_worker.login()
-                    # login success
-                    if login_status:
-                        via_status = "live"
-                    else:
-                        via_status = "can not login"
-                except Exception as ex:
-                    via_status = "can not login"
-                    logger.error(ex)
-                via_share.insert_one(
-                    {
-                        "fb_id": fb_id,
-                        "password": password,
-                        "mfa": mfa,
-                        "email": email,
-                        "email_password": email_password,
-                        "proxy": proxy_data,
-                        "share_number": 0,
-                        "group_joined": [],
-                        "date": "",
-                        "status": via_status
-                    }
-                )
-            if login_existed and via_exist:
-                try:
-                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                    login_status = chrome_worker.login()
-                    # login success
-                    if login_status:
-                        via_status = "live"
-                    else:
-                        via_status = "can not login"
-
-                except Exception as ex:
-                    via_status = "can not login"
-                    logger.error(ex)
-                via_share.update_one(
-                    {"fb_id": fb_id},
-                    {"$set": {
-                        "password": password,
-                        "mfa": mfa,
-                        "email": email,
-                        "email_password": email_password,
-                        "proxy": proxy_data,
-                        "status": via_status
-                    }}
-                )
-            try:
-                chrome_worker.driver.close()
-            except Exception as ex:
-                logger.error(f"can not close drive")
-            main_windows.write_event_value('new_via_login', "")
-
-
-def start_share(main_window, stop_thread):
-    # Step 1 query all via live
-    print("start share")
-    while not stop_thread():
-        video_sharing = scheduler_table.find_one({"shared": False})
-        if not video_sharing:
-            time.sleep(10)
-            continue
-
-        video_sharing_id = video_sharing.get("video_id", "")
-        # query via live
-        # results = connection.execute(db.select([via_share]).where(db.and_(
-        #     via_share.columns.status == 'live',
-        #     via_share.columns.share_number < 4
-        # ))).fetchall()
-        results = via_share.find({"status": 'live', "share_number": {"$lte": 4}})
-        results = list(results)
-        if len(results) == 0:
-            continue
-
-        via_data = random.choice(results)
-        current_date = str(datetime.date(datetime.now()))
-        # via_data = dict(zip(result.keys(), result))
-
-        share_date = via_data.get("date")
-        fb_id = via_data.get("fb_id")
-        password = via_data.get("password")
-        mfa = via_data.get("mfa")
-        proxy_data = via_data.get("proxy")
-        via_share_number = via_data.get("share_number")
-        # reset via share counting
-        if share_date != current_date:
-            # query = db.update(via_share).values(date=current_date, share_number=0)
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
-
-        # mark via running
-        # query = db.update(via_share).values(status='sharing')
-        # query = query.where(via_share.columns.fb_id == fb_id)
-        # connection.execute(query)
-        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'sharing'}})
-        # start sharing
-        chrome_worker = ChromeHelper()
-        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-        try:
-            share_status = chrome_worker.sharing(video_sharing_id, fb_id, via_share_number)
-        except Exception as ex:
-            # raise ex
-            logger.error(f"share video errors {ex}")
-        finally:
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
-            # query = db.update(via_share).values(status='live')
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
-            main_window.write_event_value('-THREAD-', "")
-
-        try:
-            chrome_worker.driver.close()
-        except Exception as ex:
-            pass
+from controller import thread_join_group, start_login_via, start_share
 
 
 def make_main_window(table_data):
@@ -165,19 +18,20 @@ def make_main_window(table_data):
     layout = [
         [
             sg.Button('Start share'),
-            sg.Button('Remove'),
             sg.Button('Add New Video'),
-            sg.Button('Kill Chrome'),
+            sg.Button('Remove Video'),
+            sg.Button('Shutdown Chrome'),
             sg.Button('Via Management'),
             sg.Button('Edit list group'),
             sg.Button('Start Join Group'),
-            sg.Button('Edit Share Descriptions')
+            sg.Button('Edit Default Share Descriptions')
         ],
         [
             sg.Table(values=table_data,
                      headings=headings,
                      display_row_numbers=True,
                      justification='right',
+                     enable_events=True,
                      auto_size_columns=False,
                      col_widths=[20, 20, 15, 15, 15, 15, 15],
                      vertical_scroll_only=False,
@@ -185,12 +39,19 @@ def make_main_window(table_data):
         ]
     ]
     # Create the Window
-    return sg.Window('Auto Share', layout, finalize=True)
+    return sg.Window('Auto Share V1.0', layout, finalize=True)
 
 
 def add_vid_window():
     layout_add_video = [
-        [sg.Text('Video ID'), sg.Multiline(size=(30, 5), key="video_id"), sg.Button('Them')],
+        [
+            [sg.Text('Video ID')],
+            [sg.Multiline(size=(100, 5), key="video_id")],
+        ],
+        [
+            [sg.Text('Share Descriptions')],
+            [sg.Multiline(size=(100, 10), key="video_custom_share_descriptions")],
+        ],
         [
             sg.Checkbox(
                 'Gỗ', key='groups.go', enable_events=False, default=True),
@@ -200,10 +61,37 @@ def add_vid_window():
                 'Xây Dựng', key='groups.xay_dung', enable_events=False, default=True),
             sg.Checkbox(
                 'Tùy Chọn', key='groups.options', enable_events=False, default=True),
-        ]
+        ],
+        [sg.Button('Them')]
     ]
 
     return sg.Window('Add Video', layout_add_video, finalize=True)
+
+
+def show_detail_video_info(video_data):
+    number_shared = len(video_data.get('groups_shared', []))
+    number_share_description = len(video_data.get('share_descriptions', []))
+    number_share_remaining = len(video_data.get('groups_remaining', []))
+    layout_detail_video_info = [
+        [
+            [sg.Text('Video ID')],
+            [sg.InputText(video_data.get('video_id'), size=(100, 5), readonly=True, key="detail_video_id")],
+        ],
+        [
+            [sg.Text(f'Share Descriptions: {number_share_description}')],
+            [sg.Multiline("\n".join(video_data.get('share_descriptions', [])), size=(100, 10), key="detail_share_description")],
+        ],
+        [
+            [sg.Text(f'Shared Groups: {number_shared}')],
+            [sg.Multiline("\n".join(video_data.get('groups_shared', [])), size=(100, 10), key="detail_groups_shared")],
+        ],
+        [
+            [sg.Text(f'Remaining: {number_share_remaining}')],
+            [sg.Multiline("\n".join(video_data.get('groups_remaining', [])), size=(100, 10), key="detail_groups_remaining")],
+        ]
+    ]
+
+    return sg.Window('Detail Video', layout_detail_video_info, finalize=True)
 
 
 def via_manage_window(via_data):
@@ -222,10 +110,10 @@ def via_manage_window(via_data):
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ],
-        [sg.Button('Open in Browser'),
-         sg.Button('Edit', key='edit_via_btn'),
-         sg.Button('Export', key="export_checkpoint_via_btn"),
-         sg.Button('Delete', key="delete_via")]
+        [sg.Button('Open Via in Browser'),
+         sg.Button('Edit Via', key='edit_via_btn'),
+         sg.Button('Export Via Checkpoint', key="export_checkpoint_via_btn"),
+         sg.Button('Delete Via', key="delete_via")]
     ]
 
     return sg.Window('Via Management', layout_via_manage_video, finalize=True)
@@ -259,7 +147,7 @@ def text_seo_window(text_seo_data):
         [sg.Multiline(size=(200, 20), key="share_description_data", default_text=text_seo_data)],
         [sg.Button('Save', key="text_seo_modified")]
     ]
-    return sg.Window('Share descriptions', layout_text_seo_window, finalize=True)
+    return sg.Window('Default Share descriptions', layout_text_seo_window, finalize=True)
 
 
 def edit_via_window(via_data):
@@ -289,8 +177,8 @@ def edit_via_window(via_data):
 if __name__ == '__main__':
     # time.sleep(2)
     # print(pyautogui.position())
-
-    sg.theme('DarkAmber')  # Add a touch of color
+    # sg.theme_previewer()
+    sg.theme('BlueMono')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
     window1, window2, window3, window4, window5, window6 = make_main_window(table_data), None, None, None, None, None
@@ -298,6 +186,9 @@ if __name__ == '__main__':
     stop_join_group = False
     sharing = False
     joining = False
+    # clear via status
+    via_share.update_many({"status": 'join group'}, {"$set": {"status": "live"}})
+    via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         window, event, values = sg.read_all_windows()
@@ -318,7 +209,7 @@ if __name__ == '__main__':
                 window1.Element('Start share').Update(text="Stop Share")
                 stop_threads = False
                 threads = []
-                via_share.update({"status": 'sharing'}, {"$set": {"status": "live"}})
+                via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
                 for _ in range(5):
                     thread = threading.Thread(target=start_share,
                                               args=(window1, lambda: stop_threads), daemon=True)
@@ -329,7 +220,11 @@ if __name__ == '__main__':
                 stop_threads = True
                 sharing = False
                 window1.Element('Start share').Update(text="Start share")
-        elif event == 'Remove':
+        elif event == 'Remove Video':
+            label = pyautogui.confirm(text='Are you sure?', title='', buttons=["yes", "no"])
+            if label == "no":
+                continue
+
             removed = values['table']
             table_data = window1.Element('table').Get()
             for idx in reversed(removed):
@@ -347,23 +242,42 @@ if __name__ == '__main__':
             video_ids = str(values['video_id']).strip().split('\n')
             for video_id in video_ids:
                 if video_id != "":
-                    # query = db.delete(scheduler_video).where(scheduler_video.columns.video_id == video_id)
-                    # results = connection.execute(query)
-                    # query = db.insert(scheduler_video).values(
-                    #     video_id=video_id, created_date=int(time.time()),
-                    #     go=values.get("groups.go", False), co_khi=values.get("groups.co_khi", False),
-                    #     xay_dung=values.get("groups.xay_dung", False), options=values.get("groups.options", False),
-                    #     groups_shared=json.dumps([])
-                    # )
-                    # ResultProxy = connection.execute(query)
                     exist_scheduler = scheduler_table.find_one({"video_id": video_id})
+                    share_descriptions = values.get("video_custom_share_descriptions", "").strip()
+                    if share_descriptions != "":
+                        share_descriptions = share_descriptions.split('\n')
+                    else:
+                        share_descriptions = []
+
+                    # get list group share
+                    go_enable = values.get("groups.go", False)
+                    co_khi_enable = values.get("groups.co_khi", False)
+                    xay_dung_enable = values.get("groups.xay_dung", False)
+                    options_enable = values.get("groups.options", False)
+                    groups_share = []
+
+                    if go_enable:
+                        groups_go = get_group_joining_data("group_go")
+                        groups_share.extend([x.strip() for x in groups_go.split('\n')])
+                    if co_khi_enable:
+                        groups_co_khi = get_group_joining_data("group_co_khi")
+                        groups_share.extend([x.strip() for x in groups_co_khi.split('\n')])
+                    if xay_dung_enable:
+                        groups_xay_dung = get_group_joining_data("group_xay_dung")
+                        groups_share.extend([x.strip() for x in groups_xay_dung.split('\n')])
+                    if options_enable:
+                        group_options = get_group_joining_data("group_options")
+                        groups_share.extend([x.strip() for x in group_options.split('\n')])
+
                     if exist_scheduler:
                         scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
                             "shared": False,
-                            "go_enable": values.get("groups.go", False),
-                            "co_khi_enable": values.get("groups.co_khi", False),
-                            "xay_dung_enable": values.get("groups.xay_dung", False),
-                            "options_enable": values.get("groups.options", False)
+                            "go_enable": go_enable,
+                            "co_khi_enable": co_khi_enable,
+                            "xay_dung_enable": xay_dung_enable,
+                            "options_enable": options_enable,
+                            "share_descriptions": share_descriptions,
+                            "groups_remaining": groups_share
                         }})
                         continue
 
@@ -376,10 +290,12 @@ if __name__ == '__main__':
                         "share_number": 0,
                         "title_shared": [],
                         "groups_shared": [],
-                        "go_enable": values.get("groups.go", False),
-                        "co_khi_enable": values.get("groups.co_khi", False),
-                        "xay_dung_enable": values.get("groups.xay_dung", False),
-                        "options_enable": values.get("groups.options", False)
+                        "go_enable": go_enable,
+                        "co_khi_enable": co_khi_enable,
+                        "xay_dung_enable": xay_dung_enable,
+                        "options_enable": options_enable,
+                        "share_descriptions": share_descriptions,
+                        "groups_remaining": groups_share
                     }
 
                     result = scheduler_table.insert_one(new_scheduler)
@@ -563,7 +479,7 @@ if __name__ == '__main__':
                     break
                 except Exception as ex:
                     logger.error(f"Can not open browser {ex}")
-        elif event == "Edit Share Descriptions":
+        elif event == "Edit Default Share Descriptions":
             share_descriptions = get_group_joining_data('share_descriptions')
             window5 = text_seo_window(share_descriptions)
         elif event == "text_seo_modified":
@@ -601,6 +517,14 @@ if __name__ == '__main__':
             if window3:
                 via_data = get_via_data()
                 window3.Element('via_table').Update(values=via_data)
+        elif event == 'table':
+            videos_table_data = window1.Element('table').Get()
+            data_selected = [videos_table_data[row] for row in values[event]]
+            for data in data_selected:
+                video_id = data[0]
+                video_metadata = scheduler_table.find_one({"video_id": video_id})
+                if video_metadata:
+                    show_detail_video_info(video_metadata)
 
     for window in [window1, window2, window3, window4, window5, window6]:
         if window:

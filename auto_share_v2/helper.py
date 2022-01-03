@@ -213,23 +213,25 @@ class ChromeHelper:
         co_khi_enable = video_sharing.get("co_khi_enable", False)
         xay_dung_enable = video_sharing.get("xay_dung_enable", False)
         options_enable = video_sharing.get("options_enable", False)
+        groups_share = video_sharing.get("groups_remaining", [])
+        share_descriptions = video_sharing.get("share_descriptions", [])
 
-        # get list group share
-        groups_share = []
+        total_groups = []
 
         if go_enable:
             groups_go = get_group_joining_data("group_go")
-            groups_share.extend([x.strip() for x in groups_go.split('\n')])
+            total_groups.extend([x.strip() for x in groups_go.split('\n')])
         if co_khi_enable:
             groups_co_khi = get_group_joining_data("group_co_khi")
-            groups_share.extend([x.strip() for x in groups_co_khi.split('\n')])
+            total_groups.extend([x.strip() for x in groups_co_khi.split('\n')])
         if xay_dung_enable:
             groups_xay_dung = get_group_joining_data("group_xay_dung")
-            groups_share.extend([x.strip() for x in groups_xay_dung.split('\n')])
+            total_groups.extend([x.strip() for x in groups_xay_dung.split('\n')])
         if options_enable:
             group_options = get_group_joining_data("group_options")
-            groups_share.extend([x.strip() for x in group_options.split('\n')])
+            total_groups.extend([x.strip() for x in group_options.split('\n')])
 
+        share_number += 1
         if random.choice([1, 2, 3, 4]) == 1:
             self.driver.get(f"https://fb.com")
             message_selector = """#mount_0_0_gb > div > div:nth-child(1) > div > div:nth-child(4) > div.ehxjyohh.kr520xx4.poy2od1o.b3onmgus.hv4rvrfc.n7fi1qx3 > div.du4w35lb.l9j0dhe7.byvelhso.rl25f0pe.j83agx80.bp9cbjyn > div:nth-child(3) > span"""
@@ -303,6 +305,11 @@ class ChromeHelper:
         search_group_inp = self.waiting_for_css_selector("div.n851cfcs.wkznzc2l.dhix69tm.n1l5q3vz > div > div > label > input")
         groups_share_fixed = list(set(groups_share) - set(groups_shared))
         for group in groups_share_fixed:
+            group = group.strip()
+            if group == "":
+                continue
+
+            logger.info(f"share group: {group}")
             splitter = group.split('|')
             if len(splitter) == 2:
                 group_url, group_name = splitter
@@ -321,20 +328,25 @@ class ChromeHelper:
                 try:
                     search_group_inp.send_keys(Keys.BACKSPACE)
                 except Exception as ex:
+                    logger.error(ex)
                     raise ex
 
             try:
                 search_group_inp.send_keys(group_name)
             except Exception as ex:
+                logger.error(ex)
                 raise ex
 
             time.sleep(2)  # waiting for share btn
             element = self.waiting_for_css_selector("""div.ow4ym5g4.auili1gw.rq0escxv.j83agx80.buofh1pr.g5gj957u.i1fnvgqd.oygrvhab.cxmmr5t8.hcukyx3x.kvgmc6g5.tgvbjcpo.hpfvmrgz.qt6c0cv9.rz4wbd8a.a8nywdso.jb3vyjys.du4w35lb.bp9cbjyn.btwxx1t3.l9j0dhe7 > div.n851cfcs.ozuftl9m.n1l5q3vz.l9j0dhe7.nqmvxvec > div > div > i""")
             if element:
                 element.click()
-                post_description = self.find_by_attr("div", "aria-label", "Create a public post…", waiting_time=10)
+                post_description = self.find_by_attr("div", "aria-label", "Create a public post…", waiting_time=15)
                 if post_description:
-                    all_titles = get_group_joining_data('share_descriptions')
+                    all_titles = share_descriptions
+                    if len(share_descriptions) == 0:
+                        all_titles = get_group_joining_data('share_descriptions').split("\n")
+
                     share_title = ""
                     for idx, title in enumerate(all_titles):
                         share_title = title
@@ -349,24 +361,36 @@ class ChromeHelper:
                             break
                     post_description.send_keys(share_title)
                     post_btn = self.waiting_for_text_by_css("div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span", "Post", waiting_time=10)
+
                     if post_btn:
                         # post_btn.click()
                         logger.info(f"{video_id} Share done")
                         time.sleep(5)
                         groups_shared.append(group)
-                        share_number += 1
-                        update_data = {"share_number": share_number, "groups_shared": groups_shared}
-                        if share_number >= len(groups_share):
-                            update_data['shared'] = True
-                        scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
+                        groups_share.remove(group)
+                        break
 
-                        via_share_number += 1
-                        # query = db.update(via_share).values(status='live', share_number=via_share_number)
-                        # query = query.where(via_share.columns.id == fb_id)
-                        # connection.execute(query)
-                        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live", "share_number": via_share_number}})
-                        return True
-        return False
+        update_data = {
+            "share_number": share_number,
+            "groups_shared": groups_shared,
+            "groups_remaining": groups_share
+        }
+        if len(groups_share) == 0 or share_number >= len(total_groups):
+            update_data['shared'] = True
+        scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
+        via_share_number += 1
+        via_share.update_one(
+            {
+                "fb_id": fb_id
+            },
+            {
+                "$set": {
+                    "status": "live",
+                    "share_number": via_share_number
+                }
+            }
+        )
+        return True
 
     @staticmethod
     def check_state(func):
@@ -455,9 +479,13 @@ class ChromeHelper:
         os.makedirs(user_data_dir, exist_ok=True)
         options.add_argument(f"user-data-dir={user_data_dir}/{self.fb_id}")  # Path to your chrome profile
         options.add_argument(f"--profile-directory={self.fb_id}")
-        options.add_argument(f"--start-maximized")
-        options.add_argument(f"--disable-notifications")
+        options.add_argument("--start-maximized")
+        options.add_argument("--disable-notifications")
         options.add_argument('--disable-gpu')
+        # options.add_argument('--headless')
+        options.add_argument('disable-infobars')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
         options.add_argument("test-type=browser")
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
