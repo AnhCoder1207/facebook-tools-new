@@ -18,7 +18,7 @@ from utils import logger, get_scheduler_data, get_via_data, \
 from controller import thread_join_group
 
 
-def start_login_via(main_windows, file_input):
+def start_login_via(main_windows, file_input, login_existed):
     with open(file_input) as via_files:
         for via_idx, via in enumerate(via_files):
             user_data = via.strip().split('|')
@@ -39,28 +39,19 @@ def start_login_via(main_windows, file_input):
 
             # via_exist = connection.execute(db.select([via_share]).where(via_share.columns.fb_id == fb_id.strip())).fetchone()
             via_exist = via_share.find_one({"fb_id": fb_id})
+            chrome_worker = ChromeHelper()
             if not via_exist:
-                via_status = "not ready"
-                if values.get('login.options', False):
-                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                    try:
-                        login_status = chrome_worker.login()
-                        # login success
-                        if login_status:
-                            via_status = "live"
-                        else:
-                            via_status = "can not login"
-                    except Exception as ex:
+                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                try:
+                    login_status = chrome_worker.login()
+                    # login success
+                    if login_status:
+                        via_status = "live"
+                    else:
                         via_status = "can not login"
-                        logger.error(ex)
-                # query = db.insert(via_share).values(
-                #     fb_id=fb_id, password=password, mfa=mfa,
-                #     email=email, email_password=email_password,
-                #     proxy=proxy_data, share_number=0,
-                #     group_joined=json.dumps(list()), date="",
-                #     status=via_status
-                # )
-                # ResultProxy = connection.execute(query)
+                except Exception as ex:
+                    via_status = "can not login"
+                    logger.error(ex)
                 via_share.insert_one(
                     {
                         "fb_id": fb_id,
@@ -75,27 +66,35 @@ def start_login_via(main_windows, file_input):
                         "status": via_status
                     }
                 )
-                main_windows.write_event_value('new_via_login', "")
-            # else:
-                # query = db.update(via_share).values(
-                #     password=password, mfa=mfa,
-                #     email=email, email_password=email_password,
-                #     proxy=proxy_data,
-                #     status=via_status
-                # ).where(via_share.columns.fb_id == fb_id)
-                # connection.execute(query)
-            #     via_share.update_one(
-            #         {"fb_id": fb_id},
-            #         {"$set": {
-            #             "password": password,
-            #             "mfa": mfa,
-            #             "email": email,
-            #             "email_password": email_password,
-            #             "proxy": proxy_data,
-            #             "status": via_status
-            #         }}
-            #     )
-            # main_windows.write_event_value('new_via_login', "")
+            if login_existed and via_exist:
+                try:
+                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                    login_status = chrome_worker.login()
+                    # login success
+                    if login_status:
+                        via_status = "live"
+                    else:
+                        via_status = "can not login"
+
+                except Exception as ex:
+                    via_status = "can not login"
+                    logger.error(ex)
+                via_share.update_one(
+                    {"fb_id": fb_id},
+                    {"$set": {
+                        "password": password,
+                        "mfa": mfa,
+                        "email": email,
+                        "email_password": email_password,
+                        "proxy": proxy_data,
+                        "status": via_status
+                    }}
+                )
+            try:
+                chrome_worker.driver.close()
+            except Exception as ex:
+                logger.error(f"can not close drive")
+            main_windows.write_event_value('new_via_login', "")
 
 
 def start_share(main_window, stop_thread):
@@ -104,7 +103,7 @@ def start_share(main_window, stop_thread):
     while not stop_thread():
         video_sharing = scheduler_table.find_one({"shared": False})
         if not video_sharing:
-            time.sleep(1)
+            time.sleep(10)
             continue
 
         video_sharing_id = video_sharing.get("video_id", "")
@@ -212,7 +211,7 @@ def via_manage_window(via_data):
     layout_via_manage_video = [
         [sg.Text("Browser file: "), sg.FileBrowse(key='file_via_input', enable_events=True),
          sg.Button('Start login via'),
-         sg.Checkbox('Login when adding', key='login.options', enable_events=False, default=True)],
+         sg.Checkbox('Import existed via', key='login.options', enable_events=False, default=False)],
         [
             sg.Table(values=via_data,
                      headings=headings,
@@ -225,7 +224,6 @@ def via_manage_window(via_data):
         ],
         [sg.Button('Open in Browser'),
          sg.Button('Edit', key='edit_via_btn'),
-         sg.Button('Start Login', key='login_via_manual'),
          sg.Button('Export', key="export_checkpoint_via_btn"),
          sg.Button('Delete', key="delete_via")]
     ]
@@ -296,14 +294,14 @@ if __name__ == '__main__':
     # All the stuff inside your window.
     table_data = get_scheduler_data()
     window1, window2, window3, window4, window5, window6 = make_main_window(table_data), None, None, None, None, None
-    chrome_worker = ChromeHelper()
+    # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
     joining = False
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         window, event, values = sg.read_all_windows()
-        print(f'{event} You entered {values}')
+        logger.debug(f'{event} You entered {values}')
         if event == sg.WIN_CLOSED:  # if user closes window or clicks cancel
             if window:
                 window.close()
@@ -431,7 +429,6 @@ if __name__ == '__main__':
             joining_group.insert_many(groups)
             sg.Popup('Successfully', keep_on_top=True)
             window4.close()
-
         elif event == "delete_via":
             removed = values['via_table']
             table_data = window3.Element('via_table').Get()
@@ -466,29 +463,28 @@ if __name__ == '__main__':
                 via_data = table_data[idx]
                 window6 = edit_via_window(via_data)
                 break
-        elif event == 'login_via_manual':
-            """Open single via and login manual"""
-            selected = values['via_table']
-            table_data = window3.Element('via_table').Get()
-            for idx in selected:
-                via_data = table_data[idx]
-                fb_id, password, mfa, email, email_password, proxy_data, status = via_data
-                via_status = "not ready"
-                # force close drive
-                try:
-                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                    chrome_worker.login()
-                    # login success
-                    via_status = "live"
-                    # query = db.update(via_share).values(
-                    #     status=via_status
-                    # ).where(via_share.columns.fb_id == fb_id)
-                    # connection.execute(query)
-                    via_share.update_one({"fb_id": fb_id}, {"status": via_status})
-                except Exception as ex:
-                    via_status = "can not login"
-                    print(ex)
-
+        # elif event == 'login_via_manual':
+        #     """Open single via and login manual"""
+        #     selected = values['via_table']
+        #     table_data = window3.Element('via_table').Get()
+        #     for idx in selected:
+        #         via_data = table_data[idx]
+        #         fb_id, password, mfa, email, email_password, proxy_data, status = via_data
+        #         via_status = "not ready"
+        #         # force close drive
+        #         try:
+        #             chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+        #             chrome_worker.login()
+        #             # login success
+        #             via_status = "live"
+        #             # query = db.update(via_share).values(
+        #             #     status=via_status
+        #             # ).where(via_share.columns.fb_id == fb_id)
+        #             # connection.execute(query)
+        #             via_share.update_one({"fb_id": fb_id}, {"status": via_status})
+        #         except Exception as ex:
+        #             via_status = "can not login"
+        #             print(ex)
         elif event == 'edit_via_save':
             """
             {'edit_via_id': '100062931873023', 
@@ -546,14 +542,13 @@ if __name__ == '__main__':
 
             if window6:
                 window6.close()
-
         elif event == 'Start login via':
             file_input = values.get('file_via_input')
             if not os.path.isfile(file_input):
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
             start_login_thread = threading.Thread(target=start_login_via,
-                                                  args=(window3, file_input), daemon=True)
+                                                  args=(window3, file_input, values.get('login.options', False)), daemon=True)
             start_login_thread.start()
         elif event == "Open in Browser":
             via_selected = values.get('via_table')
@@ -563,7 +558,8 @@ if __name__ == '__main__':
                 fb_id, password, mfa, email, email_password, proxy_data, status = via_data
                 # chrome_worker = get_free_worker()
                 try:
-                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                    default_chrome_worker = ChromeHelper()
+                    default_chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                     break
                 except Exception as ex:
                     logger.error(f"Can not open browser {ex}")
