@@ -113,6 +113,15 @@ def thread_join_group(stop_joining):
 
             logger.info(f"group_url {group_url}")
             chrome_worker.driver.get(group_url)
+
+            # check joined
+            joined_1 = chrome_worker.waiting_for_text_by_css(join_group_btn, 'joined', waiting_time=5)
+            invite_2 = chrome_worker.waiting_for_text_by_css(join_group_btn, 'invite', waiting_time=1)
+            if joined_1 or invite_2:
+                group_joined.append(group)
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"group_joined": group_joined}})
+                continue
+
             join_group_el = chrome_worker.waiting_for_text_by_css(join_group_btn, 'join group', waiting_time=5)
             if join_group_el:
                 logger.info("Click join button")
