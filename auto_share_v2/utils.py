@@ -58,6 +58,7 @@ def mapping_via_table(item):
         item.get('email_password', ''),
         item.get('proxy', ''),
         item.get('status', ''),
+        item.get('share_number', ''),
     ]
 
 

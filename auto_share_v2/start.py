@@ -95,7 +95,7 @@ def show_detail_video_info(video_data):
 
 
 def via_manage_window(via_data):
-    headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status"]
+    headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "share today"]
     layout_via_manage_video = [
         [sg.Text("Browser file: "), sg.FileBrowse(key='file_via_input', enable_events=True),
          sg.Button('Start login via'),
@@ -106,7 +106,7 @@ def via_manage_window(via_data):
                      display_row_numbers=True,
                      justification='right',
                      auto_size_columns=False,
-                     col_widths=[15, 15, 15, 15, 15, 15, 15],
+                     col_widths=[15, 15, 15, 15, 15, 15, 15, 15],
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ],
