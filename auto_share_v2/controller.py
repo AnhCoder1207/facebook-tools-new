@@ -86,6 +86,7 @@ def thread_join_group(stop_joining):
             if search_facebook.get_attribute('placeholder') != 'Search Facebook':
                 chrome_worker.change_language()
         else:
+            chrome_worker.driver.close()
             continue
 
         if random.choice([1, 2, 3, 4]) == 1:
