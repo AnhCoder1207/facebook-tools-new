@@ -2,7 +2,7 @@ import os
 import zipfile
 from datetime import datetime, timedelta
 from functools import wraps
-
+import requests
 import pyautogui
 import pyotp
 import time
@@ -436,6 +436,17 @@ class ChromeHelper:
         self.proxy_data = proxy_data
 
         PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = self.proxy_data.split(":")
+
+        # check proxy
+        proxies = {"http": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"}
+
+        try:
+            r = requests.get("http://www.google.com/", proxies=proxies)
+        except Exception as ex:
+            logger.error(f"proxy die: {self.fb_id}")
+            # return False
+
+
         manifest_json = """
                     {
                         "version": "1.0.0",

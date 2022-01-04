@@ -1,5 +1,5 @@
-join_group_btn = "div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div:nth-child(2) > span > span"
-joined_btn = "div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div:nth-child(2) > span > span"
+join_group_btn = "div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span"
+joined_btn = "div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span"
 answer_questions_label = "h2 > span > span"
 checkboxs = "div.rq0escxv.du4w35lb.l9j0dhe7.lzcic4wl.j83agx80 > input"
 submit_btn = 'div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span'
