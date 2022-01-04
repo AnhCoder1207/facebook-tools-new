@@ -4,10 +4,11 @@ import time
 from datetime import datetime
 import PySimpleGUI as sg
 import sqlalchemy as db
+from bson import ObjectId
 from selenium.webdriver.common.by import By
 
 from helper import ChromeHelper
-from utils import get_group_joining_data, logger, via_share, joining_group, scheduler_table
+from utils import get_group_joining_data, logger, via_share, joining_group, scheduler_table, group_auto_approved
 from config_btn import *
 
 
@@ -26,9 +27,18 @@ def thread_join_group(stop_joining):
             continue
 
         via_data = random.choice(results)  # get random via
+        fb_id = via_data.get("fb_id")
         current_date = str(datetime.date(datetime.now()))
 
-        fb_id = via_data.get("fb_id")
+        join_history = via_data.get("join_history", {})
+        join_in_day = join_history.get(current_date, None)
+        if join_in_day is None:
+            join_in_day = 0
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
+
+        if join_in_day is not None and join_in_day > 10:
+            continue
+
         logger.info(f"Start join group for via {fb_id}")
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'join group'}})
         password = via_data.get("password")
@@ -134,6 +144,7 @@ def thread_join_group(stop_joining):
                 submit = chrome_worker.waiting_for_text_by_css(submit_btn, 'submit')
                 if submit:
                     submit.click()
+                time.sleep(5)
 
             join_group_el = chrome_worker.waiting_for_text_by_css(join_group_btn, 'joined', waiting_time=5)
             if join_group_el:
@@ -143,12 +154,20 @@ def thread_join_group(stop_joining):
                 # query = query.where(via_share.columns.fb_id == fb_id)
                 # connection.execute(query)
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"group_joined": group_joined}})
+                join_in_day += 1
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
+                if group_auto_approved.find_one({"group": group}) is None:
+                    group_auto_approved.insert_one({"_id": str(ObjectId()), "group": group})
                 continue
             join_group_el = chrome_worker.waiting_for_text_by_css(join_group_btn, 'invite', waiting_time=1)
             if join_group_el:
                 logger.info("found joined_btn")
                 group_joined.append(group)
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"group_joined": group_joined}})
+                join_in_day += 1
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
+                if group_auto_approved.find_one({"group": group}) is None:
+                    group_auto_approved.insert_one({"_id": str(ObjectId()), "group": group})
                 # query = db.update(via_share).values(group_joined=json.dumps(group_joined))
                 # query = query.where(via_share.columns.fb_id == fb_id)
                 # connection.execute(query)
@@ -245,12 +264,10 @@ def start_share(main_window, stop_thread):
             continue
 
         video_sharing_id = video_sharing.get("video_id", "")
+        groups_share = video_sharing.get("groups_remaining", [])
+        groups_shared = video_sharing.get("groups_shared", [])
         logger.info(f"Share video : {video_sharing_id}")
-        # query via live
-        # results = connection.execute(db.select([via_share]).where(db.and_(
-        #     via_share.columns.status == 'live',
-        #     via_share.columns.share_number < 4
-        # ))).fetchall()
+
         results = via_share.find({"status": 'live', "share_number": {"$lte": 4}})
         results = list(results)
         if len(results) == 0:
@@ -259,6 +276,17 @@ def start_share(main_window, stop_thread):
         via_data = random.choice(results)
         current_date = str(datetime.date(datetime.now()))
         # via_data = dict(zip(result.keys(), result))
+        group_joined = via_data.get("group_joined", [])
+        groups_share_fixed = list(set(groups_share) - set(groups_shared))
+
+        founded = False
+        for group_share_fixed in groups_share_fixed:
+            if group_share_fixed in group_joined:
+                founded = True
+                break
+        if not founded:
+            # via not join this group break
+            continue
 
         share_date = via_data.get("date")
         fb_id = via_data.get("fb_id")

@@ -33,6 +33,7 @@ videos_table = mongo_client['videos']
 scheduler_table = mongo_client['scheduler_table']
 via_share = mongo_client['via_share']
 joining_group = mongo_client['joining_group']
+group_auto_approved = mongo_client['group_auto_approved']
 
 
 def mapping_table(item):

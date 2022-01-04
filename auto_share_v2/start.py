@@ -504,7 +504,7 @@ if __name__ == '__main__':
                 joining = True
                 joining_threads = []
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
-                for _ in range(5):
+                for _ in range(2):
                     thread_join_gr = threading.Thread(target=thread_join_group,
                                                       args=(lambda: stop_join_group,), daemon=True)
                     joining_threads.append(thread_join_gr)

@@ -88,6 +88,20 @@ class ChromeHelper:
             time.sleep(2)
         return False
 
+    def find_attr_by_css(self, css_selector, attribute, text_compare, waiting_time=3):
+        for _ in range(waiting_time):
+            try:
+                elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
+                for element in elements:
+                    if element and element.get_attribute(attribute) and \
+                            element.get_attribute(attribute).lower().strip() == text_compare.lower().strip():
+                        print(element.get_attribute(attribute))
+                        return element
+            except Exception as ex:
+                logger.error(f"Can not find {text_compare}")
+            time.sleep(2)
+        return False
+
     def find_by_text(self, tag, text_compare):
         """retry 3 times"""
         for _ in range(3):
@@ -235,6 +249,8 @@ class ChromeHelper:
             group_options = get_group_joining_data("group_options")
             total_groups.extend([x.strip() for x in group_options.split('\n')])
 
+        groups_share_fixed = list(set(groups_share) - set(groups_shared))
+
         share_number += 1
         if random.choice([1, 2, 3, 4]) == 1:
             self.driver.get(f"https://fb.com")
@@ -307,8 +323,8 @@ class ChromeHelper:
         self.waiting_for_text_by_css(share_to_a_group, "Share to a group", waiting_time=10).click()
 
         search_group_inp = self.waiting_for_css_selector("div.n851cfcs.wkznzc2l.dhix69tm.n1l5q3vz > div > div > label > input")
-        groups_share_fixed = list(set(groups_share) - set(groups_shared))
-        for group in groups_share_fixed:
+
+        for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
             group = group.strip()
             if group == "":
                 continue
@@ -333,19 +349,18 @@ class ChromeHelper:
                     search_group_inp.send_keys(Keys.BACKSPACE)
                 except Exception as ex:
                     logger.error(ex)
-                    raise ex
 
             try:
                 search_group_inp.send_keys(group_name)
             except Exception as ex:
                 logger.error(ex)
-                raise ex
+                continue
 
             time.sleep(2)  # waiting for share btn
-            element = self.waiting_for_css_selector("""div.ow4ym5g4.auili1gw.rq0escxv.j83agx80.buofh1pr.g5gj957u.i1fnvgqd.oygrvhab.cxmmr5t8.hcukyx3x.kvgmc6g5.tgvbjcpo.hpfvmrgz.qt6c0cv9.rz4wbd8a.a8nywdso.jb3vyjys.du4w35lb.bp9cbjyn.btwxx1t3.l9j0dhe7 > div.n851cfcs.ozuftl9m.n1l5q3vz.l9j0dhe7.nqmvxvec > div > div > i""")
-            if element:
-                element.click()
-                post_description = self.find_by_attr("div", "aria-label", "Create a public post…", waiting_time=15)
+            group_founded = self.waiting_for_css_selector("""div.ow4ym5g4.auili1gw.rq0escxv.j83agx80.buofh1pr.g5gj957u.i1fnvgqd.oygrvhab.cxmmr5t8.hcukyx3x.kvgmc6g5.tgvbjcpo.hpfvmrgz.qt6c0cv9.rz4wbd8a.a8nywdso.jb3vyjys.du4w35lb.bp9cbjyn.btwxx1t3.l9j0dhe7 > div.n851cfcs.ozuftl9m.n1l5q3vz.l9j0dhe7.nqmvxvec > div > div > i""")
+            if group_founded:
+                group_founded.click()
+                post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Create a public post…", waiting_time=15)
                 if post_description:
                     all_titles = share_descriptions
                     if len(share_descriptions) == 0:
