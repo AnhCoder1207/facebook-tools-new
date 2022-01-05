@@ -36,7 +36,7 @@ def thread_join_group(stop_joining):
             join_in_day = 0
             via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
 
-        if join_in_day is not None and join_in_day > 10:
+        if join_in_day is not None and join_in_day > 4:
             continue
 
         logger.info(f"Start join group for via {fb_id}")
