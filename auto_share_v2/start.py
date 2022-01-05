@@ -478,7 +478,7 @@ if __name__ == '__main__':
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
                 via_data = via_table_data[via_idx]
-                fb_id, password, mfa, email, email_password, proxy_data, status = via_data
+                fb_id, password, mfa, email, email_password, proxy_data, status, _ = via_data
                 # chrome_worker = get_free_worker()
                 try:
                     default_chrome_worker = ChromeHelper()
@@ -504,7 +504,7 @@ if __name__ == '__main__':
                 joining = True
                 joining_threads = []
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
-                for _ in range(2):
+                for _ in range(5):
                     thread_join_gr = threading.Thread(target=thread_join_group,
                                                       args=(lambda: stop_join_group,), daemon=True)
                     joining_threads.append(thread_join_gr)

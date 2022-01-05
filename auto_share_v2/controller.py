@@ -78,7 +78,13 @@ def thread_join_group(stop_joining):
 
         is_login = chrome_worker.waiting_for_selector("#email", waiting_time=1)
         if is_login:
-            chrome_worker.login()
+            try:
+                chrome_worker.login()
+                chrome_worker.driver.get("https://facebook.com")
+            except:
+                chrome_worker.driver.close()
+                continue
+                pass
 
         # check language
         search_facebook = chrome_worker.waiting_for_selector(search_facebook_inp)
@@ -113,7 +119,10 @@ def thread_join_group(stop_joining):
                 continue
 
             logger.info(f"group_url {group_url}")
-            chrome_worker.driver.get(group_url)
+            try:
+                chrome_worker.driver.get(group_url)
+            except Exception as ex:
+                continue
 
             # check joined
             joined_1 = chrome_worker.waiting_for_text_by_css(join_group_btn, 'joined', waiting_time=5)
