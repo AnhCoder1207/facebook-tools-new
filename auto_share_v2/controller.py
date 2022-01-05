@@ -54,7 +54,7 @@ def thread_join_group(stop_joining):
             chrome_worker.driver.get("https://facebook.com")
         except Exception as ex:
             logger.error(f"{fb_id} can not reach internet")
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+            # via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
             chrome_worker.driver.close()
             continue
 
