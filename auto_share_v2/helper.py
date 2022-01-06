@@ -136,7 +136,8 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            logger.error(f"Can not find {selector}")
+            pass
+            # logger.error(f"Can not find {selector}")
             return False
 
     def waiting_for_selector(self, selector, waiting_time=10):
@@ -146,7 +147,8 @@ class ChromeHelper:
             )
             return element
         except Exception as ex:
-            logger.error(f"Can not find {selector}")
+            pass
+            # logger.error(f"Can not find {selector}")
             return False
 
     def waiting_for_text_by_css(self, selector, text_compare, waiting_time=3):

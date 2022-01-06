@@ -166,7 +166,7 @@ def edit_via_window(via_data):
         [sg.Text('proxy_data')],
         [sg.InputText(proxy_data, key="edit_via_proxy_data")],
         [sg.Text('status')],
-        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login', 'disable', 'join group', 'die proxy'], size=(42, 6), enable_events=False, key='_LIST_VIA_STATUS_')],
+        [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login', 'disable', 'join group', 'die proxy', 'can not join group'], size=(42, 6), enable_events=False, key='_LIST_VIA_STATUS_')],
         [sg.Button('Save', key='edit_via_save')]
     ]
     window = sg.Window('Edit Via Data', layout_edit_via, finalize=True)
@@ -504,7 +504,7 @@ if __name__ == '__main__':
                 joining = True
                 joining_threads = []
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
-                for _ in range(5):
+                for _ in range(2):
                     thread_join_gr = threading.Thread(target=thread_join_group,
                                                       args=(lambda: stop_join_group,), daemon=True)
                     joining_threads.append(thread_join_gr)

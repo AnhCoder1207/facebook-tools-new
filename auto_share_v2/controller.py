@@ -108,6 +108,7 @@ def thread_join_group(stop_joining):
             time.sleep(10)
 
         join_number = 0
+        join_button_enabled = True
         for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
             if join_number >= 4:
                 break
@@ -134,9 +135,18 @@ def thread_join_group(stop_joining):
 
             join_group_el = chrome_worker.waiting_for_text_by_css(join_group_btn, 'join group', waiting_time=5)
             if join_group_el:
+                if join_group_el.value_of_css_property("color") == 'rgba(255, 255, 255, 0.3)':
+                    logger.info(f"{fb_id} button join group is not enabled")
+                    join_button_enabled = False
+                    via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "can not join group"}})
+                    break
                 logger.info("Click join button")
                 join_number += 1
                 join_group_el.click()  # click join btn
+                time.sleep(5)
+                join_group_el = chrome_worker.waiting_for_text_by_css(check_background_color, 'join group', waiting_time=5)
+                if join_group_el:
+                    join_group_el.click()  # click join btn
 
                 join_group_anw_exist = chrome_worker.waiting_for_text_by_css(join_group_anw, 'Join Group Anyway')
                 if join_group_anw_exist:
@@ -193,7 +203,9 @@ def thread_join_group(stop_joining):
                 # query = db.update(via_share).values(group_joined=json.dumps(group_joined))
                 # query = query.where(via_share.columns.fb_id == fb_id)
                 # connection.execute(query)
-        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+        if join_button_enabled:
+            # set status live
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
         chrome_worker.driver.close()
 
 
@@ -286,7 +298,7 @@ def start_share(main_window, stop_thread):
             continue
 
         video_sharing_id = video_sharing.get("video_id", "")
-        groups_share = video_sharing.get("groups_remaining", [])
+        groups_remaining = video_sharing.get("groups_remaining", [])
         groups_shared = video_sharing.get("groups_shared", [])
         logger.info(f"Share video : {video_sharing_id}")
 
@@ -299,7 +311,7 @@ def start_share(main_window, stop_thread):
         current_date = str(datetime.date(datetime.now()))
         # via_data = dict(zip(result.keys(), result))
         group_joined = via_data.get("group_joined", [])
-        groups_share_fixed = list(set(groups_share) - set(groups_shared))
+        groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
 
         founded = False
         for group_share_fixed in groups_share_fixed:
@@ -318,9 +330,6 @@ def start_share(main_window, stop_thread):
         via_share_number = via_data.get("share_number")
         # reset via share counting
         if share_date != current_date:
-            # query = db.update(via_share).values(date=current_date, share_number=0)
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
 
         # mark via running
