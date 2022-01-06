@@ -36,7 +36,7 @@ def thread_join_group(stop_joining):
             join_in_day = 0
             via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
 
-        if join_in_day is not None and join_in_day > 4:
+        if join_in_day is not None and join_in_day >= 4:
             continue
 
         logger.info(f"Start join group for via {fb_id}")
@@ -153,12 +153,15 @@ def thread_join_group(stop_joining):
                     if element and element.get_attribute('placeholder') == 'Write an answer...':
                         print("found text area")
                         if element.get_attribute('value') != "":
+                            element.click()
                             element.send_keys("I'm agree")
+                            time.sleep(1)
 
                 check_box = chrome_worker.waiting_for_text_by_css("div.hpfvmrgz.h676nmdw.buofh1pr.rj1gh0hx > span",
                                                                   'I agree to the group rules', waiting_time=10)
                 if check_box:
                     check_box.click()
+                time.sleep(1)
 
                 submit = chrome_worker.waiting_for_text_by_css(submit_btn, 'submit')
                 if submit:
