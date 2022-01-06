@@ -393,14 +393,10 @@ class ChromeHelper:
                     time.sleep(1)
                     post_btn = self.waiting_for_text_by_css("div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span", "Post", waiting_time=10)
                     if post_btn:
-
-                        # update_data = {
-                        #     "groups_shared": groups_shared,
-                        #     "groups_remaining": groups_share
-                        # }
-                        # scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
-
                         post_btn.click()
+                        video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+                        groups_shared = video_sharing_tmp.get("groups_shared", [])
+                        share_number = video_sharing_tmp.get("share_number", 0)
                         groups_shared.append(group)
                         groups_share.remove(group)
                         logger.info(f"{video_id} Share done")

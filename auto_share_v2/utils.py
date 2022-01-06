@@ -68,7 +68,7 @@ def mapping_via_table(item):
 
 
 def get_scheduler_data():
-    table_default = scheduler_table.find({"shared": False}).sort("create_date", pymongo.ASCENDING)
+    table_default = scheduler_table.find().sort("create_date", pymongo.ASCENDING)
     table_default = list(map(mapping_table, list(table_default)))
     return table_default
 
