@@ -254,7 +254,7 @@ class ChromeHelper:
 
         groups_share_fixed = list(set(groups_share) - set(groups_shared))
         groups_share_fixed.append(found_group_name)
-        share_number += 1
+
         if random.choice([1, 2, 3, 4]) == 1:
             self.driver.get(f"https://fb.com")
             message_selector = """#mount_0_0_gb > div > div:nth-child(1) > div > div:nth-child(4) > div.ehxjyohh.kr520xx4.poy2od1o.b3onmgus.hv4rvrfc.n7fi1qx3 > div.du4w35lb.l9j0dhe7.byvelhso.rl25f0pe.j83agx80.bp9cbjyn > div:nth-child(3) > span"""
@@ -344,6 +344,7 @@ class ChromeHelper:
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
             groups_shared = video_sharing_tmp.get("groups_shared", [])
             title_shared = video_sharing_tmp.get("title_shared", [])
+            share_number = video_sharing_tmp.get("share_number", 0)
             if group in groups_shared:
                 continue
 
@@ -405,6 +406,7 @@ class ChromeHelper:
                         logger.info(f"{video_id} Share done")
                         break
 
+        share_number += 1
         update_data = {
             "share_number": share_number,
             "groups_shared": groups_shared,
