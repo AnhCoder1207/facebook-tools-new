@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 import uuid
 
 import PySimpleGUI as sg
@@ -205,34 +206,34 @@ if __name__ == '__main__':
             browserExe = "chromedriver.exe"
             os.system("taskkill /f /im " + browserExe)
         elif event == 'Start share':
+            # get number theads
+            number_threads = values.get("number_threads", 0)
+
+            try:
+                number_threads = int(number_threads)
+            except Exception as ex:
+                sg.Popup("Number threads must be integer")
+                continue
+
             if not sharing:
                 sharing = True
                 window1.Element('Start share').Update(text="Stop Share")
                 stop_threads = False
                 threads = []
                 via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
-
-                # get number theads
-                number_threads = values.get("number_threads", 0)
-
-                try:
-                    number_threads = int(number_threads)
-                except Exception as ex:
-                    sg.Popup("Number threads must be integer")
-                    continue
-
                 for _ in range(number_threads):
                     thread = threading.Thread(target=start_share,
                                               args=(window1, lambda: stop_threads), daemon=True)
                     threads.append(thread)
                 for thread in threads:
                     thread.start()
+                    time.sleep(5)
             else:
                 stop_threads = True
                 sharing = False
                 window1.Element('Start share').Update(text="Start share")
         elif event == 'Remove Video':
-            label = pyautogui.confirm(text='Are you sure?', title='', buttons=["yes", "no"])
+            label = pyautogui.confirm(text='Are you sure?', title='Confirm delete', buttons=["yes", "no"])
             if label == "no":
                 continue
 
@@ -240,7 +241,8 @@ if __name__ == '__main__':
             table_data = window1.Element('table').Get()
             for idx in reversed(removed):
                 video_id = table_data[idx][0]
-                scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+                # scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+                scheduler_table.delete_one({"video_id": video_id})
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
         elif event == '-THREAD-':
@@ -510,20 +512,20 @@ if __name__ == '__main__':
             sg.Popup('Luu Thanh Cong')
             window5.close()
         elif event == 'Start Join Group':
+            # get number theads
+            number_threads = values.get("number_threads", 0)
+
+            try:
+                number_threads = int(number_threads)
+            except Exception as ex:
+                sg.Popup("Number threads must be integer")
+                continue
+
             if not joining:
                 stop_join_group = False
                 joining = True
                 joining_threads = []
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
-
-                # get number theads
-                number_threads = values.get("number_threads", 0)
-
-                try:
-                    number_threads = int(number_threads)
-                except Exception as ex:
-                    sg.Popup("Number threads must be integer")
-                    continue
 
                 for _ in range(number_threads):
                     thread_join_gr = threading.Thread(target=thread_join_group,

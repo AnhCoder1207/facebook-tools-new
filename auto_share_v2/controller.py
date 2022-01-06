@@ -304,22 +304,29 @@ def start_share(main_window, stop_thread):
 
         results = via_share.find({"status": 'live', "share_number": {"$lte": 4}})
         results = list(results)
+
         if len(results) == 0:
             continue
 
-        via_data = random.choice(results)
-        current_date = str(datetime.date(datetime.now()))
-        # via_data = dict(zip(result.keys(), result))
-        group_joined = via_data.get("group_joined", [])
         groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
-
+        current_date = str(datetime.date(datetime.now()))
+        via_data = None
         founded = False
-        for group_share_fixed in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
-            if group_share_fixed in group_joined:
-                founded = True
+        found_group_name = ""
+        for via_data in results:
+            group_joined = via_data.get("group_joined", [])
+            for group_share_fixed in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
+                if group_share_fixed in group_joined:
+                    founded = True
+                    found_group_name = group_share_fixed
+                    break
+            if founded:
+                # found group joined
                 break
+
         if not founded:
-            # via not join this group break
+            # not found any via have joined this group in the remaining groups
+            scheduler_table.update_one({"video_id": video_sharing_id}, {"shared": True})
             continue
 
         share_date = via_data.get("date")
@@ -339,18 +346,18 @@ def start_share(main_window, stop_thread):
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'sharing'}})
         # start sharing
         chrome_worker = ChromeHelper()
-        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
         try:
-            share_status = chrome_worker.sharing(video_sharing_id, fb_id, via_share_number)
+            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+            chrome_worker.sharing(video_sharing_id, fb_id, via_share_number, found_group_name)
         except Exception as ex:
             # raise ex
-            logger.error(f"share video errors {ex}")
-        finally:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
-            # query = db.update(via_share).values(status='live')
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
-            main_window.write_event_value('-THREAD-', "")
+            logger.error(f"share video errors {ex}")
+
+        # query = db.update(via_share).values(status='live')
+        # query = query.where(via_share.columns.fb_id == fb_id)
+        # connection.execute(query)
+        main_window.write_event_value('-THREAD-', "")
 
         try:
             chrome_worker.driver.close()

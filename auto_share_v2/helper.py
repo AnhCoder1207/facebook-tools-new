@@ -218,10 +218,11 @@ class ChromeHelper:
         element3 = self.find_by_text("span", "Confirm")
         [el.click() for el in [element1, element2, element3] if el]
 
-    def sharing(self, video_id, fb_id, via_share_number):
+    def sharing(self, video_id, fb_id, via_share_number, found_group_name):
         # query group share able
         video_sharing = scheduler_table.find_one({"shared": False, "video_id": video_id})
         if not video_sharing:
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
             return False
 
         video_sharing_id = video_sharing.get("video_id", "")
@@ -252,7 +253,7 @@ class ChromeHelper:
             total_groups.extend([x.strip() for x in group_options.split('\n')])
 
         groups_share_fixed = list(set(groups_share) - set(groups_shared))
-
+        groups_share_fixed.append(found_group_name)
         share_number += 1
         if random.choice([1, 2, 3, 4]) == 1:
             self.driver.get(f"https://fb.com")
@@ -289,22 +290,22 @@ class ChromeHelper:
         self.driver.get(f"https://fb.com/{video_id}")
 
         # check disable
-        is_disable = self.waiting_for_selector(disable_1, waiting_time=1)
+        is_disable = self.waiting_for_selector(disable_1, waiting_time=5)
         if is_disable:
             # query = db.update(via_share).values(status='disable')
             # query = query.where(via_share.columns.fb_id == fb_id)
             # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
             self.driver.close()
-            return
-        is_locked = self.waiting_for_selector(locked_1, waiting_time=1)
+            return False
+        is_locked = self.waiting_for_selector(locked_1, waiting_time=5)
         if is_locked:
             # query = db.update(via_share).values(status='checkpoint')
             # query = query.where(via_share.columns.fb_id == fb_id)
             # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
             self.driver.close()
-            return
+            return False
 
         is_login = self.waiting_for_selector("#email", waiting_time=1)
         if is_login:
@@ -312,9 +313,6 @@ class ChromeHelper:
 
         not_login = self.waiting_for_css_selector("""div.linmgsc8.rq0escxv.cb02d2ww.clqubjjj.bjjun2dj > div > h2 > span > span""")
         if not_login and not_login.text.lower() == "not logged in":
-            # query = db.update(via_share).values(status="can not login")
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'can not login'}})
             return False
 
@@ -326,7 +324,7 @@ class ChromeHelper:
 
         search_group_inp = self.waiting_for_css_selector("div.n851cfcs.wkznzc2l.dhix69tm.n1l5q3vz > div > div > label > input")
 
-        for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
+        for group in reversed(groups_share_fixed):
             group = group.strip()
             if group == "":
                 continue
@@ -387,14 +385,6 @@ class ChromeHelper:
                                                    {"$set": {"title_shared": title_shared}})
                         break
 
-                groups_shared.append(group)
-                groups_share.remove(group)
-                update_data = {
-                    "groups_shared": groups_shared,
-                    "groups_remaining": groups_share
-                }
-                scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
-
                 group_founded.click()
                 post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Create a public post…", waiting_time=15)
                 if post_description:
@@ -402,9 +392,17 @@ class ChromeHelper:
                     time.sleep(1)
                     post_btn = self.waiting_for_text_by_css("div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span", "Post", waiting_time=10)
                     if post_btn:
+
+                        # update_data = {
+                        #     "groups_shared": groups_shared,
+                        #     "groups_remaining": groups_share
+                        # }
+                        # scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
+
                         post_btn.click()
+                        groups_shared.append(group)
+                        groups_share.remove(group)
                         logger.info(f"{video_id} Share done")
-                        time.sleep(5)
                         break
 
         update_data = {
@@ -427,6 +425,7 @@ class ChromeHelper:
                 }
             }
         )
+        time.sleep(5)
         return True
 
     @staticmethod
