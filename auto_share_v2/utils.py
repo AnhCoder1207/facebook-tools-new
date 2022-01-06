@@ -49,6 +49,11 @@ def mapping_table(item):
 
 
 def mapping_via_table(item):
+    current_date = str(datetime.date(datetime.now()))
+    if item.get('date', '') == current_date:
+        share_number = item.get('share_number', '')
+    else:
+        share_number = 0
     # # 'id', 'password', '2fa', "email", "email password", "proxy", "status"
     return [
         item.get('fb_id', ''),
@@ -58,7 +63,7 @@ def mapping_via_table(item):
         item.get('email_password', ''),
         item.get('proxy', ''),
         item.get('status', ''),
-        item.get('share_number', ''),
+        share_number,
     ]
 
 

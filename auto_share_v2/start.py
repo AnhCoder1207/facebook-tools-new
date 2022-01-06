@@ -210,7 +210,7 @@ if __name__ == '__main__':
                 stop_threads = False
                 threads = []
                 via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
-                for _ in range(5):
+                for _ in range(1):
                     thread = threading.Thread(target=start_share,
                                               args=(window1, lambda: stop_threads), daemon=True)
                     threads.append(thread)

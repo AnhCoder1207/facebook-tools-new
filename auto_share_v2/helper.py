@@ -537,6 +537,8 @@ class ChromeHelper:
         options.add_extension(pluginfile)
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
+        # self.driver.set_window_size(1920, 1080)
+        # self.driver.fullscreen_window()
 
     def change_language(self):
         self.driver.get("https://www.facebook.com/settings/?tab=language")
