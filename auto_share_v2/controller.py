@@ -302,7 +302,7 @@ def start_share(main_window, stop_thread):
         groups_shared = video_sharing.get("groups_shared", [])
         logger.info(f"Share video : {video_sharing_id}")
 
-        results = via_share.find({"status": 'live', "share_number": {"$lte": 4}})
+        results = via_share.find({"status": 'live', "share_number": {"$lt": 4}})
         results = list(results)
 
         if len(results) == 0:
