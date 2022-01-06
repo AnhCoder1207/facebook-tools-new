@@ -314,7 +314,7 @@ def start_share(main_window, stop_thread):
         groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
 
         founded = False
-        for group_share_fixed in groups_share_fixed:
+        for group_share_fixed in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
             if group_share_fixed in group_joined:
                 founded = True
                 break

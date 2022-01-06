@@ -342,6 +342,13 @@ class ChromeHelper:
                 logger.error(f"Can not split {group}")
                 continue
 
+            # check group is shared
+            video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+            groups_shared = video_sharing_tmp.get("groups_shared", [])
+            title_shared = video_sharing_tmp.get("title_shared", [])
+            if group in groups_shared:
+                continue
+
             if not search_group_inp:
                 search_group_inp = self.find_by_attr("input", "aria-label", "Search for groups")
                 search_group_inp.click()
@@ -361,34 +368,43 @@ class ChromeHelper:
             time.sleep(2)  # waiting for share btn
             group_founded = self.waiting_for_css_selector("""div.ow4ym5g4.auili1gw.rq0escxv.j83agx80.buofh1pr.g5gj957u.i1fnvgqd.oygrvhab.cxmmr5t8.hcukyx3x.kvgmc6g5.tgvbjcpo.hpfvmrgz.qt6c0cv9.rz4wbd8a.a8nywdso.jb3vyjys.du4w35lb.bp9cbjyn.btwxx1t3.l9j0dhe7 > div.n851cfcs.ozuftl9m.n1l5q3vz.l9j0dhe7.nqmvxvec > div > div > i""")
             if group_founded:
+
+                # title share
+                all_titles = share_descriptions
+                if len(share_descriptions) == 0:
+                    all_titles = get_group_joining_data('share_descriptions').split("\n")
+
+                share_title = ""
+                for idx, title in enumerate(all_titles):
+                    share_title = title
+                    if idx == len(all_titles) - 1:
+                        title_shared = []
+                        scheduler_table.update_one({"video_id": video_id},
+                                                   {"$set": {"title_shared": []}})
+                    if title not in title_shared:
+                        title_shared.append(title)
+                        scheduler_table.update_one({"video_id": video_id},
+                                                   {"$set": {"title_shared": title_shared}})
+                        break
+
+                groups_shared.append(group)
+                groups_share.remove(group)
+                update_data = {
+                    "groups_shared": groups_shared,
+                    "groups_remaining": groups_share
+                }
+                scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
+
                 group_founded.click()
                 post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Create a public post…", waiting_time=15)
                 if post_description:
-                    all_titles = share_descriptions
-                    if len(share_descriptions) == 0:
-                        all_titles = get_group_joining_data('share_descriptions').split("\n")
-
-                    share_title = ""
-                    for idx, title in enumerate(all_titles):
-                        share_title = title
-                        if idx == len(all_titles) - 1:
-                            title_shared = []
-                            scheduler_table.update_one({"video_id": video_id},
-                                                       {"$set": {"title_shared": []}})
-                        if title not in title_shared:
-                            title_shared.append(title)
-                            scheduler_table.update_one({"video_id": video_id},
-                                                       {"$set": {"title_shared": title_shared}})
-                            break
                     post_description.send_keys(share_title)
+                    time.sleep(1)
                     post_btn = self.waiting_for_text_by_css("div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span", "Post", waiting_time=10)
-
                     if post_btn:
                         post_btn.click()
                         logger.info(f"{video_id} Share done")
                         time.sleep(5)
-                        groups_shared.append(group)
-                        groups_share.remove(group)
                         break
 
         update_data = {

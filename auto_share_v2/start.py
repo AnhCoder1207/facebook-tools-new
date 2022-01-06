@@ -24,7 +24,8 @@ def make_main_window(table_data):
             sg.Button('Via Management'),
             sg.Button('Edit list group'),
             sg.Button('Start Join Group'),
-            sg.Button('Edit Default Share Descriptions')
+            sg.Button('Edit Default Share Descriptions'),
+            sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1))
         ],
         [
             sg.Table(values=table_data,
@@ -210,7 +211,17 @@ if __name__ == '__main__':
                 stop_threads = False
                 threads = []
                 via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
-                for _ in range(1):
+
+                # get number theads
+                number_threads = values.get("number_threads", 0)
+
+                try:
+                    number_threads = int(number_threads)
+                except Exception as ex:
+                    sg.Popup("Number threads must be integer")
+                    continue
+
+                for _ in range(number_threads):
                     thread = threading.Thread(target=start_share,
                                               args=(window1, lambda: stop_threads), daemon=True)
                     threads.append(thread)
@@ -504,7 +515,17 @@ if __name__ == '__main__':
                 joining = True
                 joining_threads = []
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
-                for _ in range(2):
+
+                # get number theads
+                number_threads = values.get("number_threads", 0)
+
+                try:
+                    number_threads = int(number_threads)
+                except Exception as ex:
+                    sg.Popup("Number threads must be integer")
+                    continue
+
+                for _ in range(number_threads):
                     thread_join_gr = threading.Thread(target=thread_join_group,
                                                       args=(lambda: stop_join_group,), daemon=True)
                     joining_threads.append(thread_join_gr)
