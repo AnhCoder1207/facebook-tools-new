@@ -353,6 +353,7 @@ def start_share(main_window, stop_thread):
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'sharing'}})
         # start sharing
         chrome_worker = ChromeHelper()
+        logger.info(f"{fb_id}, {password}, {mfa}, {proxy_data}")
         try:
             chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
             chrome_worker.sharing(video_sharing_id, fb_id, via_share_number, found_group_name)
