@@ -402,6 +402,8 @@ class ChromeHelper:
 
                 group_founded.click()
                 post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Create a public post…", waiting_time=15)
+                if not post_description:
+                    post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Write something...", waiting_time=1)
                 if post_description:
                     post_description.send_keys(share_title)
                     time.sleep(1)
