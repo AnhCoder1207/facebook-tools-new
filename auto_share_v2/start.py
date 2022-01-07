@@ -506,7 +506,8 @@ if __name__ == '__main__':
                       name.strip() != '']
             # remove all exist
             joining_group.delete_many({"group_type": "share_descriptions"})
-            joining_group.insert_many(groups)
+            if len(groups) != 0:
+                joining_group.insert_many(groups)
             sg.Popup('Luu Thanh Cong')
             window5.close()
         elif event == 'Start Join Group':
