@@ -177,18 +177,32 @@ class ChromeHelper:
             self.driver.get("https://m.facebook.com/")
         except Exception as ex:
             logger.error(f"{self.fb_id} can not reach internet")
+        # check via is ok
+
+        notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        if notifications:
+            logger.info(f"{self.fb_id} passed")
+            return True
 
         search_header = self.waiting_for_css_selector(homepage)
         if search_header:
+            logger.info(f"{self.fb_id} passed")
             return True
 
         login_btn = self.waiting_for_xpath(login_btn_xpath)
         username_inp = self.waiting_for_xpath(username_xpath)
         password_inp = self.waiting_for_xpath(password_xpath)
         if login_btn and username_inp and password_inp:
+            username_inp.click()
+            username_inp.clear()
+            password_inp.click()
+            password_inp.clear()
             username_inp.send_keys(self.fb_id)
+            time.sleep(1)
             password_inp.send_keys(self.password)
+            time.sleep(1)
             login_btn.click()
+            time.sleep(1)
             totp = pyotp.TOTP(self.mfa)
             current_otp = totp.now()
             print("Current OTP:", current_otp)

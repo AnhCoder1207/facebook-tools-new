@@ -11,7 +11,7 @@ from datetime import datetime
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
     get_group_joining_data, scheduler_table, via_share, joining_group
-from controller import thread_join_group, start_login_via, start_share
+from controller import thread_join_group, start_login_via, start_share, start_join_group
 
 
 def make_main_window(table_data):
@@ -369,18 +369,16 @@ if __name__ == '__main__':
             removed = values['via_table']
             table_data = window3.Element('via_table').Get()
             label = pyautogui.confirm(text='Are you sure?', title='', buttons=["yes", "no"])
-            if label == "no":
-                continue
-
-            for idx in reversed(removed):
-                fb_id = table_data[idx][0]
-                # print(video_id)
-                via_share.delete_one({"fb_id": fb_id})
-                # query = db.delete(via_share).where(via_share.columns.fb_id == fb_id)
-                # results = connection.execute(query)
-                # table_data.pop(item)
-            table_data = get_via_data()
-            window3.Element('via_table').Update(values=table_data)
+            if label == "yes":
+                for idx in reversed(removed):
+                    fb_id = table_data[idx][0]
+                    # print(video_id)
+                    via_share.delete_one({"fb_id": fb_id})
+                    # query = db.delete(via_share).where(via_share.columns.fb_id == fb_id)
+                    # results = connection.execute(query)
+                    # table_data.pop(item)
+                table_data = get_via_data()
+                window3.Element('via_table').Update(values=table_data)
         elif event == 'export_checkpoint_via_btn':
             via_table_data = window3.Element('via_table').Get()
             if os.path.isfile("checkpoint.txt"):
@@ -528,7 +526,7 @@ if __name__ == '__main__':
                 via_share.update_one({"status": "join group"}, {"$set": {"status": 'live'}})
 
                 for _ in range(number_threads):
-                    thread_join_gr = threading.Thread(target=thread_join_group,
+                    thread_join_gr = threading.Thread(target=start_join_group,
                                                       args=(lambda: stop_join_group,), daemon=True)
                     joining_threads.append(thread_join_gr)
 
