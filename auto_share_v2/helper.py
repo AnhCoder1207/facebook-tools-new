@@ -18,7 +18,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from config_btn import english_select_language, disable_1, locked_1, share_button_selector, \
-    more_options_selector, share_to_a_group
+    more_options_selector, share_to_a_group, like_selector
 # from models import via_share, scheduler_video, connection, joining_group
 from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group
 
@@ -330,7 +330,12 @@ class ChromeHelper:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'can not login'}})
             return False
 
-        time.sleep(20)
+        time.sleep(40)
+
+        # like video
+        like_btn = self.waiting_for_text_by_css(like_selector, 'like')
+        if like_btn:
+            like_btn.click()
 
         self.waiting_for_text_by_css(share_button_selector, "Share", waiting_time=10).click()
         self.waiting_for_text_by_css(more_options_selector, "More Options", waiting_time=10).click()
