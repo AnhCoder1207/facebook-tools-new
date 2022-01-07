@@ -413,6 +413,7 @@ class ChromeHelper:
                         video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
                         groups_shared = video_sharing_tmp.get("groups_shared", [])
                         share_number = video_sharing_tmp.get("share_number", 0)
+                        groups_share = video_sharing.get("groups_remaining", [])
                         groups_shared.append(group)
                         groups_share.remove(group)
                         logger.info(f"{video_id} Share done")
