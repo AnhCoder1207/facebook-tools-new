@@ -248,7 +248,7 @@ class ChromeHelper:
         co_khi_enable = video_sharing.get("co_khi_enable", False)
         xay_dung_enable = video_sharing.get("xay_dung_enable", False)
         options_enable = video_sharing.get("options_enable", False)
-        groups_share = video_sharing.get("groups_remaining", [])
+        groups_remaining = video_sharing.get("groups_remaining", [])
         share_descriptions = video_sharing.get("share_descriptions", [])
 
         total_groups = []
@@ -266,7 +266,7 @@ class ChromeHelper:
             group_options = get_group_joining_data("group_options")
             total_groups.extend([x.strip() for x in group_options.split('\n')])
 
-        groups_share_fixed = list(set(groups_share) - set(groups_shared))
+        groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
         groups_share_fixed.append(found_group_name)
 
         if random.choice([1, 2, 3, 4]) == 1:
@@ -358,6 +358,7 @@ class ChromeHelper:
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
             groups_shared = video_sharing_tmp.get("groups_shared", [])
             title_shared = video_sharing_tmp.get("title_shared", [])
+            groups_remaining = video_sharing_tmp.get("groups_remaining", [])
             share_number = video_sharing_tmp.get("share_number", 0)
             if group in groups_shared:
                 continue
@@ -413,9 +414,9 @@ class ChromeHelper:
                         video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
                         groups_shared = video_sharing_tmp.get("groups_shared", [])
                         share_number = video_sharing_tmp.get("share_number", 0)
-                        groups_share = video_sharing.get("groups_remaining", [])
+                        groups_remaining = video_sharing.get("groups_remaining", [])
                         groups_shared.append(group)
-                        groups_share.remove(group)
+                        groups_remaining.remove(group)
                         logger.info(f"{video_id} Share done")
                         break
 
@@ -423,9 +424,9 @@ class ChromeHelper:
         update_data = {
             "share_number": share_number,
             "groups_shared": groups_shared,
-            "groups_remaining": groups_share
+            "groups_remaining": groups_remaining
         }
-        if len(groups_share) == 0 or share_number >= len(total_groups):
+        if len(groups_remaining) == 0 or share_number >= len(total_groups):
             update_data['shared'] = True
         scheduler_table.update_one({"video_id": video_id}, {"$set": update_data})
         via_share_number += 1
