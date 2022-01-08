@@ -255,7 +255,10 @@ def start_login_via(main_windows, file_input, login_existed):
                 break
 
             fb_id = fb_id.strip()
-            via_exist = via_share.find_one({"fb_id": fb_id, "status": {"$ne": 'live'}})
+            via_exist = via_share.find_one({"fb_id": fb_id})
+            if via_exist['status'] == 'live':
+                continue
+
             chrome_worker = ChromeHelper()
             if not via_exist:
                 chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
@@ -394,10 +397,10 @@ def start_share(main_window, stop_thread):
 
 # if __name__ == '__main__':
 #     all_via = via_share.find()
+#     # print(list(all_via))
 #     for via in all_via:
 #         exist = via_share.find({"fb_id": via['fb_id']})
 #         exist = list(exist)
 #         if len(exist) > 1:
-#             # via_share.delete_one({"_id": exist[0]['_id']})
-#             print(exist[0]['fb_id'])
-
+#             via_share.delete_one({"_id": exist[0]['_id']})
+#

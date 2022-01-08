@@ -386,8 +386,8 @@ if __name__ == '__main__':
             with open("checkpoint.txt", mode='w') as cp_via_files:
                 for via_data in via_table_data:
                     fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
-                    # if status and status.strip() not in ['live', 'sharing', 'join group']:
-                    cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
+                    if status and status.strip() not in ['live', 'sharing', 'join group']:
+                        cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
             cp_via_files.close()
             sg.Popup('Exported, file checkpoint.txt in your code directory.', keep_on_top=True)
         elif event == 'edit_via_btn':
