@@ -393,4 +393,11 @@ def start_share(main_window, stop_thread):
 
 
 # if __name__ == '__main__':
-#     thread_join_group(False)
+#     all_via = via_share.find()
+#     for via in all_via:
+#         exist = via_share.find({"fb_id": via['fb_id']})
+#         exist = list(exist)
+#         if len(exist) > 1:
+#             # via_share.delete_one({"_id": exist[0]['_id']})
+#             print(exist[0]['fb_id'])
+
