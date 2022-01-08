@@ -133,9 +133,16 @@ def thread_join_group(chrome_worker):
         except Exception as ex:
             continue
 
+        # check errors:
+        go_to_newsfeed = chrome_worker.waiting_for_text_by_css(join_group_btn, 'go to newsfeed', waiting_time=5)
+        if go_to_newsfeed:
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+            return
+
         # check joined
-        joined_1 = chrome_worker.waiting_for_text_by_css(join_group_btn, 'joined', waiting_time=5)
+        joined_1 = chrome_worker.waiting_for_text_by_css(join_group_btn, 'joined', waiting_time=1)
         invite_2 = chrome_worker.waiting_for_text_by_css(join_group_btn, 'invite', waiting_time=1)
+
         if joined_1 or invite_2:
             group_joined.append(group)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"group_joined": group_joined}})
@@ -150,15 +157,23 @@ def thread_join_group(chrome_worker):
                 break
             logger.info("Click join button")
             join_number += 1
+            chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", join_group_el)
             join_group_el.click()  # click join btn
             time.sleep(5)
             join_group_el = chrome_worker.waiting_for_text_by_css(check_background_color, 'join group', waiting_time=5)
             if join_group_el:
+                chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", join_group_el)
                 join_group_el.click()  # click join btn
 
             join_group_anw_exist = chrome_worker.waiting_for_text_by_css(join_group_anw, 'Join Group Anyway')
             if join_group_anw_exist:
                 join_group_anw_exist.click()
+
+        disagree_with_decision = chrome_worker.waiting_for_text_by_css(join_group_limited, 'disagree with decision',
+                                                                       waiting_time=1)
+        if disagree_with_decision:
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+            return
 
         answer_question = chrome_worker.waiting_for_text_by_css(answer_questions_label, 'answer questions',
                                                                 waiting_time=10)
@@ -170,10 +185,11 @@ def thread_join_group(chrome_worker):
             for element in elements:
                 if element and element.get_attribute('placeholder') == 'Write an answer...':
                     print("found text area")
-                    if element.get_attribute('value') != "":
-                        element.click()
-                        element.send_keys("I'm agree")
-                        time.sleep(1)
+                    chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", element)
+                    element.click()
+                    element.clear()
+                    element.send_keys("I'm agree")
+                    time.sleep(1)
 
             check_box = chrome_worker.waiting_for_text_by_css("div.hpfvmrgz.h676nmdw.buofh1pr.rj1gh0hx > span",
                                                               'I agree to the group rules', waiting_time=10)
@@ -183,6 +199,7 @@ def thread_join_group(chrome_worker):
 
             submit = chrome_worker.waiting_for_text_by_css(submit_btn, 'submit')
             if submit:
+                chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", submit)
                 submit.click()
             time.sleep(5)
 
@@ -214,6 +231,7 @@ def thread_join_group(chrome_worker):
     if join_button_enabled:
         # set status live
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+
     chrome_worker.driver.close()
 
 
@@ -236,6 +254,7 @@ def start_login_via(main_windows, file_input, login_existed):
                     keep_on_top=True)
                 break
 
+            fb_id = fb_id.strip()
             via_exist = via_share.find_one({"fb_id": fb_id, "status": {"$ne": 'live'}})
             chrome_worker = ChromeHelper()
             if not via_exist:

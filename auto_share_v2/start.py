@@ -447,33 +447,24 @@ if __name__ == '__main__':
                 status_via = edit_via_status[0].strip()
 
             via_idx = 0
-            for via_idx, via_data in enumerate(table_data):
-                fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
-                if fb_id == edit_via_id:
-                    new_via_data = edit_via_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via, share_number
-                    table_data_copy[via_idx] = [fb_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via, share_number]
-                    # query = db.update(via_share).values(
-                    #     password=edit_via_password, mfa=edit_via_mfa,
-                    #     email=edit_via_email, email_password=edit_via_email_password,
-                    #     proxy=edit_via_proxy_data,
-                    #     status=status_via
-                    # ).where(via_share.columns.fb_id == fb_id)
-                    # connection.execute(query)
-                    via_share.update_one(
-                        {"fb_id": fb_id},
-                        {"$set": {
-                            "password": edit_via_password,
-                            "mfa": edit_via_mfa,
-                            "email": edit_via_email,
-                            "email_password": edit_via_email_password,
-                            "proxy": edit_via_proxy_data,
-                            "status": status_via
-                        }}
-                    )
-                    break
-
-            window3.Element('via_table').Update(values=table_data_copy, select_rows=[via_idx])
-
+            # for via_idx, via_data in enumerate(table_data):
+            #     fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
+            #     if fb_id == edit_via_id:
+            #         new_via_data = edit_via_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via, share_number
+            #         table_data_copy[via_idx] = [fb_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via, share_number]
+            via_share.update_many(
+                {"fb_id": edit_via_id},
+                {"$set": {
+                    "password": edit_via_password,
+                    "mfa": edit_via_mfa,
+                    "email": edit_via_email,
+                    "email_password": edit_via_email_password,
+                    "proxy": edit_via_proxy_data,
+                    "status": status_via
+                }}
+            )
+            via_data = get_via_data()
+            window3.Element('via_table').Update(values=via_data)
             if window6:
                 window6.close()
         elif event == 'Start login via':

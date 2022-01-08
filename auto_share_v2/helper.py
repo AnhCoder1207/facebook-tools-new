@@ -335,9 +335,14 @@ class ChromeHelper:
         # like video
         like_btn = self.waiting_for_text_by_css(like_selector, 'like')
         if like_btn:
+            self.driver.execute_script("arguments[0].scrollIntoView();", like_btn)
             like_btn.click()
 
-        self.waiting_for_text_by_css(share_button_selector, "Share", waiting_time=10).click()
+        share_btn = self.waiting_for_text_by_css(share_button_selector, "Share", waiting_time=10)
+        if share_btn:
+            self.driver.execute_script("arguments[0].scrollIntoView();", share_btn)
+            share_btn.click()
+
         self.waiting_for_text_by_css(more_options_selector, "More Options", waiting_time=10).click()
         self.waiting_for_text_by_css(share_to_a_group, "Share to a group", waiting_time=10).click()
 
