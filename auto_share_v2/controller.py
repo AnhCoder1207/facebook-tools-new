@@ -5,6 +5,7 @@ from datetime import datetime
 import PySimpleGUI as sg
 import sqlalchemy as db
 from bson import ObjectId
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 
 from helper import ChromeHelper
@@ -18,8 +19,9 @@ def start_join_group(stop_joining):
             chrome_worker = ChromeHelper()  # init worker
             thread_join_group(chrome_worker)
         except Exception as ex:
-            logger.error(f"thread_join_group error {ex}")
-            pass
+            raise ex
+            # logger.error(f"thread_join_group error {ex}")
+            # pass
 
         try:
             chrome_worker.driver.close()
@@ -28,8 +30,8 @@ def start_join_group(stop_joining):
 
 
 def thread_join_group(chrome_worker):
-    # get list group share
-    groups_share = []
+    actions = ActionChains(chrome_worker.driver)  # create actions chain for chrome drive
+
     results = via_share.find({"status": "live", "share_number": {"$lte": 4}})
     results = list(results)
     if len(results) == 0:
@@ -157,12 +159,13 @@ def thread_join_group(chrome_worker):
                 break
             logger.info("Click join button")
             join_number += 1
-            chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", join_group_el)
+
+            # chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", join_group_el)
             join_group_el.click()  # click join btn
             time.sleep(5)
             join_group_el = chrome_worker.waiting_for_text_by_css(check_background_color, 'join group', waiting_time=5)
             if join_group_el:
-                chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", join_group_el)
+                # actions.move_to_element(join_group_el).perform()
                 join_group_el.click()  # click join btn
 
             join_group_anw_exist = chrome_worker.waiting_for_text_by_css(join_group_anw, 'Join Group Anyway')
@@ -185,7 +188,7 @@ def thread_join_group(chrome_worker):
             for element in elements:
                 if element and element.get_attribute('placeholder') == 'Write an answer...':
                     print("found text area")
-                    chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", element)
+                    # actions.move_to_element(element).perform()
                     element.click()
                     element.clear()
                     element.send_keys("I'm agree")
@@ -199,7 +202,7 @@ def thread_join_group(chrome_worker):
 
             submit = chrome_worker.waiting_for_text_by_css(submit_btn, 'submit')
             if submit:
-                chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", submit)
+                # actions.move_to_element(submit).perform()
                 submit.click()
             time.sleep(5)
 
@@ -207,9 +210,6 @@ def thread_join_group(chrome_worker):
         if join_group_el:
             logger.info("found joined_btn")
             group_joined.append(group)
-            # query = db.update(via_share).values(group_joined=json.dumps(group_joined))
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"group_joined": group_joined}})
             join_in_day += 1
             via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
