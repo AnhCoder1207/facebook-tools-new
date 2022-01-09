@@ -272,11 +272,11 @@ def start_login_via(main_windows, file_input, login_existed):
 
             fb_id = fb_id.strip()
             via_exist = via_share.find_one({"fb_id": fb_id})
-            if via_exist['status'] == 'live':
-                continue
-
             chrome_worker = ChromeHelper()
             if not via_exist:
+                if via_exist['status'] == 'live':
+                    continue
+
                 chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                 try:
                     login_status = chrome_worker.login()
