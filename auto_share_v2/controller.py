@@ -1,4 +1,5 @@
 import json
+import shutil
 import os
 import random
 import time
@@ -310,8 +311,7 @@ def start_login_via(main_windows, file_input, login_existed):
                             for line in config_file.readlines():
                                 user_data_dir = line.strip()
                                 break
-
-                    os.rmdir(f"{user_data_dir}/{fb_id}")
+                    shutil.rmtree(f"{user_data_dir}/{fb_id}")
                     chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                     login_status = chrome_worker.login()
                     # login success
