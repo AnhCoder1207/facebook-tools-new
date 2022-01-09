@@ -311,7 +311,7 @@ def start_login_via(main_windows, file_input, login_existed):
                                 user_data_dir = line.strip()
                                 break
 
-                    os.remove(f"{user_data_dir}/{fb_id}")
+                    os.rmdir(f"{user_data_dir}/{fb_id}")
                     chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                     login_status = chrome_worker.login()
                     # login success
