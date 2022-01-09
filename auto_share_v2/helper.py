@@ -18,7 +18,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from config_btn import english_select_language, disable_1, locked_1, share_button_selector, \
-    more_options_selector, share_to_a_group, like_selector
+    more_options_selector, share_to_a_group, like_selector, drop_down_menu_xpath
 # from models import via_share, scheduler_video, connection, joining_group
 from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group
 
@@ -140,6 +140,17 @@ class ChromeHelper:
             # logger.error(f"Can not find {selector}")
             return False
 
+    def find_by_xpath(self, xpath):
+        try:
+            element = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            )
+            return element
+        except Exception as ex:
+            pass
+            # logger.error(f"Can not find {selector}")
+            return False
+
     def waiting_for_selector(self, selector, waiting_time=10):
         try:
             element = WebDriverWait(self.driver, waiting_time).until(
@@ -163,6 +174,11 @@ class ChromeHelper:
                 logger.error(f"Can not find {text_compare}")
             time.sleep(1)
         return False
+
+    def check_dark_light(self):
+        drop_down_menu_el = self.find_by_xpath(drop_down_menu_xpath)
+        if drop_down_menu_el:
+            print(drop_down_menu_el.value_of_css_property("background-color"))
 
     def login(self):
         username_xpath = """//*[@id="m_login_email"]"""
@@ -335,12 +351,12 @@ class ChromeHelper:
         # like video
         like_btn = self.waiting_for_text_by_css(like_selector, 'like')
         if like_btn:
-            self.driver.execute_script("arguments[0].scrollIntoView();", like_btn)
+            # self.driver.execute_script("arguments[0].scrollIntoView();", like_btn)
             like_btn.click()
 
         share_btn = self.waiting_for_text_by_css(share_button_selector, "Share", waiting_time=10)
         if share_btn:
-            self.driver.execute_script("arguments[0].scrollIntoView();", share_btn)
+            # self.driver.execute_script("arguments[0].scrollIntoView();", share_btn)
             share_btn.click()
 
         self.waiting_for_text_by_css(more_options_selector, "More Options", waiting_time=10).click()
@@ -555,11 +571,25 @@ class ChromeHelper:
         options.add_argument("--start-maximized")
         options.add_argument("--disable-notifications")
         options.add_argument('--disable-gpu')
+        options.add_argument('--disable-background-networking')
+        options.add_argument('--disable-backgrounding-occluded-windows')
+        options.add_argument('--disable-client-side-phishing-detection')
+        options.add_argument('--disable-popup-blocking')
+        options.add_argument('--disable-prompt-on-repost')
+        options.add_argument('--disable-rtc-smoothness-algorithm')
+        options.add_argument('--disable-sync')
+        options.add_argument('--disable-web-security')
+        options.add_argument('--disable-webgl')
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--mute-audio')
         # options.add_argument('--headless')
         options.add_argument('disable-infobars')
         options.add_argument('--no-sandbox')
+        options.add_argument('--no-first-run')
+        options.add_argument('--no-service-autorun')
+        options.add_argument('--password-store=basic')
         options.add_argument('--disable-dev-shm-usage')
-        options.add_argument("test-type=browser")
+        options.add_argument("test-type=webdriver")
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         #prefs = {"profile.default_content_setting_values.notifications": 1, "profile.name": f"{self.fb_id} - Chrome"}

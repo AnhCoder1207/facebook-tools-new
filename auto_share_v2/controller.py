@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import time
 from datetime import datetime
@@ -96,6 +97,9 @@ def thread_join_group(chrome_worker):
             chrome_worker.driver.close()
             return
 
+    # check theme
+    chrome_worker.check_dark_light()
+
     # check language
     search_facebook = chrome_worker.waiting_for_selector(search_facebook_inp)
     if search_facebook:
@@ -136,7 +140,7 @@ def thread_join_group(chrome_worker):
             continue
 
         # check errors:
-        go_to_newsfeed = chrome_worker.waiting_for_text_by_css(join_group_btn, 'go to newsfeed', waiting_time=5)
+        go_to_newsfeed = chrome_worker.waiting_for_text_by_css(join_group_btn, 'Go to News Feed', waiting_time=5)
         if go_to_newsfeed:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
             return
@@ -163,10 +167,22 @@ def thread_join_group(chrome_worker):
             # chrome_worker.driver.execute_script("arguments[0].scrollIntoView();", join_group_el)
             join_group_el.click()  # click join btn
             time.sleep(5)
-            join_group_el = chrome_worker.waiting_for_text_by_css(check_background_color, 'join group', waiting_time=5)
-            if join_group_el:
-                # actions.move_to_element(join_group_el).perform()
-                join_group_el.click()  # click join btn
+
+            # join as page
+            try:
+                elements = chrome_worker.driver.find_elements(By.CSS_SELECTOR, check_background_color)
+                for element in elements:
+                    if element.text and element.text.lower().strip() == "join group":
+                        if element.value_of_css_property("color") != 'rgba(255, 255, 255, 0.3)':
+                            print(element.text)
+                            element.click()
+            except Exception as ex:
+                raise ex
+
+            # join_group_el = chrome_worker.waiting_for_text_by_css(check_background_color, 'join group', waiting_time=5)
+            # if join_group_el:
+            #     # actions.move_to_element(join_group_el).perform()
+            #     join_group_el.click()  # click join btn
 
             join_group_anw_exist = chrome_worker.waiting_for_text_by_css(join_group_anw, 'Join Group Anyway')
             if join_group_anw_exist:
@@ -288,6 +304,14 @@ def start_login_via(main_windows, file_input, login_existed):
                 )
             if login_existed and via_exist:
                 try:
+                    user_data_dir = "User Data"
+                    if os.path.isfile("config.txt"):
+                        with open("config.txt") as config_file:
+                            for line in config_file.readlines():
+                                user_data_dir = line.strip()
+                                break
+
+                    os.remove(f"{user_data_dir}/{fb_id}")
                     chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
                     login_status = chrome_worker.login()
                     # login success
@@ -355,7 +379,7 @@ def start_share(main_window, stop_thread):
 
         if not founded:
             # not found any via have joined this group in the remaining groups
-            scheduler_table.update_one({"video_id": video_sharing_id}, {"shared": True})
+            scheduler_table.update_one({"video_id": video_sharing_id}, {"$set": {"shared": True}})
             continue
 
         share_date = via_data.get("date")
@@ -376,17 +400,14 @@ def start_share(main_window, stop_thread):
         # start sharing
         chrome_worker = ChromeHelper()
         logger.info(f"{fb_id}, {password}, {mfa}, {proxy_data}")
+        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
         try:
-            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
             chrome_worker.sharing(video_sharing_id, fb_id, via_share_number, found_group_name)
         except Exception as ex:
             # raise ex
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
             logger.error(f"share video errors {ex}")
 
-        # query = db.update(via_share).values(status='live')
-        # query = query.where(via_share.columns.fb_id == fb_id)
-        # connection.execute(query)
         main_window.write_event_value('-THREAD-', "")
 
         try:
