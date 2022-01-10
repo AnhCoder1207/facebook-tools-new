@@ -310,6 +310,12 @@ def start_login_via(main_windows, file_input, login_existed):
                                 user_data_dir = line.strip()
                                 break
                     if via_exist['status'] == 'live':
+                        via_share.update_one(
+                            {"fb_id": fb_id},
+                            {"$set": {
+                                "create_date": str(datetime.now())
+                            }}
+                        )
                         continue
 
                     shutil.rmtree(f"{user_data_dir}/{fb_id}")
