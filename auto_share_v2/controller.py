@@ -300,7 +300,8 @@ def start_login_via(main_windows, file_input, login_existed):
                         "share_number": 0,
                         "group_joined": [],
                         "date": "",
-                        "status": via_status
+                        "status": via_status,
+                        "create_date": str(datetime.now())
                     }
                 )
             if login_existed and via_exist:
@@ -331,7 +332,8 @@ def start_login_via(main_windows, file_input, login_existed):
                         "email": email,
                         "email_password": email_password,
                         "proxy": proxy_data,
-                        "status": via_status
+                        "status": via_status,
+                        "create_date": str(datetime.now())
                     }}
                 )
             try:

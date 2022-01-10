@@ -90,6 +90,6 @@ def get_via_data():
     #     return []
     # df = pd.DataFrame(results)
     # df.columns = results[0].keys()
-    results = via_share.find()
+    results = via_share.find().sort([("status", pymongo.DESCENDING), ("create_date", pymongo.DESCENDING)])
     table_default = list(map(mapping_via_table, list(results)))
     return table_default
