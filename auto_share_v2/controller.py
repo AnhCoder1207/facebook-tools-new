@@ -32,8 +32,6 @@ def start_join_group(stop_joining):
 
 
 def thread_join_group(chrome_worker):
-    actions = ActionChains(chrome_worker.driver)  # create actions chain for chrome drive
-
     results = via_share.find({"status": "live", "share_number": {"$lte": 4}})
     results = list(results)
     if len(results) == 0:
@@ -144,6 +142,24 @@ def thread_join_group(chrome_worker):
         go_to_newsfeed = chrome_worker.waiting_for_text_by_css(join_group_btn, 'Go to News Feed', waiting_time=5)
         if go_to_newsfeed:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+            return
+
+        # check disable
+        is_disable = chrome_worker.waiting_for_selector(disable_1, waiting_time=1)
+        if is_disable:
+            # query = db.update(via_share).values(status='disable')
+            # query = query.where(via_share.columns.fb_id == fb_id)
+            # connection.execute(query)
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
+            chrome_worker.driver.close()
+            return
+        is_locked = chrome_worker.waiting_for_selector(locked_1, waiting_time=1)
+        if is_locked:
+            # query = db.update(via_share).values(status='checkpoint')
+            # query = query.where(via_share.columns.fb_id == fb_id)
+            # connection.execute(query)
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
+            chrome_worker.driver.close()
             return
 
         # check joined
