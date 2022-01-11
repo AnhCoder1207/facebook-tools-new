@@ -1,5 +1,6 @@
 import logging
 import random
+import time
 from datetime import datetime
 
 import pymongo
@@ -93,3 +94,7 @@ def get_via_data():
     results = via_share.find().sort([("status", pymongo.DESCENDING), ("create_date", pymongo.DESCENDING)])
     table_default = list(map(mapping_via_table, list(results)))
     return table_default
+
+
+def random_sleep(first_time=1, last_time=5):
+    time.sleep(random.randint(first_time, last_time))

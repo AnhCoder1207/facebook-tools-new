@@ -18,9 +18,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from config_btn import english_select_language, disable_1, locked_1, share_button_selector, \
-    more_options_selector, share_to_a_group, like_selector, drop_down_menu_xpath
+    more_options_selector, share_to_a_group, like_selector, drop_down_menu_xpath, confirm_friend_request, \
+    add_friend_button
 # from models import via_share, scheduler_video, connection, joining_group
-from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group
+from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group, random_sleep
 
 
 class ChromeHelper:
@@ -285,68 +286,72 @@ class ChromeHelper:
         groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
         groups_share_fixed.append(found_group_name)
 
-        if random.choice([1, 2, 3, 4]) == 1:
-            self.driver.get(f"https://fb.com")
-            message_selector = """#mount_0_0_gb > div > div:nth-child(1) > div > div:nth-child(4) > div.ehxjyohh.kr520xx4.poy2od1o.b3onmgus.hv4rvrfc.n7fi1qx3 > div.du4w35lb.l9j0dhe7.byvelhso.rl25f0pe.j83agx80.bp9cbjyn > div:nth-child(3) > span"""
-            message_el = self.waiting_for_css_selector(message_selector)
+        self.driver.get("https://m.facebook.com")
+        if random.choice([1, 2]) == 1:
+            message_el = self.find_by_attr("a", "href", "Friend Requests")
             if message_el:
                 message_el.click()
-        if random.choice([1, 2, 3, 4]) == 1:
-            self.driver.get("https://www.facebook.com/groups/feed/")
-            time.sleep(10)
-        if random.choice([1, 2, 3, 4]) == 1:
-            self.driver.get("https://www.facebook.com/watch/?ref=tab")
-            time.sleep(10)
-        if random.choice([1, 2, 3, 4]) == 1:
-            self.driver.get("https://m.facebook.com")
-            SCROLL_PAUSE_TIME = 0.5
+                confirm_friend = self.waiting_for_text_by_css(confirm_friend_request, "Confirm")
+                if confirm_friend: confirm_friend.click()
+                add_friend = self.waiting_for_text_by_css(add_friend_button, "Add Friend")
+                if add_friend: add_friend.click()
+            random_sleep()
+        if random.choice([1, 2]) == 1:
+            message_el = self.find_by_attr("a", "href", "Notifications")
+            if message_el: message_el.click()
+            random_sleep()
 
-            # Get scroll height
-            last_height = self.driver.execute_script("return document.body.scrollHeight")
-            i = 0
-            while i < 10:
-                i += 1
-                # Scroll down to bottom
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                # Wait to load page
-                time.sleep(SCROLL_PAUSE_TIME)
-                # Calculate new scroll height and compare with last scroll height
-                new_height = self.driver.execute_script("return document.body.scrollHeight")
-                if new_height == last_height:
-                    break
-                last_height = new_height
-            time.sleep(10)
+        # Get scroll height
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        i = 0
+        while i < 10:
+            i += 1
+            # Scroll down to bottom
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Wait to load page
+            time.sleep(0.5)
 
-        self.driver.get(f"https://fb.com/{video_id}")
+        time.sleep(10)
+        self.driver.get(f"https://m.facebook.com/{video_id}")
+
+        i = 0
+        while i < 10:
+            i += 1
+            # Scroll down to bottom
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Wait to load page
+            time.sleep(0.5)
 
         # check disable
-        is_disable = self.waiting_for_selector(disable_1, waiting_time=5)
-        if is_disable:
-            # query = db.update(via_share).values(status='disable')
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
-            self.driver.close()
-            return False
-        is_locked = self.waiting_for_selector(locked_1, waiting_time=5)
-        if is_locked:
-            # query = db.update(via_share).values(status='checkpoint')
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
-            self.driver.close()
-            return False
+        # is_disable = self.waiting_for_selector(disable_1, waiting_time=5)
+        # if is_disable:
+        #     # query = db.update(via_share).values(status='disable')
+        #     # query = query.where(via_share.columns.fb_id == fb_id)
+        #     # connection.execute(query)
+        #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
+        #     self.driver.close()
+        #     return False
+        # is_locked = self.waiting_for_selector(locked_1, waiting_time=5)
+        # if is_locked:
+        #     # query = db.update(via_share).values(status='checkpoint')
+        #     # query = query.where(via_share.columns.fb_id == fb_id)
+        #     # connection.execute(query)
+        #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
+        #     self.driver.close()
+        #     return False
 
         is_login = self.waiting_for_selector("#email", waiting_time=1)
         if is_login:
             self.login()
 
-        not_login = self.waiting_for_css_selector("""div.linmgsc8.rq0escxv.cb02d2ww.clqubjjj.bjjun2dj > div > h2 > span > span""")
-        if not_login and not_login.text.lower() == "not logged in":
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'can not login'}})
-            return False
+        # not_login = self.waiting_for_css_selector("""div.linmgsc8.rq0escxv.cb02d2ww.clqubjjj.bjjun2dj > div > h2 > span > span""")
+        # if not_login and not_login.text.lower() == "not logged in":
+        #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'can not login'}})
+        #     return False
 
-        time.sleep(40)
+        random_sleep(30, 60)
+
+        self.driver.get("https://m.facebook.com/groups/crafttrick/")
 
         # like video
         like_btn = self.waiting_for_text_by_css(like_selector, 'like')

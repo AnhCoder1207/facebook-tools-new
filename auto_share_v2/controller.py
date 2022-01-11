@@ -21,9 +21,8 @@ def start_join_group(stop_joining):
             chrome_worker = ChromeHelper()  # init worker
             thread_join_group(chrome_worker)
         except Exception as ex:
-            raise ex
-            # logger.error(f"thread_join_group error {ex}")
-            # pass
+            # raise ex
+            logger.error(f"thread_join_group error {ex}")
 
         try:
             chrome_worker.driver.close()
