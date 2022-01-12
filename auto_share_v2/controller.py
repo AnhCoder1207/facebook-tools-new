@@ -376,34 +376,34 @@ def start_share(main_window, stop_thread):
         video_sharing_id = video_sharing.get("video_id", "")
         groups_remaining = video_sharing.get("groups_remaining", [])
         groups_shared = video_sharing.get("groups_shared", [])
-        logger.info(f"Share video : {video_sharing_id}")
-
-        results = via_share.find({"status": 'live', "share_number": {"$lt": 4}})
+        current_date = str(datetime.date(datetime.now()))
+        results = via_share.find({"status": 'live'})
         results = list(results)
 
         if len(results) == 0:
+            time.sleep(10)
             continue
 
         groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
-        current_date = str(datetime.date(datetime.now()))
-        via_data = None
-        founded = False
-        found_group_name = ""
-        for via_data in results:
-            group_joined = via_data.get("group_joined", [])
-            for group_share_fixed in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
-                if group_share_fixed in group_joined:
-                    founded = True
-                    found_group_name = group_share_fixed
-                    break
-            if founded:
-                # found group joined
-                break
 
-        if not founded:
-            # not found any via have joined this group in the remaining groups
-            scheduler_table.update_one({"video_id": video_sharing_id}, {"$set": {"shared": True}})
-            continue
+        via_data = random.choice(results)
+        founded = True
+        found_group_name = ""
+        # for via_data in results:
+        #     group_joined = via_data.get("group_joined", [])
+        #     for group_share_fixed in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
+        #         if group_share_fixed in group_joined:
+        #             founded = True
+        #             found_group_name = group_share_fixed
+        #             break
+        #     if founded:
+        #         # found group joined
+        #         break
+
+        # if not founded:
+        #     # not found any via have joined this group in the remaining groups
+        #     scheduler_table.update_one({"video_id": video_sharing_id}, {"$set": {"shared": True}})
+        #     continue
 
         share_date = via_data.get("date")
         fb_id = via_data.get("fb_id")
@@ -412,20 +412,23 @@ def start_share(main_window, stop_thread):
         proxy_data = via_data.get("proxy")
         via_share_number = via_data.get("share_number")
         # reset via share counting
-        if share_date != current_date:
+        if share_date != current_date and via_share_number >= 4:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
+            via_share_number = 0
+        if via_share_number >= 4:
+            time.sleep(10)
+            continue
 
-        # mark via running
-        # query = db.update(via_share).values(status='sharing')
-        # query = query.where(via_share.columns.fb_id == fb_id)
-        # connection.execute(query)
+        logger.info(f"Share video: {video_sharing_id}")
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'sharing'}})
         # start sharing
         chrome_worker = ChromeHelper()
         logger.info(f"{fb_id}, {password}, {mfa}, {proxy_data}")
-        chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+
         try:
-            chrome_worker.sharing(video_sharing_id, fb_id, via_share_number, found_group_name)
+            chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+            if chrome_status:
+                chrome_worker.sharing(video_sharing_id, fb_id, via_share_number, found_group_name)
         except Exception as ex:
             # raise ex
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
@@ -437,6 +440,7 @@ def start_share(main_window, stop_thread):
             chrome_worker.driver.close()
         except Exception as ex:
             pass
+        time.sleep(10)
 
 
 # if __name__ == '__main__':

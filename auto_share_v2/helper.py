@@ -117,8 +117,8 @@ class ChromeHelper:
             time.sleep(2)
         return False
 
-    def waiting_for_text(self, tag, text_compare):
-        for _ in range(3):
+    def waiting_for_text(self, tag, text_compare, waiting_time=3):
+        for _ in range(waiting_time):
             try:
                 elements = self.driver.find_elements(By.TAG_NAME, tag)
                 for element in elements:
@@ -229,6 +229,7 @@ class ChromeHelper:
             submit_mfa.click()
             continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
             continue_mfa_btn.click()
+
             return True
         return False
 
@@ -287,6 +288,27 @@ class ChromeHelper:
         groups_share_fixed.append(found_group_name)
 
         self.driver.get("https://m.facebook.com")
+
+        # check logged
+        newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        if not newsfeed:
+            try:
+                self.login()
+            except Exception as ex:
+                print(ex)
+
+            # check again
+            # check logged
+            if self.find_by_text("h1", "Your account has been disabled"):
+                logger.info(f"Via {fb_id} Disabled")
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
+                return
+            # check logged
+            if self.find_by_attr("button", "value", "Get started"):
+                logger.info(f"Via {fb_id} Checkpoint")
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
+                return
+
         if random.choice([1, 2]) == 1:
             message_el = self.find_by_attr("a", "href", "Friend Requests")
             if message_el:
@@ -309,18 +331,22 @@ class ChromeHelper:
             # Scroll down to bottom
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             # Wait to load page
-            time.sleep(0.5)
+            random_sleep(1, 2)
 
         time.sleep(10)
         self.driver.get(f"https://m.facebook.com/{video_id}")
 
-        i = 0
-        while i < 10:
-            i += 1
-            # Scroll down to bottom
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            # Wait to load page
-            time.sleep(0.5)
+        play_button = self.find_by_attr("div", "data-sigil", "m-video-play-button playInlineVideo")
+        if play_button: play_button.click()
+        random_sleep(30, 50)
+
+        # i = 0
+        # while i < 10:
+        #     i += 1
+        #     # Scroll down to bottom
+        #     self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        #     # Wait to load page
+        #     time.sleep(1)
 
         # check disable
         # is_disable = self.waiting_for_selector(disable_1, waiting_time=5)
@@ -340,36 +366,11 @@ class ChromeHelper:
         #     self.driver.close()
         #     return False
 
-        is_login = self.waiting_for_selector("#email", waiting_time=1)
-        if is_login:
-            self.login()
+        # is_login = self.waiting_for_selector("#m_login_email", waiting_time=1)
+        # if is_login:
+        #     self.login()
 
-        # not_login = self.waiting_for_css_selector("""div.linmgsc8.rq0escxv.cb02d2ww.clqubjjj.bjjun2dj > div > h2 > span > span""")
-        # if not_login and not_login.text.lower() == "not logged in":
-        #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'can not login'}})
-        #     return False
-
-        random_sleep(30, 60)
-
-        self.driver.get("https://m.facebook.com/groups/crafttrick/")
-
-        # like video
-        like_btn = self.waiting_for_text_by_css(like_selector, 'like')
-        if like_btn:
-            # self.driver.execute_script("arguments[0].scrollIntoView();", like_btn)
-            like_btn.click()
-
-        share_btn = self.waiting_for_text_by_css(share_button_selector, "Share", waiting_time=10)
-        if share_btn:
-            # self.driver.execute_script("arguments[0].scrollIntoView();", share_btn)
-            share_btn.click()
-
-        self.waiting_for_text_by_css(more_options_selector, "More Options", waiting_time=10).click()
-        self.waiting_for_text_by_css(share_to_a_group, "Share to a group", waiting_time=10).click()
-
-        search_group_inp = self.waiting_for_css_selector("div.n851cfcs.wkznzc2l.dhix69tm.n1l5q3vz > div > div > label > input")
-
-        for group in reversed(groups_share_fixed):
+        for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
             group = group.strip()
             if group == "":
                 continue
@@ -384,6 +385,53 @@ class ChromeHelper:
             else:
                 logger.error(f"Can not split {group}")
                 continue
+            self.driver.get(group_url)
+
+            # check logged
+            if self.find_by_text("h1", "Your account has been disabled"):
+                logger.info(f"Via {fb_id} Disabled")
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
+                return
+            # check logged
+            if self.find_by_attr("button", "value", "Get started"):
+                logger.info(f"Via {fb_id} Checkpoint")
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
+                return
+
+            # check logged
+            if self.find_by_text("a", "Content Not Found"):
+                continue
+
+            i = 0
+            while i < 20:
+                i += 1
+                # Scroll down to bottom
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                # Wait to load page
+                time.sleep(2)
+
+            self.driver.get(group_url)
+            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=10)
+            if not write_something:
+                continue
+
+            write_something.click()
+            random_sleep(1, 3)
+
+            post_area = self.find_by_attr("textarea", "aria-label", "What's on your mind?", waiting_time=10)
+            if not post_area:
+                continue
+
+            post_area.click()
+            post_area.clear()
+            post_area.send_keys("https://facebook.com/968438177404210")
+            random_sleep(1, 3)
+
+            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button")
+            if not close_link_button:
+                continue
+
+            random_sleep(1, 3)
 
             # check group is shared
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
@@ -394,62 +442,50 @@ class ChromeHelper:
             if group in groups_shared:
                 continue
 
-            if not search_group_inp:
-                search_group_inp = self.find_by_attr("input", "aria-label", "Search for groups")
-                search_group_inp.click()
+            random_sleep(1, 3)  # waiting for share btn
 
-            for _ in range(100):
-                try:
-                    search_group_inp.send_keys(Keys.BACKSPACE)
-                except Exception as ex:
-                    logger.error(ex)
+            # title share
+            all_titles = share_descriptions
+            if len(share_descriptions) == 0:
+                all_titles = get_group_joining_data('share_descriptions').split("\n")
 
-            try:
-                search_group_inp.send_keys(group_name)
-            except Exception as ex:
-                logger.error(ex)
-                continue
+            share_title = ""
+            for idx, title in enumerate(all_titles):
+                share_title = title
+                if idx == len(all_titles) - 1:
+                    title_shared = []
+                    scheduler_table.update_one({"video_id": video_id},
+                                               {"$set": {"title_shared": []}})
+                if title not in title_shared:
+                    title_shared.append(title)
+                    scheduler_table.update_one({"video_id": video_id},
+                                               {"$set": {"title_shared": title_shared}})
+                    break
 
-            time.sleep(2)  # waiting for share btn
-            group_founded = self.waiting_for_css_selector("""div.ow4ym5g4.auili1gw.rq0escxv.j83agx80.buofh1pr.g5gj957u.i1fnvgqd.oygrvhab.cxmmr5t8.hcukyx3x.kvgmc6g5.tgvbjcpo.hpfvmrgz.qt6c0cv9.rz4wbd8a.a8nywdso.jb3vyjys.du4w35lb.bp9cbjyn.btwxx1t3.l9j0dhe7 > div.n851cfcs.ozuftl9m.n1l5q3vz.l9j0dhe7.nqmvxvec > div > div > i""")
-            if group_founded:
+            post_area.click()
+            post_area.clear()
+            post_area.send_keys(share_title)
 
-                # title share
-                all_titles = share_descriptions
-                if len(share_descriptions) == 0:
-                    all_titles = get_group_joining_data('share_descriptions').split("\n")
+            time.sleep(1)
+            elements = self.driver.find_elements(By.TAG_NAME, "button")
+            attribute = "data-sigil"
+            text_compare = "touchable submit_composer"
+            for element in elements:
+                if element and element.get_attribute(attribute) and \
+                        element.get_attribute(attribute).lower().strip() == text_compare.lower().strip():
+                    if element.text == "Post":
+                        element.click()
 
-                share_title = ""
-                for idx, title in enumerate(all_titles):
-                    share_title = title
-                    if idx == len(all_titles) - 1:
-                        title_shared = []
-                        scheduler_table.update_one({"video_id": video_id},
-                                                   {"$set": {"title_shared": []}})
-                    if title not in title_shared:
-                        title_shared.append(title)
-                        scheduler_table.update_one({"video_id": video_id},
-                                                   {"$set": {"title_shared": title_shared}})
-                        break
-
-                group_founded.click()
-                post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Create a public post…", waiting_time=15)
-                if not post_description:
-                    post_description = self.find_attr_by_css("div.rq0escxv.buofh1pr.df2bnetk.dati1w0a.l9j0dhe7.k4urcfbm.du4w35lb.ftjopcgk > div > div > div > div > div._5rpb > div", "aria-label", "Write something...", waiting_time=1)
-                if post_description:
-                    post_description.send_keys(share_title)
-                    time.sleep(1)
-                    post_btn = self.waiting_for_text_by_css("div.bp9cbjyn.j83agx80.taijpn5t.c4xchbtz.by2jbhx6.a0jftqn4 > div > span > span", "Post", waiting_time=10)
-                    if post_btn:
-                        post_btn.click()
-                        video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
-                        groups_shared = video_sharing_tmp.get("groups_shared", [])
-                        share_number = video_sharing_tmp.get("share_number", 0)
-                        groups_remaining = video_sharing.get("groups_remaining", [])
-                        groups_shared.append(group)
-                        groups_remaining.remove(group)
-                        logger.info(f"{video_id} Share done")
-                        break
+            video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+            groups_shared = video_sharing_tmp.get("groups_shared", [])
+            share_number = video_sharing_tmp.get("share_number", 0)
+            groups_remaining = video_sharing_tmp.get("groups_remaining", [])
+            if group not in groups_shared:
+                groups_shared.append(group)
+            if group in groups_remaining:
+                groups_remaining.remove(group)
+            logger.info(f"{video_id} Share done")
+            break
 
         share_number += 1
         update_data = {
@@ -472,7 +508,7 @@ class ChromeHelper:
                 }
             }
         )
-        time.sleep(5)
+        time.sleep(10)
         return True
 
     @staticmethod
@@ -502,14 +538,13 @@ class ChromeHelper:
         PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = self.proxy_data.split(":")
 
         # check proxy
-        # proxies = {"http": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"}
-        #
-        # try:
-        #     r = requests.get("http://www.google.com/", proxies=proxies)
-        # except Exception as ex:
-        #     logger.error(f"proxy die: {self.fb_id}")
-            # return False
+        proxies = {"http": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"}
 
+        try:
+            r = requests.get("http://www.google.com/", proxies=proxies)
+        except Exception as ex:
+            logger.error(f"proxy die: {self.fb_id}")
+            return False
 
         manifest_json = """
             {
@@ -613,8 +648,8 @@ class ChromeHelper:
         options.add_extension(pluginfile)
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
-        # self.driver.set_window_size(1920, 1080)
-        # self.driver.fullscreen_window()
+        self.driver.set_window_size(390, 844)
+        return True
 
     def change_language(self):
         self.driver.get("https://www.facebook.com/settings/?tab=language")
