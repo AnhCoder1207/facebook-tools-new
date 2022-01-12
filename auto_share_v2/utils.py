@@ -98,3 +98,9 @@ def get_via_data():
 
 def random_sleep(first_time=1, last_time=5):
     time.sleep(random.randint(first_time, last_time))
+
+
+def validate_string(input_txt):
+    if type(input_txt) is str:
+        return ''.join(e for e in input_txt if (e.isalnum() or e == " " or e == '.'))
+    return input_txt

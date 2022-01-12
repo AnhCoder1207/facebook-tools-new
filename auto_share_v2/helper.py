@@ -21,7 +21,8 @@ from config_btn import english_select_language, disable_1, locked_1, share_butto
     more_options_selector, share_to_a_group, like_selector, drop_down_menu_xpath, confirm_friend_request, \
     add_friend_button
 # from models import via_share, scheduler_video, connection, joining_group
-from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group, random_sleep
+from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group, random_sleep, \
+    validate_string
 
 
 class ChromeHelper:
@@ -451,7 +452,7 @@ class ChromeHelper:
 
             share_title = ""
             for idx, title in enumerate(all_titles):
-                share_title = title
+                share_title = validate_string(title)
                 if idx == len(all_titles) - 1:
                     title_shared = []
                     scheduler_table.update_one({"video_id": video_id},
