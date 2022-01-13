@@ -265,13 +265,13 @@ def thread_join_group(chrome_worker):
     chrome_worker.driver.close()
 
 
-def start_login_via(main_windows, file_input, login_existed):
+def start_login_via(main_windows, file_input, login_existed, number_threads):
     with open(file_input, encoding="utf-8") as via_files:
 
         def chunks(l, n):
             n = max(1, n)
             return (l[i:i + n] for i in range(0, len(l), n))
-        data_via = chunks(via_files.readlines(), 10)
+        data_via = chunks(via_files.readlines(), number_threads)
         for sub_data in data_via:
             start_login_thread = threading.Thread(target=login_via_thread,
                                                   args=(sub_data, main_windows, login_existed),

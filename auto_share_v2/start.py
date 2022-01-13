@@ -472,7 +472,15 @@ if __name__ == '__main__':
             if not os.path.isfile(file_input):
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
-            start_login_via(window3, file_input, values.get('login.options', False))
+
+            number_threads = values.get("number_threads", 0)
+            try:
+                number_threads = int(number_threads)
+            except Exception as ex:
+                sg.Popup("Number threads must be integer")
+                continue
+
+            start_login_via(window3, file_input, values.get('login.options', False), number_threads)
             # start_login_thread = threading.Thread(target=start_login_via,
             #                                       args=(), daemon=True)
             # start_login_thread.start()
