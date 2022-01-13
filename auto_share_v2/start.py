@@ -207,7 +207,7 @@ if __name__ == '__main__':
             os.system("taskkill /f /im " + browserExe)
         elif event == 'Start share':
             # get number theads
-            number_threads = values.get("number_threads", 0)
+            number_threads = values.get("number_threads", 1)
 
             try:
                 number_threads = int(number_threads)
@@ -473,7 +473,7 @@ if __name__ == '__main__':
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
 
-            number_threads = values.get("number_threads", 0)
+            number_threads = window1.Element('number_threads').Get()
             try:
                 number_threads = int(number_threads)
             except Exception as ex:
@@ -512,7 +512,7 @@ if __name__ == '__main__':
             window5.close()
         elif event == 'Start Join Group':
             # get number theads
-            number_threads = values.get("number_threads", 0)
+            number_threads = values.get("number_threads", 1)
 
             try:
                 number_threads = int(number_threads)
