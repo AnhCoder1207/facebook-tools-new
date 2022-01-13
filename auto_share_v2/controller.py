@@ -286,26 +286,27 @@ def start_login_via(main_windows, file_input, login_existed, number_threads):
 def login_via_thread(via_data, main_windows, login_existed):
     for via_idx, via in enumerate(via_data):
         user_data = via.strip().split('|')
-        if len(user_data) < 5:
-            sg.Popup(
-                f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                keep_on_top=True)
-            break
+        # if len(user_data) < 5:
+        #     sg.Popup(
+        #         f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+        #         keep_on_top=True)
+        #     break
+        if len(user_data) not in [5, 6]:
+            logger.error(f"login via error : {user_data}")
+            continue
 
         if len(user_data) == 6:
             fb_id, password, mfa, email, email_password, proxy_data = user_data
             proxy_data_split = proxy_data.split(":")
             if len(proxy_data_split) != 4:
-                sg.Popup(
-                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                    keep_on_top=True)
+                # sg.Popup(
+                #     f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                #     keep_on_top=True)
                 break
 
-        elif len(user_data) == 5:
+        if len(user_data) == 5:
             fb_id, password, mfa, email, email_password = user_data
             proxy_data = ""
-        else:
-            continue
 
         mfa = mfa.replace(" ", '')
         logger.info(f"login via {via_idx} {fb_id}")
