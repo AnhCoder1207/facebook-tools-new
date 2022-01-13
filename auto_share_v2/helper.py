@@ -1,28 +1,19 @@
 import os
 import zipfile
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import wraps
 import requests
-import pyautogui
 import pyotp
 import time
 import random
-import json
-import sqlalchemy as db
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from config_btn import english_select_language, disable_1, locked_1, share_button_selector, \
-    more_options_selector, share_to_a_group, like_selector, drop_down_menu_xpath, confirm_friend_request, \
-    add_friend_button
-# from models import via_share, scheduler_video, connection, joining_group
-from utils import logger, get_group_joining_data, mongo_client, scheduler_table, via_share, joining_group, random_sleep, \
-    validate_string
+from config_btn import drop_down_menu_xpath, confirm_friend_request, add_friend_button
+from utils import logger, get_group_joining_data, scheduler_table, via_share, random_sleep, validate_string
 
 
 class ChromeHelper:

@@ -1,0 +1,10 @@
+pyautogui
+schedule
+clipboard
+pymongo[srv]
+keyboard
+opencv-python
+PySimpleGUI
+selenium
+pyotp
+sqlalchemy

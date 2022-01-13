@@ -1,4 +1,3 @@
-import json
 import shutil
 import os
 import random
@@ -6,13 +5,11 @@ import threading
 import time
 from datetime import datetime
 import PySimpleGUI as sg
-import sqlalchemy as db
 from bson import ObjectId
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 
 from helper import ChromeHelper
-from utils import get_group_joining_data, logger, via_share, joining_group, scheduler_table, group_auto_approved
+from utils import get_group_joining_data, logger, via_share, scheduler_table, group_auto_approved
 from config_btn import *
 
 

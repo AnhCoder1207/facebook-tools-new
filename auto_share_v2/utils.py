@@ -4,9 +4,6 @@ import time
 from datetime import datetime
 
 import pymongo
-
-import sqlalchemy as db
-import pandas as pd
 # create logger with 'spam_application'
 from pymongo import MongoClient
 
