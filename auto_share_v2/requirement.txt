@@ -9,3 +9,4 @@ selenium
 pyotp
 sqlalchemy
 requests
+pyinstaller
