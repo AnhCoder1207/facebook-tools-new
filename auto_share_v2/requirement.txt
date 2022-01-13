@@ -8,3 +8,4 @@ PySimpleGUI
 selenium
 pyotp
 sqlalchemy
+requests
