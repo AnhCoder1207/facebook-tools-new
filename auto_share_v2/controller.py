@@ -2,6 +2,7 @@ import json
 import shutil
 import os
 import random
+import threading
 import time
 from datetime import datetime
 import PySimpleGUI as sg
@@ -268,101 +269,113 @@ def thread_join_group(chrome_worker):
 
 
 def start_login_via(main_windows, file_input, login_existed):
-    with open(file_input) as via_files:
-        for via_idx, via in enumerate(via_files):
-            user_data = via.strip().split('|')
-            if len(user_data) != 6:
-                sg.Popup(
-                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                    keep_on_top=True)
-                break
-            fb_id, password, mfa, email, email_password, proxy_data = user_data
-            mfa = mfa.replace(" ", '')
-            logger.info(f"login via {via_idx} {fb_id}")
-            proxy_data_split = proxy_data.split(":")
-            if len(proxy_data_split) != 4:
-                sg.Popup(
-                    f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
-                    keep_on_top=True)
-                break
+    with open(file_input, encoding="utf-8") as via_files:
 
-            fb_id = fb_id.strip()
-            via_exist = via_share.find_one({"fb_id": fb_id})
-            chrome_worker = ChromeHelper()
-            if not via_exist:
-                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                try:
-                    login_status = chrome_worker.login()
-                    # login success
-                    if login_status:
-                        via_status = "live"
-                    else:
-                        via_status = "can not login"
-                except Exception as ex:
-                    via_status = "can not login"
-                    logger.error(ex)
-                via_share.insert_one(
-                    {
-                        "fb_id": fb_id,
-                        "password": password,
-                        "mfa": mfa,
-                        "email": email,
-                        "email_password": email_password,
-                        "proxy": proxy_data,
-                        "share_number": 0,
-                        "group_joined": [],
-                        "date": "",
-                        "status": via_status,
-                        "create_date": str(datetime.now())
-                    }
-                )
-            if login_existed and via_exist:
-                try:
-                    user_data_dir = "User Data"
-                    if os.path.isfile("config.txt"):
-                        with open("config.txt") as config_file:
-                            for line in config_file.readlines():
-                                user_data_dir = line.strip()
-                                break
-                    if via_exist['status'] == 'live':
-                        via_share.update_one(
-                            {"fb_id": fb_id},
-                            {"$set": {
-                                "create_date": str(datetime.now())
-                            }}
-                        )
-                        continue
+        def chunks(l, n):
+            n = max(1, n)
+            return (l[i:i + n] for i in range(0, len(l), n))
+        data_via = chunks(via_files.readlines(), 10)
+        for sub_data in data_via:
+            start_login_thread = threading.Thread(target=login_via_thread,
+                                                  args=(sub_data, main_windows, login_existed),
+                                                  daemon=True)
+            start_login_thread.start()
 
-                    shutil.rmtree(f"{user_data_dir}/{fb_id}")
-                    chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
-                    login_status = chrome_worker.login()
-                    # login success
-                    if login_status:
-                        via_status = "live"
-                    else:
-                        via_status = "can not login"
 
-                except Exception as ex:
-                    via_status = "can not login"
-                    logger.error(ex)
-                via_share.update_one(
-                    {"fb_id": fb_id},
-                    {"$set": {
-                        "password": password,
-                        "mfa": mfa,
-                        "email": email,
-                        "email_password": email_password,
-                        "proxy": proxy_data,
-                        "status": via_status,
-                        "create_date": str(datetime.now())
-                    }}
-                )
+def login_via_thread(via_data, main_windows, login_existed):
+    for via_idx, via in enumerate(via_data):
+        user_data = via.strip().split('|')
+        if len(user_data) != 6:
+            sg.Popup(
+                f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                keep_on_top=True)
+            break
+        fb_id, password, mfa, email, email_password, proxy_data = user_data
+        mfa = mfa.replace(" ", '')
+        logger.info(f"login via {via_idx} {fb_id}")
+        proxy_data_split = proxy_data.split(":")
+        if len(proxy_data_split) != 4:
+            sg.Popup(
+                f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
+                keep_on_top=True)
+            break
+
+        fb_id = fb_id.strip()
+        via_exist = via_share.find_one({"fb_id": fb_id})
+        chrome_worker = ChromeHelper()
+        if not via_exist:
+            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
             try:
-                chrome_worker.driver.close()
+                login_status = chrome_worker.login()
+                # login success
+                if login_status:
+                    via_status = "live"
+                else:
+                    via_status = "can not login"
             except Exception as ex:
-                logger.error(f"can not close drive")
-            main_windows.write_event_value('new_via_login', "")
+                via_status = "can not login"
+                logger.error(ex)
+            via_share.insert_one(
+                {
+                    "fb_id": fb_id,
+                    "password": password,
+                    "mfa": mfa,
+                    "email": email,
+                    "email_password": email_password,
+                    "proxy": proxy_data,
+                    "share_number": 0,
+                    "group_joined": [],
+                    "date": "",
+                    "status": via_status,
+                    "create_date": str(datetime.now())
+                }
+            )
+        if login_existed and via_exist:
+            try:
+                user_data_dir = "User Data"
+                if os.path.isfile("config.txt"):
+                    with open("config.txt") as config_file:
+                        for line in config_file.readlines():
+                            user_data_dir = line.strip()
+                            break
+                if via_exist['status'] == 'live':
+                    via_share.update_one(
+                        {"fb_id": fb_id},
+                        {"$set": {
+                            "create_date": str(datetime.now())
+                        }}
+                    )
+                    continue
 
+                shutil.rmtree(f"{user_data_dir}/{fb_id}")
+                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                login_status = chrome_worker.login()
+                # login success
+                if login_status:
+                    via_status = "live"
+                else:
+                    via_status = "can not login"
+
+            except Exception as ex:
+                via_status = "can not login"
+                logger.error(ex)
+            via_share.update_one(
+                {"fb_id": fb_id},
+                {"$set": {
+                    "password": password,
+                    "mfa": mfa,
+                    "email": email,
+                    "email_password": email_password,
+                    "proxy": proxy_data,
+                    "status": via_status,
+                    "create_date": str(datetime.now())
+                }}
+            )
+        try:
+            chrome_worker.driver.close()
+        except Exception as ex:
+            logger.error(f"can not close drive")
+        main_windows.write_event_value('new_via_login', "")
 
 def start_share(main_window, stop_thread):
     # Step 1 query all via live

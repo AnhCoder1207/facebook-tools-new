@@ -536,67 +536,6 @@ class ChromeHelper:
 
         self.proxy_data = proxy_data
 
-        PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = self.proxy_data.split(":")
-
-        # check proxy
-        proxies = {"http": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"}
-
-        try:
-            r = requests.get("http://www.google.com/", proxies=proxies)
-        except Exception as ex:
-            logger.error(f"proxy die: {self.fb_id}")
-            return False
-
-        manifest_json = """
-            {
-                "version": "1.0.0",
-                "manifest_version": 2,
-                "name": "Chrome Proxy",
-                "permissions": [
-                    "proxy",
-                    "tabs",
-                    "unlimitedStorage",
-                    "storage",
-                    "<all_urls>",
-                    "webRequest",
-                    "webRequestBlocking"
-                ],
-                "background": {
-                    "scripts": ["background.js"]
-                },
-                "minimum_chrome_version":"22.0.0"
-            }
-            """
-        background_js = """
-            var config = {
-                    mode: "fixed_servers",
-                    rules: {
-                    singleProxy: {
-                        scheme: "http",
-                        host: "%s",
-                        port: parseInt(%s)
-                    },
-                    bypassList: ["localhost"]
-                    }
-                };
-
-            chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
-
-            function callbackFn(details) {
-                return {
-                    authCredentials: {
-                        username: "%s",
-                        password: "%s"
-                    }
-                };
-            }
-
-            chrome.webRequest.onAuthRequired.addListener(
-                        callbackFn,
-                        {urls: ["<all_urls>"]},
-                        ['blocking']
-            );
-            """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
         options = webdriver.ChromeOptions()
         user_data_dir = "User Data"
         if os.path.isfile("config.txt"):
@@ -633,20 +572,77 @@ class ChromeHelper:
         options.add_argument("test-type=webdriver")
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        #prefs = {"profile.default_content_setting_values.notifications": 1, "profile.name": f"{self.fb_id} - Chrome"}
-        #options.add_experimental_option("prefs", prefs)
-        # options.add_experimental_option(
-        #     "prefs", {
-        #
-        #         "profile": {"name": f"{self.fb_id} - Chrome"}
-        #     }
-        # )
-        pluginfile = f'Plugin/{self.fb_id}_proxy_auth_plugin.zip'
 
-        with zipfile.ZipFile(pluginfile, 'w') as zp:
-            zp.writestr("manifest.json", manifest_json)
-            zp.writestr("background.js", background_js)
-        options.add_extension(pluginfile)
+        if proxy_data != "":
+
+            PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = self.proxy_data.split(":")
+
+            # check proxy
+            proxies = {"http": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"}
+
+            try:
+                r = requests.get("http://www.google.com/", proxies=proxies)
+            except Exception as ex:
+                logger.error(f"proxy die: {self.fb_id}")
+                return False
+
+            manifest_json = """
+                {
+                    "version": "1.0.0",
+                    "manifest_version": 2,
+                    "name": "Chrome Proxy",
+                    "permissions": [
+                        "proxy",
+                        "tabs",
+                        "unlimitedStorage",
+                        "storage",
+                        "<all_urls>",
+                        "webRequest",
+                        "webRequestBlocking"
+                    ],
+                    "background": {
+                        "scripts": ["background.js"]
+                    },
+                    "minimum_chrome_version":"22.0.0"
+                }
+                """
+            background_js = """
+                var config = {
+                        mode: "fixed_servers",
+                        rules: {
+                        singleProxy: {
+                            scheme: "http",
+                            host: "%s",
+                            port: parseInt(%s)
+                        },
+                        bypassList: ["localhost"]
+                        }
+                    };
+    
+                chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
+    
+                function callbackFn(details) {
+                    return {
+                        authCredentials: {
+                            username: "%s",
+                            password: "%s"
+                        }
+                    };
+                }
+    
+                chrome.webRequest.onAuthRequired.addListener(
+                            callbackFn,
+                            {urls: ["<all_urls>"]},
+                            ['blocking']
+                );
+                """ % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
+
+            pluginfile = f'Plugin/{self.fb_id}_proxy_auth_plugin.zip'
+
+            with zipfile.ZipFile(pluginfile, 'w') as zp:
+                zp.writestr("manifest.json", manifest_json)
+                zp.writestr("background.js", background_js)
+            options.add_extension(pluginfile)
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
         self.driver.set_window_size(390, 844)

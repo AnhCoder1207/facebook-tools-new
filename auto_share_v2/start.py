@@ -472,9 +472,10 @@ if __name__ == '__main__':
             if not os.path.isfile(file_input):
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
-            start_login_thread = threading.Thread(target=start_login_via,
-                                                  args=(window3, file_input, values.get('login.options', False)), daemon=True)
-            start_login_thread.start()
+            start_login_via(window3, file_input, values.get('login.options', False))
+            # start_login_thread = threading.Thread(target=start_login_via,
+            #                                       args=(), daemon=True)
+            # start_login_thread.start()
         elif event == "open_via_in_browser":
             via_selected = values.get('via_table')
             via_table_data = window3.Element('via_table').Get()
