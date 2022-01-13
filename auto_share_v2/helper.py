@@ -361,7 +361,7 @@ class ChromeHelper:
         # is_login = self.waiting_for_selector("#m_login_email", waiting_time=1)
         # if is_login:
         #     self.login()
-
+        not_found_time = 0
         for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
             group = group.strip()
             if group == "":
@@ -417,10 +417,14 @@ class ChromeHelper:
             post_area.click()
             post_area.clear()
             post_area.send_keys(f"https://facebook.com/{video_id}")
-            random_sleep(1, 3)
+            random_sleep(5, 10)
 
             close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button")
             if not close_link_button:
+                not_found_time += 1
+                if not_found_time > 2:
+                    scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+                    break
                 continue
 
             random_sleep(1, 3)
