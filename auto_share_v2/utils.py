@@ -65,6 +65,7 @@ def mapping_via_table(item):
         item.get('proxy', ''),
         item.get('status', ''),
         share_number,
+        item.get('create_date', ''),
     ]
 
 

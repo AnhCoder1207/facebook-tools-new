@@ -97,7 +97,7 @@ def show_detail_video_info(video_data):
 
 
 def via_manage_window(via_data):
-    headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "share today"]
+    headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "auto share today", "last modified"]
     layout_via_manage_video = [
         [sg.Text("Browser file: "), sg.FileBrowse(key='file_via_input', enable_events=True),
          sg.Button('Start login via'),
@@ -108,7 +108,7 @@ def via_manage_window(via_data):
                      display_row_numbers=True,
                      justification='right',
                      auto_size_columns=False,
-                     col_widths=[15, 15, 15, 15, 15, 15, 15, 15],
+                     col_widths=[15, 15, 15, 15, 15, 20, 15, 15, 20],
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ],
@@ -153,7 +153,7 @@ def text_seo_window(text_seo_data):
 
 
 def edit_via_window(via_data):
-    fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
+    fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
     layout_edit_via = [
         [sg.Text('Via ID')],
         [sg.InputText(fb_id, key="edit_via_id", readonly=True)],
@@ -385,7 +385,7 @@ if __name__ == '__main__':
                 os.remove("checkpoint.txt")
             with open("checkpoint.txt", mode='w') as cp_via_files:
                 for via_data in via_table_data:
-                    fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
+                    fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
                     if status and status.strip() not in ['live', 'sharing', 'join group']:
                         cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
             cp_via_files.close()
@@ -481,7 +481,7 @@ if __name__ == '__main__':
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
                 via_data = via_table_data[via_idx]
-                fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
+                fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
                 # chrome_worker = get_free_worker()
                 try:
                     default_chrome_worker = ChromeHelper()
