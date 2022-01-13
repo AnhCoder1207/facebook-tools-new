@@ -1,3 +1,3 @@
 @echo off
 
-git pull && pyinstaller --onefile start.py
+git pull && pip install -r requirement.txt && pyinstaller --onefile start.py
