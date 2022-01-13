@@ -280,6 +280,7 @@ def start_login_via(main_windows, file_input, login_existed):
                                                   args=(sub_data, main_windows, login_existed),
                                                   daemon=True)
             start_login_thread.start()
+            time.sleep(5)
 
 
 def login_via_thread(via_data, main_windows, login_existed):
