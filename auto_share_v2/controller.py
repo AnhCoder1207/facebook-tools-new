@@ -302,7 +302,8 @@ def login_via_thread(via_data, main_windows, login_existed):
                 # sg.Popup(
                 #     f'Via Format khong dung: fb_id|password|mfa|email|email_password|ProxyIP:ProxyPORT:ProxyUsername:ProxyPassword',
                 #     keep_on_top=True)
-                break
+                logger.error(f"proxy not correct error : {user_data}")
+                continue
 
         if len(user_data) == 5:
             fb_id, password, mfa, email, email_password = user_data
