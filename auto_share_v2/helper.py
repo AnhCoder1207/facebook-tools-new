@@ -328,6 +328,12 @@ class ChromeHelper:
         time.sleep(10)
         self.driver.get(f"https://m.facebook.com/{video_id}")
 
+        # check content not found
+        if self.find_by_text("a", "Content Not Found"):
+            scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+            return
+
         play_button = self.find_by_attr("div", "data-sigil", "m-video-play-button playInlineVideo")
         if play_button: play_button.click()
         random_sleep(30, 50)
