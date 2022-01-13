@@ -425,7 +425,7 @@ class ChromeHelper:
 
             post_area.click()
             post_area.clear()
-            post_area.send_keys("https://facebook.com/968438177404210")
+            post_area.send_keys(f"https://facebook.com/{video_id}")
             random_sleep(1, 3)
 
             close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button")
