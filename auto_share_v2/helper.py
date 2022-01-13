@@ -289,6 +289,7 @@ class ChromeHelper:
             except Exception as ex:
                 print(ex)
 
+            self.driver.get("https://m.facebook.com")
             # check again
             # check logged
             if self.find_by_text("h1", "Your account has been disabled"):
@@ -299,6 +300,11 @@ class ChromeHelper:
             if self.find_by_attr("button", "value", "Get started"):
                 logger.info(f"Via {fb_id} Checkpoint")
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
+                return
+
+            newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+            if not newsfeed:
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
                 return
 
         if random.choice([1, 2]) == 1:
