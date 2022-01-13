@@ -271,7 +271,10 @@ def start_login_via(main_windows, file_input, login_existed, number_threads):
         def chunks(l, n):
             n = max(1, n)
             return (l[i:i + n] for i in range(0, len(l), n))
-        data_via = chunks(via_files.readlines(), number_threads)
+
+        all_line = len(via_files.readlines())
+
+        data_via = chunks(via_files.readlines(), all_line//number_threads)
         for sub_data in data_via:
             start_login_thread = threading.Thread(target=login_via_thread,
                                                   args=(sub_data, main_windows, login_existed),
