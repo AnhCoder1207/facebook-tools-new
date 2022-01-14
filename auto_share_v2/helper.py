@@ -435,7 +435,7 @@ class ChromeHelper:
                 time.sleep(2)
 
             self.driver.get(group_url)
-            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=10)
+            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=2)
             if not write_something:
                 logger.error(f"errors : Write something... not found")
                 continue
@@ -443,7 +443,7 @@ class ChromeHelper:
             write_something.click()
             random_sleep(1, 3)
 
-            post_area = self.find_by_attr("textarea", "aria-label", "What's on your mind?", waiting_time=10)
+            post_area = self.find_by_attr("textarea", "aria-label", "What's on your mind?", waiting_time=2)
             if not post_area:
                 logger.error(f"errors : What's on your mind?")
                 continue
@@ -453,7 +453,7 @@ class ChromeHelper:
             post_area.send_keys(f"https://facebook.com/{video_id}")
             random_sleep(5, 10)
 
-            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button")
+            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=2)
             if not close_link_button:
                 not_found_time += 1
                 if not_found_time > 2:
