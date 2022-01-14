@@ -212,17 +212,37 @@ class ChromeHelper:
             time.sleep(1)
             login_btn.click()
             time.sleep(1)
-            totp = pyotp.TOTP(self.mfa)
-            current_otp = totp.now()
-            print("Current OTP:", current_otp)
-            mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
-            submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
-            mfa_inp.send_keys(current_otp)
-            submit_mfa.click()
-            continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-            continue_mfa_btn.click()
 
-            return True
+            continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+            if continue_mfa_btn:
+                continue_mfa_btn.click()
+                # checkpointSubmitButton-actual-button
+                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+                if continue_mfa_btn:
+                    continue_mfa_btn.click()
+                    return True
+
+            else:
+                totp = pyotp.TOTP(self.mfa)
+                current_otp = totp.now()
+                print("Current OTP:", current_otp)
+                mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
+                submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
+                mfa_inp.send_keys(current_otp)
+                submit_mfa.click()
+                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+                continue_mfa_btn.click()
+
+            notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+            if notifications:
+                logger.info(f"{self.fb_id} passed")
+                return True
+
+            search_header = self.waiting_for_css_selector(homepage)
+            if search_header:
+                logger.info(f"{self.fb_id} passed")
+                return True
+
         return False
 
     def watch_live(self):
