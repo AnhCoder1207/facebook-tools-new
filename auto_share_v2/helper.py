@@ -213,11 +213,12 @@ class ChromeHelper:
             login_btn.click()
             time.sleep(1)
 
-            continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-            if continue_mfa_btn:
-                while not continue_mfa_btn:
-                    continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-                    if continue_mfa_btn: continue_mfa_btn.click()
+            while True:
+                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+                if continue_mfa_btn:
+                    continue_mfa_btn.click()
+                if not continue_mfa_btn:
+                    break
 
             mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
             if mfa_inp:
@@ -341,14 +342,13 @@ class ChromeHelper:
             random_sleep()
 
         # Get scroll height
-        last_height = self.driver.execute_script("return document.body.scrollHeight")
         i = 0
         while i < 10:
             i += 1
             # Scroll down to bottom
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             # Wait to load page
-            random_sleep(1, 2)
+            random_sleep(1)
 
         time.sleep(10)
         self.driver.get(f"https://m.facebook.com/{video_id}")
@@ -361,7 +361,7 @@ class ChromeHelper:
 
         play_button = self.find_by_attr("div", "data-sigil", "m-video-play-button playInlineVideo")
         if play_button: play_button.click()
-        random_sleep(30, 50)
+        random_sleep(5, 10)
 
         # i = 0
         # while i < 10:
@@ -408,6 +408,7 @@ class ChromeHelper:
             else:
                 logger.error(f"Can not split {group}")
                 continue
+
             self.driver.get(group_url)
 
             # check logged
@@ -426,7 +427,7 @@ class ChromeHelper:
                 continue
 
             i = 0
-            while i < 20:
+            while i < 10:
                 i += 1
                 # Scroll down to bottom
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -436,6 +437,7 @@ class ChromeHelper:
             self.driver.get(group_url)
             write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=10)
             if not write_something:
+                logger.error(f"errors : Write something... not found")
                 continue
 
             write_something.click()
@@ -443,6 +445,7 @@ class ChromeHelper:
 
             post_area = self.find_by_attr("textarea", "aria-label", "What's on your mind?", waiting_time=10)
             if not post_area:
+                logger.error(f"errors : What's on your mind?")
                 continue
 
             post_area.click()
