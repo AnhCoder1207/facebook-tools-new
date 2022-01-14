@@ -215,19 +215,18 @@ class ChromeHelper:
 
             continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
             if continue_mfa_btn:
-                continue_mfa_btn.click()
-                # checkpointSubmitButton-actual-button
-                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-                if continue_mfa_btn:
-                    continue_mfa_btn.click()
-                    return True
+                while not continue_mfa_btn:
+                    continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+                    if continue_mfa_btn: continue_mfa_btn.click()
 
-            else:
+            mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
+            if mfa_inp:
                 totp = pyotp.TOTP(self.mfa)
                 current_otp = totp.now()
                 print("Current OTP:", current_otp)
-                mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
                 submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
+                mfa_inp.click()
+                mfa_inp.clear()
                 mfa_inp.send_keys(current_otp)
                 submit_mfa.click()
                 continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
