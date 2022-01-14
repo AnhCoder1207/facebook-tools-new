@@ -211,12 +211,13 @@ class ChromeHelper:
             password_inp.send_keys(self.password)
             time.sleep(1)
             login_btn.click()
-            time.sleep(1)
+            time.sleep(5)
 
             while True:
                 continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
                 if continue_mfa_btn:
                     continue_mfa_btn.click()
+                    time.sleep(5)
                 else:
                     break
 
