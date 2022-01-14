@@ -217,7 +217,7 @@ class ChromeHelper:
                 continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
                 if continue_mfa_btn:
                     continue_mfa_btn.click()
-                if not continue_mfa_btn:
+                else:
                     break
 
             mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
