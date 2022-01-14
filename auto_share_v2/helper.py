@@ -95,9 +95,9 @@ class ChromeHelper:
             time.sleep(2)
         return False
 
-    def find_by_text(self, tag, text_compare):
+    def find_by_text(self, tag, text_compare, waiting_time=3):
         """retry 3 times"""
-        for _ in range(3):
+        for _ in range(waiting_time):
             try:
                 elements = self.driver.find_elements(By.TAG_NAME, tag)
                 for element in elements:
@@ -312,23 +312,23 @@ class ChromeHelper:
             self.driver.get("https://m.facebook.com")
             # check again
             # check logged
-            if self.find_by_text("h1", "Your account has been disabled"):
+            if self.find_by_text("h1", "Your account has been disabled", waiting_time=1):
                 logger.info(f"Via {fb_id} Disabled")
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
                 return
             # check logged
-            if self.find_by_attr("button", "value", "Get started"):
+            if self.find_by_attr("button", "value", "Get started", waiting_time=1):
                 logger.info(f"Via {fb_id} Checkpoint")
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
                 return
 
-            newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+            newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon', waiting_time=1)
             if not newsfeed:
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
                 return
 
         if random.choice([1, 2]) == 1:
-            message_el = self.find_by_attr("a", "href", "Friend Requests")
+            message_el = self.find_by_attr("a", "href", "Friend Requests", waiting_time=1)
             if message_el:
                 message_el.click()
                 confirm_friend = self.waiting_for_text_by_css(confirm_friend_request, "Confirm")
@@ -337,7 +337,7 @@ class ChromeHelper:
                 if add_friend: add_friend.click()
             random_sleep()
         if random.choice([1, 2]) == 1:
-            message_el = self.find_by_attr("a", "href", "Notifications")
+            message_el = self.find_by_attr("a", "href", "Notifications", waiting_time=1)
             if message_el: message_el.click()
             random_sleep()
 
@@ -354,7 +354,7 @@ class ChromeHelper:
         self.driver.get(f"https://m.facebook.com/{video_id}")
 
         # check content not found
-        if self.find_by_text("a", "Content Not Found"):
+        if self.find_by_text("a", "Content Not Found", waiting_time=2):
             scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
             return
@@ -412,7 +412,7 @@ class ChromeHelper:
             self.driver.get(group_url)
 
             # check logged
-            if self.find_by_text("h1", "Your account has been disabled"):
+            if self.find_by_text("h1", "Your account has been disabled", waiting_time=1):
                 logger.info(f"Via {fb_id} Disabled")
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
                 return
@@ -423,7 +423,7 @@ class ChromeHelper:
                 return
 
             # check logged
-            if self.find_by_text("a", "Content Not Found"):
+            if self.find_by_text("a", "Content Not Found", waiting_time=1):
                 continue
 
             i = 0
