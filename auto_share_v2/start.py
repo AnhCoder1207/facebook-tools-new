@@ -636,6 +636,7 @@ if __name__ == '__main__':
                 try:
                     comments = video_comments(youtube_video_id)
                 except Exception as ex:
+                    logger.error(f"get youtube comments errors: {ex}")
                     comments = []
                 comments = "\n".join(comments)
                 windows8.Element('youtube_comments_area').update(comments)
