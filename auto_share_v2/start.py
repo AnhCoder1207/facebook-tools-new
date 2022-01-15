@@ -8,6 +8,8 @@ import pyautogui
 
 from bson import ObjectId
 from datetime import datetime
+
+from auto_share_v2.get_subtitle import video_comments
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
     get_group_joining_data, scheduler_table, via_share, joining_group
@@ -22,6 +24,7 @@ def make_main_window(table_data):
             sg.Button('Add New Video'),
             sg.Button('Remove Video'),
             sg.Button('Shutdown Chrome'),
+            sg.Button('Get Youtube Comments'),
             sg.Button('Via Management'),
             sg.Button('Edit list group'),
             sg.Button('Edit Default Share Descriptions'),
@@ -67,6 +70,22 @@ def add_vid_window():
     ]
 
     return sg.Window('Add Video', layout_add_video, finalize=True)
+
+
+def get_youtube_comment_window():
+    layout_youtube_comment_window = [
+        [
+            [sg.Text('Youtube Video ID')],
+            [sg.InputText(key="youtube_video_id")],
+        ],
+        [
+            [sg.Text('Share Descriptions')],
+            [sg.Multiline(size=(200, 10), key="youtube_comments_area")],
+        ],
+        [sg.Button('Process', key="process_youtube_video")]
+    ]
+
+    return sg.Window('Get youtube comments', layout_youtube_comment_window, finalize=True)
 
 
 def show_detail_video_info(video_data):
@@ -201,7 +220,7 @@ if __name__ == '__main__':
     sg.theme('BlueMono')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
-    window1, window2, window3, window4, window5, window6, windows7 = make_main_window(table_data), None, None, None, None, None, None
+    window1, window2, window3, window4, window5, window6, windows7, windows8 = make_main_window(table_data), None, None, None, None, None, None, None
     # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
@@ -218,7 +237,7 @@ if __name__ == '__main__':
                 window.close()
             else:
                 break
-        elif event == 'Kill Chrome':
+        elif event == 'Shutdown Chrome':
             browserExe = "chrome.exe"
             os.system("taskkill /f /im " + browserExe)
             browserExe = "chromedriver.exe"
@@ -606,6 +625,18 @@ if __name__ == '__main__':
             window1.Element('table').Update(values=table_data)
             if windows7:
                 windows7.close()
-    for window in [window1, window2, window3, window4, window5, window6, windows7]:
+        elif event == "Get Youtube Comments":
+            if not windows8:
+                windows8 = get_youtube_comment_window()
+        elif event == "process_youtube_video":
+            # windows 8
+            # youtube_video_id
+            # youtube_comments_area
+            if windows8:
+                youtube_video_id = values.get("youtube_video_id", "").strip()
+                comments = video_comments(youtube_video_id)
+                comments = "\n".join(comments)
+                windows8.Element('youtube_comments_area').update(comments)
+    for window in [window1, window2, window3, window4, window5, window6, windows7, windows8]:
         if window:
             window.close()
