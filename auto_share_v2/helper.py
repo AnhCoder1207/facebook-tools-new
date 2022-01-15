@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from config_btn import drop_down_menu_xpath, confirm_friend_request, add_friend_button
+from config_btn import drop_down_menu_xpath, confirm_friend_request, add_friend_button, language_selector
 from utils import logger, get_group_joining_data, scheduler_table, via_share, random_sleep, validate_string
 
 
@@ -202,6 +202,19 @@ class ChromeHelper:
         username_inp = self.waiting_for_xpath(username_xpath)
         password_inp = self.waiting_for_xpath(password_xpath)
         if login_btn and username_inp and password_inp:
+            if username_inp.get_attribute("placeholder") != "Mobile number or email address":
+                english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
+                try:
+                    english_uk.click()
+                    time.sleep(5)
+                    login_btn = self.waiting_for_xpath(login_btn_xpath)
+                    username_inp = self.waiting_for_xpath(username_xpath)
+                    password_inp = self.waiting_for_xpath(password_xpath)
+                    if not login_btn:
+                        return False
+                except:
+                    pass
+
             username_inp.click()
             username_inp.clear()
             password_inp.click()
@@ -213,15 +226,19 @@ class ChromeHelper:
             login_btn.click()
             time.sleep(5)
 
-            for _ in range(5):
-                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-                if continue_mfa_btn:
-                    continue_mfa_btn.click()
-                    time.sleep(5)
-                else:
-                    break
-
             mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
+            submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
+            if submit_mfa.get_attribute("value") != "Submit Code":
+                english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
+                try:
+                    english_uk.click()
+                    time.sleep(5)
+                    mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
+                    if not login_btn:
+                        return False
+                except:
+                    pass
+
             if mfa_inp:
                 totp = pyotp.TOTP(self.mfa)
                 current_otp = totp.now()
@@ -233,6 +250,13 @@ class ChromeHelper:
                 submit_mfa.click()
                 continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
                 continue_mfa_btn.click()
+
+            for _ in range(5):
+                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+                if continue_mfa_btn:
+                    continue_mfa_btn.click()
+                else:
+                    break
 
             notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
             if notifications:

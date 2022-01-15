@@ -22,3 +22,4 @@ turn_on_dark_mode = "#mount_0_0_rm > div > div:nth-child(1) > div > div:nth-chil
 drop_down_menu_xpath = """//*[@id="mount_0_0_fU"]/div/div[1]/div/div[2]/div[4]/div[1]/span/div/div[1]"""
 confirm_friend_request = """div > button > span"""
 add_friend_button = """div > a > button > span"""
+language_selector = """#locale-selector > div > div > span"""
