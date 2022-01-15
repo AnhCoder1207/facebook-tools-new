@@ -9,7 +9,7 @@ import pyautogui
 from bson import ObjectId
 from datetime import datetime
 
-from auto_share_v2.get_subtitle import video_comments
+from get_subtitle import video_comments
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
     get_group_joining_data, scheduler_table, via_share, joining_group
