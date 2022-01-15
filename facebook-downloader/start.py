@@ -270,11 +270,21 @@ def crawl_movie(page_name, filter_number):
     parents = soup.select('div.rq0escxv.rj1gh0hx.buofh1pr.ni8dbmo4.stjgntxs.l9j0dhe7')
     print(f"Number parents {len(parents)}")
     for parent in parents:
+
+        #div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a
         href_el = parent.select_one("div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a")
+
+        #div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a > span > span
         text_video = parent.select_one('div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a > span > span')
+        
+        #div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(2) > a > span > span
+        #div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(3) > div > div:nth-child(2) > span > div > div > span > div
         views = parent.select_one("div.i1fnvgqd.btwxx1t3.j83agx80.bp9cbjyn > span:nth-child(1) > div:nth-child(3) > div > div:nth-child(2) > div > div > span > div")
+
+        #div.pu81012h.pmk7jnqg.hzruof5a.pcp91wgn.pby63qed.p8fzw8mz.linoseic.b5fwa0m2.labbqbtg.b6jg2yqc.hp05c5td.bn9qtmzc.s8bnoagg.d6rk862h > span
         duration = parent.select_one("div.pu81012h.pmk7jnqg.hzruof5a.pcp91wgn.pby63qed.p8fzw8mz.linoseic.b5fwa0m2.labbqbtg.b6jg2yqc.hp05c5td.bn9qtmzc.s8bnoagg.d6rk862h > span")
-        if href_el and text_video and views and duration:
+        print(href_el, text_video, views, duration)
+        if href_el and text_video and views:
 
             try:
                 logger.info(f"{duration.text}")

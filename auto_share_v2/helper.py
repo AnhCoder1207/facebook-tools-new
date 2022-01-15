@@ -213,7 +213,7 @@ class ChromeHelper:
             login_btn.click()
             time.sleep(5)
 
-            while True:
+            for _ in range(5):
                 continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
                 if continue_mfa_btn:
                     continue_mfa_btn.click()
@@ -305,8 +305,9 @@ class ChromeHelper:
         # check logged
         newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
         if not newsfeed:
+            login_status = False
             try:
-                self.login()
+                login_status = self.login()
             except Exception as ex:
                 print(ex)
 
@@ -324,12 +325,16 @@ class ChromeHelper:
                 return
 
             newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon', waiting_time=1)
+            if login_status and not newsfeed:
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+                return
+
             if not newsfeed:
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
                 return
 
         if random.choice([1, 2]) == 1:
-            message_el = self.find_by_attr("a", "href", "Friend Requests", waiting_time=1)
+            message_el = self.find_by_attr("a", "name", "Friend Requests", waiting_time=1)
             if message_el:
                 message_el.click()
                 confirm_friend = self.waiting_for_text_by_css(confirm_friend_request, "Confirm")
@@ -338,20 +343,20 @@ class ChromeHelper:
                 if add_friend: add_friend.click()
             random_sleep()
         if random.choice([1, 2]) == 1:
-            message_el = self.find_by_attr("a", "href", "Notifications", waiting_time=1)
+            message_el = self.find_by_attr("a", "name", "Notifications", waiting_time=1)
             if message_el: message_el.click()
             random_sleep()
 
         # Get scroll height
         i = 0
-        while i < 10:
+        while i < 5:
             i += 1
             # Scroll down to bottom
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             # Wait to load page
             random_sleep(1)
 
-        time.sleep(10)
+        time.sleep(5)
         self.driver.get(f"https://m.facebook.com/{video_id}")
 
         # check content not found
@@ -449,6 +454,16 @@ class ChromeHelper:
                 logger.error(f"errors : What's on your mind?")
                 continue
 
+
+            # check group is shared
+            video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+            groups_shared = video_sharing_tmp.get("groups_shared", [])
+            title_shared = video_sharing_tmp.get("title_shared", [])
+            groups_remaining = video_sharing_tmp.get("groups_remaining", [])
+            share_number = video_sharing_tmp.get("share_number", 0)
+            if group in groups_shared:
+                continue
+
             post_area.click()
             post_area.clear()
             post_area.send_keys(f"https://facebook.com/{video_id}")
@@ -463,18 +478,6 @@ class ChromeHelper:
                 continue
 
             random_sleep(1, 3)
-
-            # check group is shared
-            video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
-            groups_shared = video_sharing_tmp.get("groups_shared", [])
-            title_shared = video_sharing_tmp.get("title_shared", [])
-            groups_remaining = video_sharing_tmp.get("groups_remaining", [])
-            share_number = video_sharing_tmp.get("share_number", 0)
-            if group in groups_shared:
-                continue
-
-            random_sleep(1, 3)  # waiting for share btn
-
             # title share
             all_titles = share_descriptions
             if len(share_descriptions) == 0:
@@ -496,16 +499,19 @@ class ChromeHelper:
             post_area.click()
             post_area.clear()
             post_area.send_keys(share_title)
-
+            logger.info(f"send {share_title}")
             time.sleep(1)
             elements = self.driver.find_elements(By.TAG_NAME, "button")
             attribute = "data-sigil"
-            text_compare = "touchable submit_composer"
+            text_compare = "submit_composer"
             for element in elements:
                 if element and element.get_attribute(attribute) and \
                         element.get_attribute(attribute).lower().strip() == text_compare.lower().strip():
                     if element.text == "Post":
-                        element.click()
+                        logger.info(f"Found post button")
+                        video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+                        if not video_sharing_tmp['shared']:
+                            element.click()
 
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
             groups_shared = video_sharing_tmp.get("groups_shared", [])
