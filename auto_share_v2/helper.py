@@ -468,6 +468,12 @@ class ChromeHelper:
 
             # check logged
             if self.find_by_text("a", "Content Not Found", waiting_time=1):
+                logger.error(f"Group {group} not found")
+                # video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+                # groups_remaining = video_sharing_tmp.get("groups_remaining", [])
+                # if group in groups_remaining:
+                #     groups_remaining.remove(group)
+                #     scheduler_table.update_one({"video_id": video_id}, {"$set": {"groups_remaining": groups_remaining}})
                 continue
 
             i = 0
