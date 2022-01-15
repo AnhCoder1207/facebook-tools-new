@@ -270,6 +270,18 @@ class ChromeHelper:
 
         return False
 
+    def check_language(self):
+        search_bar = """#search_jewel > a > span"""
+        search_bar_el = self.waiting_for_text_by_css(search_bar, "Search")
+        if not search_bar_el:
+            self.driver.get("https://m.facebook.com/language/")
+            english_us_selector = """span"""
+            english_select = self.find_by_text(english_us_selector, "English (US)")
+            if english_select:
+                english_select.click()
+                time.sleep(5)
+                self.driver.get("https://m.facebook.com")
+    
     def watch_live(self):
         element = self.find_by_attr("a", "aria-label", "Watch")
         if element:
@@ -325,6 +337,8 @@ class ChromeHelper:
         groups_share_fixed.append(found_group_name)
 
         self.driver.get("https://m.facebook.com")
+
+        self.check_language()
 
         # check logged
         newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
@@ -473,12 +487,6 @@ class ChromeHelper:
             write_something.click()
             random_sleep(1, 3)
 
-            post_area = self.find_by_attr("textarea", "aria-label", "What's on your mind?", waiting_time=2)
-            if not post_area:
-                logger.error(f"errors : What's on your mind?")
-                continue
-
-
             # check group is shared
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
             groups_shared = video_sharing_tmp.get("groups_shared", [])
@@ -486,6 +494,11 @@ class ChromeHelper:
             groups_remaining = video_sharing_tmp.get("groups_remaining", [])
             share_number = video_sharing_tmp.get("share_number", 0)
             if group in groups_shared:
+                continue
+
+            post_area = self.find_by_attr("textarea", "aria-label", "What's on your mind?", waiting_time=2)
+            if not post_area:
+                logger.error(f"errors : What's on your mind?")
                 continue
 
             post_area.click()
@@ -534,6 +547,9 @@ class ChromeHelper:
                     if element.text == "Post":
                         logger.info(f"Found post button")
                         video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+                        groups_shared = video_sharing_tmp.get("groups_shared", [])
+                        if group in groups_shared:
+                            continue
                         if not video_sharing_tmp['shared']:
                             element.click()
 

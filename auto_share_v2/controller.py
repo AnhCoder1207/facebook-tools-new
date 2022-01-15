@@ -403,6 +403,7 @@ def start_share(main_window, stop_thread):
         groups_remaining = video_sharing.get("groups_remaining", [])
         groups_shared = video_sharing.get("groups_shared", [])
         current_date = str(datetime.date(datetime.now()))
+        # fb_id = "100067986994042"
         results = via_share.find({"status": 'live'})
         results = list(results)
 
