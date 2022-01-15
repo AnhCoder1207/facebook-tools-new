@@ -626,15 +626,17 @@ if __name__ == '__main__':
             if windows7:
                 windows7.close()
         elif event == "Get Youtube Comments":
-            if not windows8:
-                windows8 = get_youtube_comment_window()
+            windows8 = get_youtube_comment_window()
         elif event == "process_youtube_video":
             # windows 8
             # youtube_video_id
             # youtube_comments_area
             if windows8:
                 youtube_video_id = values.get("youtube_video_id", "").strip()
-                comments = video_comments(youtube_video_id)
+                try:
+                    comments = video_comments(youtube_video_id)
+                except Exception as ex:
+                    comments = []
                 comments = "\n".join(comments)
                 windows8.Element('youtube_comments_area').update(comments)
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8]:
