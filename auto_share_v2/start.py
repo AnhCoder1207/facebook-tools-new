@@ -24,7 +24,6 @@ def make_main_window(table_data):
             sg.Button('Shutdown Chrome'),
             sg.Button('Via Management'),
             sg.Button('Edit list group'),
-            sg.Button('Start Join Group'),
             sg.Button('Edit Default Share Descriptions'),
             sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1))
         ],
@@ -77,7 +76,25 @@ def show_detail_video_info(video_data):
     layout_detail_video_info = [
         [
             [sg.Text('Video ID')],
-            [sg.InputText(video_data.get('video_id'), size=(100, 5), readonly=True, key="detail_video_id")],
+            [sg.InputText(video_data.get('video_id'), size=(100, 5), readonly=True, key="detail_video_id")]
+        ],
+        [
+            [sg.Text('Share Config')],
+            [
+                sg.Checkbox(
+                    'Gỗ', key='groups.go', enable_events=False, default=video_data.get("go_enable", False)),
+                sg.Checkbox(
+                    'Cơ Khí', key='groups.co_khi', enable_events=False, default=video_data.get("co_khi_enable", False)),
+                sg.Checkbox(
+                    'Xây Dựng', key='groups.xay_dung', enable_events=False,
+                    default=video_data.get("xay_dung_enable", False)),
+                sg.Checkbox(
+                    'Tùy Chọn', key='groups.options', enable_events=False,
+                    default=video_data.get("options_enable", False)),
+                sg.Checkbox(
+                    'Share Done', key='video_shared', enable_events=False,
+                    default=video_data.get("shared", False)),
+            ],
         ],
         [
             [sg.Text(f'Share Descriptions: {number_share_description}')],
@@ -90,7 +107,8 @@ def show_detail_video_info(video_data):
         [
             [sg.Text(f'Remaining: {number_share_remaining}')],
             [sg.Multiline("\n".join(video_data.get('groups_remaining', [])), size=(100, 10), key="detail_groups_remaining")],
-        ]
+        ],
+        [sg.Button('Save', key="video_modified"), sg.Button('Delete', key="remove_video")]
     ]
 
     return sg.Window('Detail Video', layout_detail_video_info, finalize=True)
@@ -183,7 +201,7 @@ if __name__ == '__main__':
     sg.theme('BlueMono')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
-    window1, window2, window3, window4, window5, window6 = make_main_window(table_data), None, None, None, None, None
+    window1, window2, window3, window4, window5, window6, windows7 = make_main_window(table_data), None, None, None, None, None, None
     # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
@@ -232,19 +250,21 @@ if __name__ == '__main__':
                 stop_threads = True
                 sharing = False
                 window1.Element('Start share').Update(text="Start share")
-        elif event == 'Remove Video':
+        elif event == 'remove_video':
             label = pyautogui.confirm(text='Are you sure?', title='Confirm delete', buttons=["yes", "no"])
-            if label == "no":
-                continue
-
-            removed = values['table']
-            table_data = window1.Element('table').Get()
-            for idx in reversed(removed):
-                video_id = table_data[idx][0]
-                # scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+            if label == "yes":
+                video_id = values.get("detail_video_id")
+                # removed = values['table']
+                # table_data = window1.Element('table').Get()
+                # for idx in reversed(removed):
+                #     video_id = table_data[idx][0]
+                    # scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
                 scheduler_table.delete_one({"video_id": video_id})
-            table_data = get_scheduler_data()
-            window1.Element('table').Update(values=table_data)
+                if windows7:
+                    windows7.close()
+
+                table_data = get_scheduler_data()
+                window1.Element('table').Update(values=table_data)
         elif event == '-THREAD-':
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
@@ -447,11 +467,6 @@ if __name__ == '__main__':
                 status_via = edit_via_status[0].strip()
 
             via_idx = 0
-            # for via_idx, via_data in enumerate(table_data):
-            #     fb_id, password, mfa, email, email_password, proxy_data, status, share_number = via_data
-            #     if fb_id == edit_via_id:
-            #         new_via_data = edit_via_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via, share_number
-            #         table_data_copy[via_idx] = [fb_id, edit_via_password, edit_via_mfa, edit_via_email, edit_via_email_password, edit_via_proxy_data, status_via, share_number]
             via_share.update_many(
                 {"fb_id": edit_via_id},
                 {"$set": {
@@ -549,8 +564,48 @@ if __name__ == '__main__':
                 video_id = data[0]
                 video_metadata = scheduler_table.find_one({"video_id": video_id})
                 if video_metadata:
-                    show_detail_video_info(video_metadata)
+                    windows7 = show_detail_video_info(video_metadata)
+        elif event == 'video_modified':
+            video_id = values.get("detail_video_id")
+            go_enable = values.get("groups.go")
+            co_khi_enable = values.get("groups.co_khi")
+            xay_dung_enable = values.get("groups.xay_dung")
+            options_enable = values.get("groups.options")
+            video_shared = values.get("video_shared")
+            detail_share_description = [x.strip() for x in values.get("detail_share_description").split("\n") if x.strip() != ""]
+            detail_groups_shared = [x.strip() for x in values.get("detail_groups_shared").split("\n") if x.strip() != ""]
 
-    for window in [window1, window2, window3, window4, window5, window6]:
+            total_groups = []
+
+            if go_enable:
+                groups_go = get_group_joining_data("group_go")
+                total_groups.extend([x.strip() for x in groups_go.split('\n')])
+            if co_khi_enable:
+                groups_co_khi = get_group_joining_data("group_co_khi")
+                total_groups.extend([x.strip() for x in groups_co_khi.split('\n')])
+            if xay_dung_enable:
+                groups_xay_dung = get_group_joining_data("group_xay_dung")
+                total_groups.extend([x.strip() for x in groups_xay_dung.split('\n')])
+            if options_enable:
+                group_options = get_group_joining_data("group_options")
+                total_groups.extend([x.strip() for x in group_options.split('\n')])
+
+            groups_share_fixed = list(set(total_groups) - set(detail_groups_shared))
+
+            scheduler_table.update_one({"video_id": video_id}, {"$set": {
+                "go_enable": go_enable,
+                "co_khi_enable": co_khi_enable,
+                "xay_dung_enable": xay_dung_enable,
+                "options_enable": options_enable,
+                "share_descriptions": detail_share_description,
+                "groups_remaining": groups_share_fixed,
+                "shared": video_shared
+            }})
+            sg.Popup("Save success!")
+            table_data = get_scheduler_data()
+            window1.Element('table').Update(values=table_data)
+            if windows7:
+                windows7.close()
+    for window in [window1, window2, window3, window4, window5, window6, windows7]:
         if window:
             window.close()

@@ -337,10 +337,10 @@ class ChromeHelper:
             message_el = self.find_by_attr("a", "name", "Friend Requests", waiting_time=1)
             if message_el:
                 message_el.click()
-                confirm_friend = self.waiting_for_text_by_css(confirm_friend_request, "Confirm")
-                if confirm_friend: confirm_friend.click()
-                add_friend = self.waiting_for_text_by_css(add_friend_button, "Add Friend")
-                if add_friend: add_friend.click()
+                # confirm_friend = self.waiting_for_text_by_css(confirm_friend_request, "Confirm")
+                # if confirm_friend: confirm_friend.click()
+                # add_friend = self.waiting_for_text_by_css(add_friend_button, "Add Friend")
+                # if add_friend: add_friend.click()
             random_sleep()
         if random.choice([1, 2]) == 1:
             message_el = self.find_by_attr("a", "name", "Notifications", waiting_time=1)
