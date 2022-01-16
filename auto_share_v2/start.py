@@ -1,4 +1,5 @@
 import os
+import shutil
 import threading
 import time
 import uuid
@@ -408,11 +409,26 @@ if __name__ == '__main__':
             removed = values['via_table']
             table_data = window3.Element('via_table').Get()
             label = pyautogui.confirm(text='Are you sure?', title='', buttons=["yes", "no"])
+
             if label == "yes":
+                user_data_dir = "User Data"
+                if os.path.isfile("config.txt"):
+                    with open("config.txt") as config_file:
+                        for line in config_file.readlines():
+                            user_data_dir = line.strip()
+                            break
+
                 for idx in reversed(removed):
                     fb_id = table_data[idx][0]
                     # print(video_id)
-                    via_share.delete_one({"fb_id": fb_id})
+
+                    try:
+                        shutil.rmtree(f"{user_data_dir}/{fb_id}")
+                        via_share.delete_one({"fb_id": fb_id})
+                    except:
+                        sg.Popup(f"Can not remove {fb_id} please close chrome before delete via")
+                        break
+
                     # query = db.delete(via_share).where(via_share.columns.fb_id == fb_id)
                     # results = connection.execute(query)
                     # table_data.pop(item)
