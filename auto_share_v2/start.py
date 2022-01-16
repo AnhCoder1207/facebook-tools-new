@@ -23,7 +23,6 @@ def make_main_window(table_data):
         [
             sg.Button('Start share'),
             sg.Button('Add New Video'),
-            sg.Button('Remove Video'),
             sg.Button('Shutdown Chrome'),
             sg.Button('Get Youtube Comments'),
             sg.Button('Via Management'),
