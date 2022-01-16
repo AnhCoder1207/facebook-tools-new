@@ -350,14 +350,14 @@ def login_via_thread(via_data, main_windows, login_existed):
                         for line in config_file.readlines():
                             user_data_dir = line.strip()
                             break
-                if via_exist['status'] == 'live':
-                    via_share.update_one(
-                        {"fb_id": fb_id},
-                        {"$set": {
-                            "create_date": str(datetime.now())
-                        }}
-                    )
-                    continue
+                # if via_exist['status'] == 'live':
+                #     via_share.update_one(
+                #         {"fb_id": fb_id},
+                #         {"$set": {
+                #             "create_date": str(datetime.now())
+                #         }}
+                #     )
+                #     continue
 
                 shutil.rmtree(f"{user_data_dir}/{fb_id}")
                 chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
