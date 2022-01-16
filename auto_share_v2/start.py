@@ -422,7 +422,7 @@ if __name__ == '__main__':
                     # print(video_id)
 
                     try:
-                        shutil.rmtree(f"{user_data_dir}/{fb_id}")
+                        shutil.rmtree(f"{user_data_dir}/{fb_id}", ignore_errors=True)
                         via_share.delete_one({"fb_id": fb_id})
                     except:
                         sg.Popup(f"Can not remove {fb_id} please close chrome before delete via")
