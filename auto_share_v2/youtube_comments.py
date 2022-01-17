@@ -11,7 +11,7 @@ def get_youtube_comment_window():
         ],
         [
             [sg.Text('Share Descriptions')],
-            [sg.Multiline(size=(200, 10), key="youtube_comments_area")],
+            [sg.Multiline(size=(200, 30), key="youtube_comments_area")],
         ],
         [sg.Button('Process', key="process_youtube_video")]
     ]
