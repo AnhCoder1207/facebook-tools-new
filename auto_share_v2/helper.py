@@ -317,7 +317,11 @@ class ChromeHelper:
         options_enable = video_sharing.get("options_enable", False)
         groups_remaining = video_sharing.get("groups_remaining", [])
         share_descriptions = video_sharing.get("share_descriptions", [])
+        video_custom_share_links = video_sharing.get("video_custom_share_links", [])
 
+        share_link = f"https://m.facebook.com/{video_id}"
+        if len(video_custom_share_links) > 0:
+            share_link = random.choice(video_custom_share_links)
         total_groups = []
 
         if go_enable:
@@ -395,7 +399,7 @@ class ChromeHelper:
             random_sleep(1)
 
         time.sleep(5)
-        self.driver.get(f"https://m.facebook.com/{video_id}")
+        self.driver.get(share_link)
 
         # check content not found
         if self.find_by_text("a", "Content Not Found", waiting_time=2):
@@ -509,7 +513,7 @@ class ChromeHelper:
 
             post_area.click()
             post_area.clear()
-            post_area.send_keys(f"https://facebook.com/{video_id}")
+            post_area.send_keys(share_link)
             random_sleep(5, 10)
 
             close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=2)

@@ -50,7 +50,11 @@ def add_vid_window():
     layout_add_video = [
         [
             [sg.Text('Video ID')],
-            [sg.Multiline(size=(100, 5), key="video_id")],
+            [sg.InputText(size=(100, 5), key="video_id")],
+        ],
+        [
+            [sg.Text('Custom Share Links')],
+            [sg.Multiline(size=(100, 10), key="video_custom_share_links")],
         ],
         [
             [sg.Text('Share Descriptions')],
@@ -92,6 +96,7 @@ def show_detail_video_info(video_data):
     number_shared = len(video_data.get('groups_shared', []))
     number_share_description = len(video_data.get('share_descriptions', []))
     number_share_remaining = len(video_data.get('groups_remaining', []))
+    number_video_custom_share_links = len(video_data.get('video_custom_share_links', []))
     layout_detail_video_info = [
         [
             [sg.Text('Video ID')],
@@ -114,6 +119,11 @@ def show_detail_video_info(video_data):
                     'Share Done', key='video_shared', enable_events=False,
                     default=video_data.get("shared", False)),
             ],
+        ],
+        [
+           [sg.Text(f'Custom Share Links: {number_video_custom_share_links}')],
+           [sg.Multiline("\n".join(video_data.get('video_custom_share_links', [])), size=(100, 10),
+                         key="detail_video_custom_share_links")],
         ],
         [
             [sg.Text(f'Share Descriptions: {number_share_description}')],
@@ -289,70 +299,84 @@ if __name__ == '__main__':
             window1.Element('table').Update(values=table_data)
         elif event == 'Them':
             # them video
-            video_ids = str(values['video_id']).strip().split('\n')
-            for video_id in video_ids:
-                if video_id != "":
-                    exist_scheduler = scheduler_table.find_one({"video_id": video_id})
-                    share_descriptions = values.get("video_custom_share_descriptions", "").strip()
-                    if share_descriptions != "":
-                        share_descriptions = share_descriptions.split('\n')
-                    else:
-                        share_descriptions = []
+            video_id = values.get("video_id", "").strip()
 
-                    # get list group share
-                    go_enable = values.get("groups.go", False)
-                    co_khi_enable = values.get("groups.co_khi", False)
-                    xay_dung_enable = values.get("groups.xay_dung", False)
-                    options_enable = values.get("groups.options", False)
-                    groups_share = []
+            video_custom_share_links = values.get("video_custom_share_links", "").strip()
+            if video_custom_share_links != "":
+                video_custom_share_links = video_custom_share_links.split('\n')
+            else:
+                video_custom_share_links = []
 
-                    if go_enable:
-                        groups_go = get_group_joining_data("group_go")
-                        groups_share.extend([x.strip() for x in groups_go.split('\n')])
-                    if co_khi_enable:
-                        groups_co_khi = get_group_joining_data("group_co_khi")
-                        groups_share.extend([x.strip() for x in groups_co_khi.split('\n')])
-                    if xay_dung_enable:
-                        groups_xay_dung = get_group_joining_data("group_xay_dung")
-                        groups_share.extend([x.strip() for x in groups_xay_dung.split('\n')])
-                    if options_enable:
-                        group_options = get_group_joining_data("group_options")
-                        groups_share.extend([x.strip() for x in group_options.split('\n')])
+            if video_id == "":
+                sg.Popup('Video ID is require', keep_on_top=True)
+                continue
 
-                    if exist_scheduler:
-                        scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
-                            "shared": False,
-                            "go_enable": go_enable,
-                            "co_khi_enable": co_khi_enable,
-                            "xay_dung_enable": xay_dung_enable,
-                            "options_enable": options_enable,
-                            "share_descriptions": share_descriptions,
-                            "groups_remaining": groups_share
-                        }})
-                        continue
+            exist_scheduler = scheduler_table.find_one({"video_id": video_id})
+            share_descriptions = values.get("video_custom_share_descriptions", "").strip()
+            if share_descriptions != "":
+                share_descriptions = share_descriptions.split('\n')
+            else:
+                share_descriptions = []
 
-                    new_scheduler = {
-                        "_id": str(uuid.uuid4()),
-                        "video_id": video_id,
-                        "scheduler_time": datetime.now().timestamp(),
-                        "create_date": datetime.now().timestamp(),
-                        "shared": False,
-                        "share_number": 0,
-                        "title_shared": [],
-                        "groups_shared": [],
-                        "go_enable": go_enable,
-                        "co_khi_enable": co_khi_enable,
-                        "xay_dung_enable": xay_dung_enable,
-                        "options_enable": options_enable,
-                        "share_descriptions": share_descriptions,
-                        "groups_remaining": groups_share
-                    }
+            # video_custom_share_links
 
-                    result = scheduler_table.insert_one(new_scheduler)
+            # get list group share
+            go_enable = values.get("groups.go", False)
+            co_khi_enable = values.get("groups.co_khi", False)
+            xay_dung_enable = values.get("groups.xay_dung", False)
+            options_enable = values.get("groups.options", False)
+            groups_share = []
+
+            if go_enable:
+                groups_go = get_group_joining_data("group_go")
+                groups_share.extend([x.strip() for x in groups_go.split('\n')])
+            if co_khi_enable:
+                groups_co_khi = get_group_joining_data("group_co_khi")
+                groups_share.extend([x.strip() for x in groups_co_khi.split('\n')])
+            if xay_dung_enable:
+                groups_xay_dung = get_group_joining_data("group_xay_dung")
+                groups_share.extend([x.strip() for x in groups_xay_dung.split('\n')])
+            if options_enable:
+                group_options = get_group_joining_data("group_options")
+                groups_share.extend([x.strip() for x in group_options.split('\n')])
+
+            if exist_scheduler:
+                scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
+                    "shared": False,
+                    "go_enable": go_enable,
+                    "co_khi_enable": co_khi_enable,
+                    "xay_dung_enable": xay_dung_enable,
+                    "options_enable": options_enable,
+                    "share_descriptions": share_descriptions,
+                    "groups_remaining": groups_share,
+                    "video_custom_share_links": video_custom_share_links
+                }})
+                continue
+
+            new_scheduler = {
+                "_id": str(uuid.uuid4()),
+                "video_id": video_id,
+                "scheduler_time": datetime.now().timestamp(),
+                "create_date": datetime.now().timestamp(),
+                "shared": False,
+                "share_number": 0,
+                "title_shared": [],
+                "groups_shared": [],
+                "go_enable": go_enable,
+                "co_khi_enable": co_khi_enable,
+                "xay_dung_enable": xay_dung_enable,
+                "options_enable": options_enable,
+                "share_descriptions": share_descriptions,
+                "groups_remaining": groups_share,
+                "video_custom_share_links": video_custom_share_links
+            }
+
+            result = scheduler_table.insert_one(new_scheduler)
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
             sg.Popup('Them thanh cong', keep_on_top=True)
             window2.close()
+
         elif event == "Add New Video":
             window2 = add_vid_window()
         elif event == "Via Management":
@@ -608,6 +632,7 @@ if __name__ == '__main__':
             video_shared = values.get("video_shared")
             detail_share_description = [x.strip() for x in values.get("detail_share_description").split("\n") if x.strip() != ""]
             detail_groups_shared = [x.strip() for x in values.get("detail_groups_shared").split("\n") if x.strip() != ""]
+            video_custom_share_links = [x.strip() for x in values.get("detail_video_custom_share_links").split("\n") if x.strip() != ""]
 
             total_groups = []
 
@@ -633,7 +658,8 @@ if __name__ == '__main__':
                 "options_enable": options_enable,
                 "share_descriptions": detail_share_description,
                 "groups_remaining": groups_share_fixed,
-                "shared": video_shared
+                "shared": video_shared,
+                "video_custom_share_links": video_custom_share_links
             }})
             sg.Popup("Save success!")
             table_data = get_scheduler_data()
