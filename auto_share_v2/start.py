@@ -143,6 +143,21 @@ def show_detail_video_info(video_data):
     return sg.Window('Detail Video', layout_detail_video_info, finalize=True)
 
 
+def export_via_window():
+    layout_detail_video_info = [
+        [sg.Text('Select type')],
+        [
+            sg.Radio(
+                'Toàn bộ', group_id="gr_start_export_via", default=True, key="all_via"),
+            sg.Radio(
+                'Via Die', group_id="gr_start_export_via", key="checkpoint_via")
+        ],
+        [sg.Button('Export', key="start_export_via")]
+    ]
+
+    return sg.Window('Export Via', layout_detail_video_info, finalize=True)
+
+
 def via_manage_window(via_data):
     headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "auto share today", "last modified"]
     layout_via_manage_video = [
@@ -230,7 +245,7 @@ if __name__ == '__main__':
     sg.theme('BlueMono')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
-    window1, window2, window3, window4, window5, window6, windows7, windows8 = make_main_window(table_data), None, None, None, None, None, None, None
+    window1, window2, window3, window4, window5, window6, windows7, windows8, window9 = make_main_window(table_data), None, None, None, None, None, None, None, None
     # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
@@ -458,14 +473,30 @@ if __name__ == '__main__':
                 table_data = get_via_data()
                 window3.Element('via_table').Update(values=table_data)
         elif event == 'export_checkpoint_via_btn':
+            if windows8:
+                windows8.close()
+
+            windows8 = export_via_window()
+        elif event == "start_export_via":
+            config_all_via = values.get("all_via", True)
+            config_checkpoint_via = values.get("checkpoint_via", False)
             via_table_data = window3.Element('via_table').Get()
             if os.path.isfile("checkpoint.txt"):
                 os.remove("checkpoint.txt")
             with open("checkpoint.txt", mode='w') as cp_via_files:
                 for via_data in via_table_data:
                     fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
-                    if status and status.strip() not in ['live', 'sharing', 'join group']:
-                        cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
+                    if config_all_via:
+                        if proxy_data != "":
+                            cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
+                        else:
+                            cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}\n')
+                    else:
+                        if status and status.strip() not in ['live', 'sharing', 'join group']:
+                            if proxy_data != "":
+                                cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
+                            else:
+                                cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}\n')
             cp_via_files.close()
             sg.Popup('Exported, file checkpoint.txt in your code directory.', keep_on_top=True)
         elif event == 'edit_via_btn':
