@@ -439,10 +439,10 @@ def start_share(main_window, stop_thread):
         proxy_data = via_data.get("proxy")
         via_share_number = via_data.get("share_number")
         # reset via share counting
-        if share_date != current_date and via_share_number >= 4:
+        if share_date != current_date and via_share_number >= 8:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
             via_share_number = 0
-        if via_share_number >= 4:
+        if via_share_number >= 8:
             time.sleep(10)
             continue
 
