@@ -245,7 +245,7 @@ if __name__ == '__main__':
     sg.theme('BlueMono')  # Add a touch of color
     # All the stuff inside your window.
     table_data = get_scheduler_data()
-    window1, window2, window3, window4, window5, window6, windows7, windows8, window9 = make_main_window(table_data), None, None, None, None, None, None, None, None
+    window1, window2, window3, window4, window5, window6, windows7, windows8, windows9 = make_main_window(table_data), None, None, None, None, None, None, None, None
     # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
@@ -473,10 +473,10 @@ if __name__ == '__main__':
                 table_data = get_via_data()
                 window3.Element('via_table').Update(values=table_data)
         elif event == 'export_checkpoint_via_btn':
-            if windows8:
-                windows8.close()
+            if windows9:
+                windows9.close()
 
-            windows8 = export_via_window()
+            windows9 = export_via_window()
         elif event == "start_export_via":
             config_all_via = values.get("all_via", True)
             config_checkpoint_via = values.get("checkpoint_via", False)
@@ -705,6 +705,7 @@ if __name__ == '__main__':
             # youtube_comments_area
             if windows8:
                 youtube_video_id = values.get("youtube_video_id", "").strip()
+                logger.info(f"process video {youtube_video_id}")
                 try:
                     comments = video_comments(youtube_video_id)
                 except Exception as ex:
@@ -712,6 +713,6 @@ if __name__ == '__main__':
                     comments = []
                 comments = "\n".join(comments)
                 windows8.Element('youtube_comments_area').update(comments)
-    for window in [window1, window2, window3, window4, window5, window6, windows7, windows8]:
+    for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()

@@ -441,6 +441,7 @@ class ChromeHelper:
         # if is_login:
         #     self.login()
         not_found_time = 0
+        found_group = False
         for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
             group = group.strip()
             if group == "":
@@ -572,7 +573,15 @@ class ChromeHelper:
             if group in groups_remaining:
                 groups_remaining.remove(group)
             logger.info(f"{video_id} Share done")
+            found_group = True
             break
+
+        if not found_group:
+            # update video metadata
+            video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
+            groups_shared = video_sharing_tmp.get("groups_shared", [])
+            share_number = video_sharing_tmp.get("share_number", 0)
+            groups_remaining = video_sharing_tmp.get("groups_remaining", [])
 
         share_number += 1
         update_data = {
