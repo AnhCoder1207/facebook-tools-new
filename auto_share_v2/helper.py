@@ -738,13 +738,14 @@ class ChromeHelper:
                 zp.writestr("manifest.json", manifest_json)
                 zp.writestr("background.js", background_js)
             options.add_extension(pluginfile)
-        elif not proxy_enable:
+        if not proxy_enable:
             pluginfile = f'Plugin/{self.fb_id}_proxy_auth_plugin.zip'
             if os.path.isfile(pluginfile):
                 try:
                     os.remove(pluginfile)
                 except:
                     logger.error("Can not remove plugin files.")
+            options.add_argument("--disable-extensions")
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
         self.driver.set_window_size(390, 844)
