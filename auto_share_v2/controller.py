@@ -265,7 +265,7 @@ def thread_join_group(chrome_worker):
     chrome_worker.driver.close()
 
 
-def start_login_via(main_windows, file_input, login_existed, number_threads):
+def start_login_via(main_windows, file_input, login_existed, number_threads, proxy_enable):
     with open(file_input, encoding="utf-8") as via_files:
         def chunks(l, n):
             n = max(1, n)
@@ -277,13 +277,13 @@ def start_login_via(main_windows, file_input, login_existed, number_threads):
         data_via = chunks(via_files.readlines(), all_line//number_threads)
         for sub_data in data_via:
             start_login_thread = threading.Thread(target=login_via_thread,
-                                                  args=(sub_data, main_windows, login_existed),
+                                                  args=(sub_data, main_windows, login_existed, proxy_enable),
                                                   daemon=True)
             start_login_thread.start()
             time.sleep(5)
 
 
-def login_via_thread(via_data, main_windows, login_existed):
+def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
     for via_idx, via in enumerate(via_data):
         user_data = via.strip().split('|')
         # if len(user_data) < 5:
@@ -297,6 +297,10 @@ def login_via_thread(via_data, main_windows, login_existed):
 
         if len(user_data) == 6:
             fb_id, password, mfa, email, email_password, proxy_data = user_data
+            if proxy_data == "" and proxy_enable:
+                logger.error(f"Proxy can not null when proxy enable")
+                continue
+
             proxy_data_split = proxy_data.split(":")
             if len(proxy_data_split) != 4:
                 # sg.Popup(
@@ -316,7 +320,7 @@ def login_via_thread(via_data, main_windows, login_existed):
         via_exist = via_share.find_one({"fb_id": fb_id})
         chrome_worker = ChromeHelper()
         if not via_exist:
-            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             try:
                 login_status = chrome_worker.login()
                 # login success
@@ -360,7 +364,7 @@ def login_via_thread(via_data, main_windows, login_existed):
                 #     continue
 
                 shutil.rmtree(f"{user_data_dir}/{fb_id}")
-                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
                 login_status = chrome_worker.login()
                 # login success
                 if login_status:
@@ -390,7 +394,7 @@ def login_via_thread(via_data, main_windows, login_existed):
         main_windows.write_event_value('new_via_login', "")
 
 
-def start_share(main_window, stop_thread):
+def start_share(main_window, stop_thread, proxy_enable):
     # Step 1 query all via live
     print("start share")
     while not stop_thread():
@@ -454,7 +458,7 @@ def start_share(main_window, stop_thread):
         logger.info(f"{fb_id}, {password}, {mfa}, {proxy_data}")
 
         try:
-            chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+            chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             if chrome_status:
                 chrome_worker.sharing(video_sharing_id, fb_id, via_share_number, found_group_name)
         except Exception as ex:

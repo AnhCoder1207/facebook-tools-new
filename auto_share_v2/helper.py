@@ -618,7 +618,7 @@ class ChromeHelper:
 
         return wrapper
 
-    def open_chrome(self, fb_id, password, mfa, proxy_data):
+    def open_chrome(self, fb_id, password, mfa, proxy_data, proxy_enable=True):
         self.in_use = True
         self.fb_id = fb_id
         self.password = password
@@ -668,7 +668,7 @@ class ChromeHelper:
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
-        if proxy_data != "":
+        if proxy_data != "" and proxy_enable:
 
             PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS = self.proxy_data.split(":")
 

@@ -28,7 +28,8 @@ def make_main_window(table_data):
             sg.Button('Via Management'),
             sg.Button('Edit list group'),
             sg.Button('Edit Default Share Descriptions'),
-            sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1))
+            sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1)),
+            sg.Checkbox('Use Proxy', key='proxy_enable', enable_events=False, default=True),
         ],
         [
             sg.Table(values=table_data,
@@ -270,7 +271,7 @@ if __name__ == '__main__':
         elif event == 'Start share':
             # get number theads
             number_threads = values.get("number_threads", 1)
-
+            proxy_enable = window1.Element('proxy_enable').Get()
             try:
                 number_threads = int(number_threads)
             except Exception as ex:
@@ -285,7 +286,7 @@ if __name__ == '__main__':
                 via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
                 for _ in range(number_threads):
                     thread = threading.Thread(target=start_share,
-                                              args=(window1, lambda: stop_threads), daemon=True)
+                                              args=(window1, lambda: stop_threads, proxy_enable), daemon=True)
                     threads.append(thread)
                 for thread in threads:
                     thread.start()
@@ -576,7 +577,7 @@ if __name__ == '__main__':
             if not os.path.isfile(file_input):
                 sg.Popup('File not exist', keep_on_top=True)
                 continue
-
+            proxy_enable = window1.Element('proxy_enable').Get()
             number_threads = window1.Element('number_threads').Get()
             try:
                 number_threads = int(number_threads)
@@ -584,12 +585,13 @@ if __name__ == '__main__':
                 sg.Popup("Number threads must be integer")
                 continue
 
-            start_login_via(window3, file_input, values.get('login.options', False), number_threads)
+            start_login_via(window3, file_input, values.get('login.options', False), number_threads, proxy_enable)
             # start_login_thread = threading.Thread(target=start_login_via,
             #                                       args=(), daemon=True)
             # start_login_thread.start()
         elif event == "open_via_in_browser":
             via_selected = values.get('via_table')
+            proxy_enable = window1.Element('proxy_enable').Get()
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
                 via_data = via_table_data[via_idx]
@@ -597,7 +599,7 @@ if __name__ == '__main__':
                 # chrome_worker = get_free_worker()
                 try:
                     default_chrome_worker = ChromeHelper()
-                    default_chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+                    default_chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
                     break
                 except Exception as ex:
                     logger.error(f"Can not open browser {ex}")
