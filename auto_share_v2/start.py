@@ -294,6 +294,10 @@ if __name__ == '__main__':
             else:
                 stop_threads = True
                 sharing = False
+                # browserExe = "chrome.exe"
+                # os.system("taskkill /f /im " + browserExe)
+                # browserExe = "chromedriver.exe"
+                # os.system("taskkill /f /im " + browserExe)
                 window1.Element('Start share').Update(text="Start share")
         elif event == 'remove_video':
             label = pyautogui.confirm(text='Are you sure?', title='Confirm delete', buttons=["yes", "no"])
@@ -365,29 +369,28 @@ if __name__ == '__main__':
                     "options_enable": options_enable,
                     "share_descriptions": share_descriptions,
                     "groups_remaining": groups_share,
-                    "video_custom_share_links": video_custom_share_links
+                    "video_custom_share_links": video_custom_share_links,
+                    "create_date": datetime.now().timestamp()
                 }})
-                continue
-
-            new_scheduler = {
-                "_id": str(uuid.uuid4()),
-                "video_id": video_id,
-                "scheduler_time": datetime.now().timestamp(),
-                "create_date": datetime.now().timestamp(),
-                "shared": False,
-                "share_number": 0,
-                "title_shared": [],
-                "groups_shared": [],
-                "go_enable": go_enable,
-                "co_khi_enable": co_khi_enable,
-                "xay_dung_enable": xay_dung_enable,
-                "options_enable": options_enable,
-                "share_descriptions": share_descriptions,
-                "groups_remaining": groups_share,
-                "video_custom_share_links": video_custom_share_links
-            }
-
-            result = scheduler_table.insert_one(new_scheduler)
+            else:
+                new_scheduler = {
+                    "_id": str(uuid.uuid4()),
+                    "video_id": video_id,
+                    "scheduler_time": datetime.now().timestamp(),
+                    "create_date": datetime.now().timestamp(),
+                    "shared": False,
+                    "share_number": 0,
+                    "title_shared": [],
+                    "groups_shared": [],
+                    "go_enable": go_enable,
+                    "co_khi_enable": co_khi_enable,
+                    "xay_dung_enable": xay_dung_enable,
+                    "options_enable": options_enable,
+                    "share_descriptions": share_descriptions,
+                    "groups_remaining": groups_share,
+                    "video_custom_share_links": video_custom_share_links
+                }
+                result = scheduler_table.insert_one(new_scheduler)
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
             sg.Popup('Them thanh cong', keep_on_top=True)

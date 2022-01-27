@@ -198,77 +198,91 @@ class ChromeHelper:
             logger.info(f"{self.fb_id} passed")
             return True
 
-        login_btn = self.waiting_for_xpath(login_btn_xpath)
-        username_inp = self.waiting_for_xpath(username_xpath)
-        password_inp = self.waiting_for_xpath(password_xpath)
-        if login_btn and username_inp and password_inp:
-            if username_inp.get_attribute("placeholder") != "Mobile number or email address":
-                english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
-                try:
-                    english_uk.click()
-                    time.sleep(5)
-                    login_btn = self.waiting_for_xpath(login_btn_xpath)
-                    username_inp = self.waiting_for_xpath(username_xpath)
-                    password_inp = self.waiting_for_xpath(password_xpath)
-                    if not login_btn:
-                        return False
-                except:
-                    pass
+        choose_your_account_selector = """#root > div > div > div > p"""
+        choose_your_account = self.waiting_for_text_by_css(choose_your_account_selector, "Choose Your Account")
+        if choose_your_account:
+            # login exited account
+            # data-sigil="login_profile_form"
+            login_profile_form = self.find_by_attr("div", "data-sigil", "login_profile_form", waiting_time=1)
+            if login_profile_form:
+                login_profile_form.click()
+                # placeholder="Password"
+                password_inp = self.find_by_attr("input", "placeholder", "Password")
+                password_inp.send_keys(self.password)
+                # data-sigil="touchable password_login_button"
+                password_login_button = self.find_by_attr("button", "data-sigil", "touchable password_login_button")
+                if password_login_button:
+                    password_login_button.click()
+                    self.input_mfa()
 
-            username_inp.click()
-            username_inp.clear()
-            password_inp.click()
-            password_inp.clear()
-            username_inp.send_keys(self.fb_id)
-            time.sleep(1)
-            password_inp.send_keys(self.password)
-            time.sleep(1)
-            login_btn.click()
-            time.sleep(5)
+        else:
+            # login normal
+            login_btn = self.waiting_for_xpath(login_btn_xpath)
+            username_inp = self.waiting_for_xpath(username_xpath)
+            password_inp = self.waiting_for_xpath(password_xpath)
+            if login_btn and username_inp and password_inp:
+                if username_inp.get_attribute("placeholder") != "Mobile number or email address":
+                    english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
+                    try:
+                        english_uk.click()
+                        time.sleep(5)
+                        login_btn = self.waiting_for_xpath(login_btn_xpath)
+                        username_inp = self.waiting_for_xpath(username_xpath)
+                        password_inp = self.waiting_for_xpath(password_xpath)
+                        if not login_btn:
+                            return False
+                    except:
+                        pass
 
-            mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
-            submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
-            if submit_mfa.get_attribute("value") != "Submit Code":
-                english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
-                try:
-                    english_uk.click()
-                    time.sleep(5)
-                    mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
-                    if not login_btn:
-                        return False
-                except:
-                    pass
+                username_inp.click()
+                username_inp.clear()
+                password_inp.click()
+                password_inp.clear()
+                username_inp.send_keys(self.fb_id)
+                time.sleep(1)
+                password_inp.send_keys(self.password)
+                time.sleep(1)
+                login_btn.click()
+                time.sleep(5)
 
-            if mfa_inp:
-                totp = pyotp.TOTP(self.mfa)
-                current_otp = totp.now()
-                print("Current OTP:", current_otp)
-                submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
-                mfa_inp.click()
-                mfa_inp.clear()
-                mfa_inp.send_keys(current_otp)
-                submit_mfa.click()
-                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-                continue_mfa_btn.click()
+                self.input_mfa()
 
-            for _ in range(5):
-                continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
-                if continue_mfa_btn:
-                    continue_mfa_btn.click()
-                else:
-                    break
+        notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        if notifications:
+            logger.info(f"{self.fb_id} passed")
+            return True
 
-            notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-            if notifications:
-                logger.info(f"{self.fb_id} passed")
-                return True
-
-            search_header = self.waiting_for_css_selector(homepage)
-            if search_header:
-                logger.info(f"{self.fb_id} passed")
-                return True
+        search_header = self.waiting_for_css_selector(homepage)
+        if search_header:
+            logger.info(f"{self.fb_id} passed")
+            return True
 
         return False
+
+    def input_mfa(self):
+        mfa_inp_xpath = """//*[@id="approvals_code"]"""
+        submit_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
+        continue_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
+        mfa_inp = self.waiting_for_xpath(mfa_inp_xpath)
+
+        if mfa_inp:
+            totp = pyotp.TOTP(self.mfa)
+            current_otp = totp.now()
+            print("Current OTP:", current_otp)
+            submit_mfa = self.waiting_for_xpath(submit_mfa_xpath)
+            mfa_inp.click()
+            mfa_inp.clear()
+            mfa_inp.send_keys(current_otp)
+            submit_mfa.click()
+            continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+            continue_mfa_btn.click()
+
+        for _ in range(5):
+            continue_mfa_btn = self.waiting_for_xpath(continue_mfa_xpath)
+            if continue_mfa_btn:
+                continue_mfa_btn.click()
+            else:
+                break
 
     def check_language(self):
         search_bar = """#search_jewel > a > span"""
@@ -342,6 +356,14 @@ class ChromeHelper:
 
         self.driver.get("https://m.facebook.com")
 
+        # check die proxy
+        any_tag = self.driver.find_element(By.TAG_NAME, "div")
+        if not any_tag:
+            logger.error(f"Proxy die {self.fb_id}")
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+            return
+
+        # check log in needed
         self.check_language()
 
         # check logged

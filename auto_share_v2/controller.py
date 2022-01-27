@@ -443,7 +443,8 @@ def start_share(main_window, stop_thread, proxy_enable):
         proxy_data = via_data.get("proxy")
         via_share_number = via_data.get("share_number")
         # reset via share counting
-        share_per_day = 10
+        share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+        share_per_day = int(share_per_day)
         if share_date != current_date and via_share_number >= share_per_day:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"date": current_date, "share_number": 0}})
             via_share_number = 0
