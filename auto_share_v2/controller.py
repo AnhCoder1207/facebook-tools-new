@@ -29,7 +29,7 @@ def start_join_group(stop_joining):
 
 
 def thread_join_group(chrome_worker):
-    results = via_share.find({"status": "live", "share_number": {"$lte": 4}})
+    results = via_share.find({"status": "live"})
     results = list(results)
     if len(results) == 0:
         time.sleep(10)
@@ -45,7 +45,7 @@ def thread_join_group(chrome_worker):
         join_in_day = 0
         via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
 
-    if join_in_day is not None and join_in_day >= 4:
+    if join_in_day is not None and join_in_day >= 5:
         return
 
     logger.info(f"Start join group for via {fb_id}")
@@ -60,6 +60,7 @@ def thread_join_group(chrome_worker):
 
     try:
         chrome_worker.driver.get("https://facebook.com")
+        chrome_worker.driver.set_window_size(1920, 1080)
     except Exception as ex:
         logger.error(f"{fb_id} can not reach internet")
         # via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
@@ -255,9 +256,6 @@ def thread_join_group(chrome_worker):
             via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
             if group_auto_approved.find_one({"group": group}) is None:
                 group_auto_approved.insert_one({"_id": str(ObjectId()), "group": group})
-            # query = db.update(via_share).values(group_joined=json.dumps(group_joined))
-            # query = query.where(via_share.columns.fb_id == fb_id)
-            # connection.execute(query)
     if join_button_enabled:
         # set status live
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})

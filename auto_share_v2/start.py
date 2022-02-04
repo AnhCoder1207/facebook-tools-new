@@ -27,6 +27,7 @@ def make_main_window(table_data):
             sg.Button('Get Youtube Comments'),
             sg.Button('Via Management'),
             sg.Button('Edit list group'),
+            sg.Button('Start Join Group', key="start_join_group"),
             sg.Button('Edit Default Share Descriptions'),
             sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1)),
             sg.Checkbox('Use Proxy', key='proxy_enable', enable_events=False, default=True),
@@ -44,7 +45,7 @@ def make_main_window(table_data):
         ]
     ]
     # Create the Window
-    return sg.Window('Auto Share V1.0', layout, finalize=True)
+    return sg.Window('Auto Share V1.1', layout, finalize=True)
 
 
 def add_vid_window():
@@ -619,7 +620,7 @@ if __name__ == '__main__':
                 joining_group.insert_many(groups)
             sg.Popup('Luu Thanh Cong')
             window5.close()
-        elif event == 'Start Join Group':
+        elif event == 'start_join_group':
             # get number theads
             number_threads = values.get("number_threads", 1)
 
@@ -642,11 +643,11 @@ if __name__ == '__main__':
 
                 for thread_join_gr in joining_threads:
                     thread_join_gr.start()
-                window1.Element('Start Join Group').Update(text="Stop Join Group")
+                window1.Element('start_join_group').Update(text="Stop Join Group")
             else:
                 stop_join_group = True
                 joining = False
-                window1.Element('Start Join Group').Update(text="Start Join Group")
+                window1.Element('start_join_group').Update(text="Start Join Group")
         elif event == 'new_via_login':
             if window3:
                 via_data = get_via_data()
