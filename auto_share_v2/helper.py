@@ -514,7 +514,7 @@ class ChromeHelper:
                 return False
 
             self.driver.get(group_url)
-            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=2)
+            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=1)
             if not write_something:
                 logger.error(f"errors : Write something... not found")
                 continue
