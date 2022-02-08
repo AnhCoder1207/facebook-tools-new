@@ -357,11 +357,13 @@ class ChromeHelper:
         self.driver.get("https://m.facebook.com")
 
         # check die proxy
-        any_tag = self.driver.find_element(By.TAG_NAME, "div")
-        if not any_tag:
+        try:
+            any_tag = self.driver.find_element(By.TAG_NAME, "div")
+            # if not any_tag:
+            #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+            #     return
+        except Exception as ex:
             logger.error(f"Proxy die {self.fb_id}")
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
-            return
 
         # check log in needed
         self.check_language()
