@@ -772,7 +772,7 @@ class ChromeHelper:
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
         self.driver.set_window_size(390, 844)
-        self.driver.quit()
+        # self.driver.quit()
         return True
 
     def change_language(self):
