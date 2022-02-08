@@ -448,7 +448,7 @@ class ChromeHelper:
         #     # query = query.where(via_share.columns.fb_id == fb_id)
         #     # connection.execute(query)
         #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
-        #     self.driver.close()
+        #     self.driver.quit()
         #     return False
         # is_locked = self.waiting_for_selector(locked_1, waiting_time=5)
         # if is_locked:
@@ -456,7 +456,7 @@ class ChromeHelper:
         #     # query = query.where(via_share.columns.fb_id == fb_id)
         #     # connection.execute(query)
         #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
-        #     self.driver.close()
+        #     self.driver.quit()
         #     return False
 
         # is_login = self.waiting_for_selector("#m_login_email", waiting_time=1)
@@ -566,6 +566,7 @@ class ChromeHelper:
                                                {"$set": {"title_shared": title_shared}})
                     break
 
+            # share_title += " #DIY #handmade #lifehack"
             post_area.click()
             post_area.clear()
             post_area.send_keys(share_title)
@@ -647,7 +648,7 @@ class ChromeHelper:
         self.mfa = mfa
         if self.driver:
             try:
-                self.driver.close()
+                self.driver.quit()
             except Exception as ex:
                 logger.error(f"can not close drive {ex}")
 
@@ -771,6 +772,7 @@ class ChromeHelper:
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
         self.driver.set_window_size(390, 844)
+        self.driver.quit()
         return True
 
     def change_language(self):

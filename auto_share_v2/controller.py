@@ -23,7 +23,7 @@ def start_join_group(stop_joining):
             logger.error(f"thread_join_group error {ex}")
 
         try:
-            chrome_worker.driver.close()
+            chrome_worker.driver.quit()
         except Exception as ex:
             pass
 
@@ -64,7 +64,7 @@ def thread_join_group(chrome_worker):
     except Exception as ex:
         logger.error(f"{fb_id} can not reach internet")
         # via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
-        chrome_worker.driver.close()
+        chrome_worker.driver.quit()
         return
 
     # check disable
@@ -74,7 +74,7 @@ def thread_join_group(chrome_worker):
         # query = query.where(via_share.columns.fb_id == fb_id)
         # connection.execute(query)
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
-        chrome_worker.driver.close()
+        chrome_worker.driver.quit()
         return
     is_locked = chrome_worker.waiting_for_selector(locked_1, waiting_time=1)
     if is_locked:
@@ -82,7 +82,7 @@ def thread_join_group(chrome_worker):
         # query = query.where(via_share.columns.fb_id == fb_id)
         # connection.execute(query)
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
-        chrome_worker.driver.close()
+        chrome_worker.driver.quit()
         return
 
     is_login = chrome_worker.waiting_for_selector("#email", waiting_time=1)
@@ -91,7 +91,7 @@ def thread_join_group(chrome_worker):
             chrome_worker.login()
             chrome_worker.driver.get("https://facebook.com")
         except Exception as ex:
-            chrome_worker.driver.close()
+            chrome_worker.driver.quit()
             return
 
     # check theme
@@ -103,7 +103,7 @@ def thread_join_group(chrome_worker):
         if search_facebook.get_attribute('placeholder') != 'Search Facebook':
             chrome_worker.change_language()
     else:
-        chrome_worker.driver.close()
+        chrome_worker.driver.quit()
         return
 
     if random.choice([1, 2, 3, 4]) == 1:
@@ -149,7 +149,7 @@ def thread_join_group(chrome_worker):
             # query = query.where(via_share.columns.fb_id == fb_id)
             # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
-            chrome_worker.driver.close()
+            chrome_worker.driver.quit()
             return
         is_locked = chrome_worker.waiting_for_selector(locked_1, waiting_time=1)
         if is_locked:
@@ -157,7 +157,7 @@ def thread_join_group(chrome_worker):
             # query = query.where(via_share.columns.fb_id == fb_id)
             # connection.execute(query)
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
-            chrome_worker.driver.close()
+            chrome_worker.driver.quit()
             return
 
         # check joined
@@ -260,7 +260,7 @@ def thread_join_group(chrome_worker):
         # set status live
         via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
 
-    chrome_worker.driver.close()
+    chrome_worker.driver.quit()
 
 
 def start_login_via(main_windows, file_input, login_existed, number_threads, proxy_enable):
@@ -386,7 +386,7 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
                 }}
             )
         try:
-            chrome_worker.driver.close()
+            chrome_worker.driver.quit()
         except Exception as ex:
             logger.error(f"can not close drive")
         main_windows.write_event_value('new_via_login', "")
@@ -468,7 +468,7 @@ def start_share(main_window, stop_thread, proxy_enable):
         main_window.write_event_value('-THREAD-', "")
 
         try:
-            chrome_worker.driver.close()
+            chrome_worker.driver.quit()
         except Exception as ex:
             pass
         time.sleep(10)

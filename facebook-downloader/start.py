@@ -475,7 +475,7 @@ if __name__ == '__main__':
 
     # close drive
     if driver:
-        driver.close()
+        driver.quit()
     # close all windows
     for window in [main_windows, add_new_window]:
         if window:

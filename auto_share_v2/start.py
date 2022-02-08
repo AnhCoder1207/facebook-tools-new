@@ -39,7 +39,7 @@ def make_main_window(table_data):
                      justification='right',
                      enable_events=True,
                      auto_size_columns=False,
-                     col_widths=[20, 20, 15, 15, 15, 15, 15],
+                     col_widths=[20, 25, 20, 15, 15, 15, 15],
                      vertical_scroll_only=False,
                      num_rows=24, key='table')
         ]

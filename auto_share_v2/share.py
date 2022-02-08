@@ -296,13 +296,13 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
             if btn_index not in [6, 7]:
                 query = db.update(via_share).values(status='checkpoint').where(via_share.columns.fb_id == fb_id)
                 connection.execute(query)
-                chrome_worker.driver.close()
+                chrome_worker.driver.quit()
                 continue
 
             if btn_index == 5:
                 query = db.update(via_share).values(status='die proxy').where(via_share.columns.fb_id == fb_id)
                 connection.execute(query)
-                chrome_worker.driver.close()
+                chrome_worker.driver.quit()
                 continue
 
             #buttons = ["checkpoint_1.PNG",
@@ -314,7 +314,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
             #    if btn_index not in [6, 7]:
             #        query = db.update(via_share).values(status='checkpoint').where(via_share.columns.fb_id == fb_id)
             #        connection.execute(query)
-            #        chrome_worker.driver.close()
+            #        chrome_worker.driver.quit()
             #        continue
 
             scheduler = scheduler[0] if len(scheduler) != 0 else dict()
@@ -367,7 +367,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                 join_group(fb_id)
 
             if join_group_only_enable:
-                chrome_worker.driver.close()
+                chrome_worker.driver.quit()
                 continue
 
             status = access_video(video_id)
@@ -539,7 +539,7 @@ def auto_share(table_data, current_index, window, stop, enable_join_group, join_
                     scheduler_table.delete_one({"video_id": video_id})
 
             window.write_event_value('-THREAD-', "not done")  # put a message into queue for GUI
-        chrome_worker.driver.close()
+        chrome_worker.driver.quit()
 
     et = time.time()
     logger.debug(f"share done time consuming: {round((et - st)/60, 1)}")
