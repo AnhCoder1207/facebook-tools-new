@@ -247,6 +247,13 @@ class ChromeHelper:
 
                 self.input_mfa()
 
+        login_with_one_tab = self.find_by_text("h3", "Log In With One Tap", waiting_time=1)
+        if login_with_one_tab:
+            not_now = self.waiting_for_text_by_css("div > a > span", "Not now", waiting_time=1)
+            if not_now:
+                not_now.click()
+                time.sleep(5)
+
         notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
         if notifications:
             logger.info(f"{self.fb_id} passed")
@@ -359,11 +366,10 @@ class ChromeHelper:
         # check die proxy
         try:
             any_tag = self.driver.find_element(By.TAG_NAME, "div")
-            # if not any_tag:
-            #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
-            #     return
         except Exception as ex:
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
             logger.error(f"Proxy die {self.fb_id}")
+            return
 
         # check log in needed
         self.check_language()
@@ -496,13 +502,21 @@ class ChromeHelper:
                 return
 
             # check logged
-            if self.find_by_text("a", "Content Not Found", waiting_time=1):
+            if self.waiting_for_text_by_css("#MBackNavBar > a", "Content Not Found", waiting_time=1):
                 logger.error(f"Group {group} not found")
-                # video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
-                # groups_remaining = video_sharing_tmp.get("groups_remaining", [])
-                # if group in groups_remaining:
-                #     groups_remaining.remove(group)
-                #     scheduler_table.update_one({"video_id": video_id}, {"$set": {"groups_remaining": groups_remaining}})
+                continue
+
+            if self.waiting_for_text_by_css("#MBackNavBar > a", "You’re Temporarily Blocked", waiting_time=1):
+                logger.error(f"{fb_id} You’re Temporarily Blocked")
+                share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+                share_per_day = int(share_per_day)
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
+                return False
+
+            self.driver.get(group_url)
+            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=2)
+            if not write_something:
+                logger.error(f"errors : Write something... not found")
                 continue
 
             i = 0
@@ -588,6 +602,13 @@ class ChromeHelper:
                             continue
                         if not video_sharing_tmp['shared']:
                             element.click()
+                            if self.waiting_for_text_by_css("#MBackNavBar > a", "You Can't Use This Feature Right Now",
+                                                            waiting_time=1):
+                                logger.error(f"{fb_id} You Can't Use This Feature Right Now")
+                                share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+                                share_per_day = int(share_per_day)
+                                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
+                                return False
 
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
             groups_shared = video_sharing_tmp.get("groups_shared", [])
