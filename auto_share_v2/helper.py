@@ -496,7 +496,7 @@ class ChromeHelper:
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
                 return
             # check logged
-            if self.find_by_attr("button", "value", "Get started"):
+            if self.find_by_attr("button", "value", "Get started", waiting_time=1):
                 logger.info(f"Via {fb_id} Checkpoint")
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
                 return
