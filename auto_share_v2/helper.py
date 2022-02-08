@@ -602,6 +602,7 @@ class ChromeHelper:
                             continue
                         if not video_sharing_tmp['shared']:
                             element.click()
+                            time.sleep(2)
                             if self.waiting_for_text_by_css("#MBackNavBar > a", "You Can't Use This Feature Right Now",
                                                             waiting_time=1):
                                 logger.error(f"{fb_id} You Can't Use This Feature Right Now")
