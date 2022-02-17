@@ -599,7 +599,7 @@ class ChromeHelper:
                         video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
                         groups_shared = video_sharing_tmp.get("groups_shared", [])
                         if group in groups_shared:
-                            continue
+                            break
                         if not video_sharing_tmp['shared']:
                             element.click()
                             time.sleep(2)
@@ -610,6 +610,15 @@ class ChromeHelper:
                                 share_per_day = int(share_per_day)
                                 via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
                                 return False
+                            if self.waiting_for_text_by_css("#MBackNavBar > a", "You can't use this feature at the moment",
+                                                            waiting_time=1):
+                                # You can't use this feature at the moment
+                                logger.error(f"{fb_id} You Can't Use This Feature Right Now")
+                                share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+                                share_per_day = int(share_per_day)
+                                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
+                                return False
+                            break
 
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
             groups_shared = video_sharing_tmp.get("groups_shared", [])
