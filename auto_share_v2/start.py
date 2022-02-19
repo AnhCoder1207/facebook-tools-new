@@ -18,17 +18,23 @@ from controller import thread_join_group, start_login_via, start_share, start_jo
 
 
 def make_main_window(table_data):
+    menu_def = ['&Menu', ['&Start share', '&Stop share', '---', '&Shutdown Chrome', '&Exit']], \
+               ['&Video', ['&Add A New Video', '&Add Multiple Videos', "&Delete Videos"]], \
+               ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions']], \
+               ['&Tools', ['&Get Youtube Comments', '&Downloader']]
+
     headings = ['video_id', 'share group', 'share done', "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
     layout = [
+        [sg.Menu(menu_def, key='menu_bar')],
         [
-            sg.Button('Start share'),
-            sg.Button('Add New Video'),
-            sg.Button('Shutdown Chrome'),
-            sg.Button('Get Youtube Comments'),
-            sg.Button('Via Management'),
-            sg.Button('Edit list group'),
-            sg.Button('Start Join Group', key="start_join_group"),
-            sg.Button('Edit Default Share Descriptions'),
+            # sg.Button('Start share'),
+            # sg.Button('Add New Video'),
+            # sg.Button('Shutdown Chrome'),
+            # sg.Button('Get Youtube Comments'),
+            # sg.Button('Via Management'),
+            # sg.Button('Edit list group'),
+            # sg.Button('Start Join Group', key="start_join_group"),
+            # sg.Button('Edit Default Share Descriptions'),
             sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1)),
             sg.Checkbox('Use Proxy', key='proxy_enable', enable_events=False, default=True),
         ],
@@ -45,7 +51,7 @@ def make_main_window(table_data):
         ]
     ]
     # Create the Window
-    return sg.Window('Auto Share V1.1', layout, finalize=True)
+    return sg.Window('Auto Share V1.2', layout, finalize=True)
 
 
 def add_vid_window():
@@ -64,18 +70,44 @@ def add_vid_window():
         ],
         [
             sg.Checkbox(
-                'Gỗ', key='groups.go', enable_events=False, default=True),
+                'Gỗ', key='groups.go', enable_events=False, default=False),
             sg.Checkbox(
-                'Cơ Khí', key='groups.co_khi', enable_events=False, default=True),
+                'Cơ Khí', key='groups.co_khi', enable_events=False, default=False),
             sg.Checkbox(
-                'Xây Dựng', key='groups.xay_dung', enable_events=False, default=True),
+                'Xây Dựng', key='groups.xay_dung', enable_events=False, default=False),
             sg.Checkbox(
-                'Tùy Chọn', key='groups.options', enable_events=False, default=True),
+                'Tùy Chọn', key='groups.options', enable_events=False, default=False),
         ],
         [sg.Button('Them')]
     ]
 
     return sg.Window('Add Video', layout_add_video, finalize=True)
+
+
+def add_multiple_vid_window():
+    layout_add_video = [
+        [
+            [sg.Text('Video IDs')],
+            [sg.Multiline(size=(100, 5), key="video_ids")],
+        ],
+        [
+            [sg.Text('Share Descriptions')],
+            [sg.Multiline(size=(100, 10), key="video_custom_share_descriptions")],
+        ],
+        [
+            sg.Checkbox(
+                'Gỗ', key='groups.go', enable_events=False, default=False),
+            sg.Checkbox(
+                'Cơ Khí', key='groups.co_khi', enable_events=False, default=False),
+            sg.Checkbox(
+                'Xây Dựng', key='groups.xay_dung', enable_events=False, default=False),
+            sg.Checkbox(
+                'Tùy Chọn', key='groups.options', enable_events=False, default=False),
+        ],
+        [sg.Button('Them', key='add_multiple_videos')]
+    ]
+
+    return sg.Window('Add Multiple Videos', layout_add_video, finalize=True)
 
 
 def get_youtube_comment_window():
@@ -163,9 +195,11 @@ def export_via_window():
 def via_manage_window(via_data):
     headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "auto share today", "last modified"]
     layout_via_manage_video = [
-        [sg.Text("Browser file: "), sg.FileBrowse(key='file_via_input', enable_events=True),
-         sg.Button('Start login via'),
-         sg.Checkbox('Import existed via', key='login.options', enable_events=False, default=False)],
+        [sg.Button('Add new here', key='add_new_via'),
+         sg.Button('Open Via in Browser', key='open_via_in_browser'),
+         sg.Button('Edit Via', key='edit_via_btn'),
+         sg.Button('Export Via Checkpoint', key="export_checkpoint_via_btn"),
+         sg.Button('Delete Via', key="delete_via")],
         [
             sg.Table(values=via_data,
                      headings=headings,
@@ -175,14 +209,23 @@ def via_manage_window(via_data):
                      col_widths=[15, 15, 15, 15, 15, 20, 15, 15, 20],
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
-        ],
-        [sg.Button('Open Via in Browser', key='open_via_in_browser'),
-         sg.Button('Edit Via', key='edit_via_btn'),
-         sg.Button('Export Via Checkpoint', key="export_checkpoint_via_btn"),
-         sg.Button('Delete Via', key="delete_via")]
+        ]
     ]
 
     return sg.Window('Via Management', layout_via_manage_video, finalize=True)
+
+
+def add_new_via_windows():
+    add_new_via_layouts = [
+        [
+            sg.Text("Browser file: "), sg.FileBrowse(key='file_via_input', enable_events=True),
+            sg.Checkbox('Import existed via', key='login.options', enable_events=False, default=False),
+        ],
+        [
+            sg.Button('Start login via')
+        ]
+    ]
+    return sg.Window('Via Management', add_new_via_layouts, finalize=True)
 
 
 def group_to_join_window(group_options, group_go, group_co_khi, group_xay_dung, group_join_auto):
@@ -362,7 +405,9 @@ if __name__ == '__main__':
                 groups_share.extend([x.strip() for x in group_options.split('\n')])
 
             if exist_scheduler:
+                number_shared = len(exist_scheduler.get("groups_shared"))
                 scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
+                    "share_number": number_shared,
                     "shared": False,
                     "go_enable": go_enable,
                     "co_khi_enable": co_khi_enable,
@@ -396,8 +441,90 @@ if __name__ == '__main__':
             window1.Element('table').Update(values=table_data)
             sg.Popup('Them thanh cong', keep_on_top=True)
             window2.close()
+        elif event == 'Add Multiple Videos':
+            add_multiple_vid_window()
+        elif event == 'add_multiple_videos':
+            # them video
+            video_ids = values.get("video_ids", "").strip().split('\n')
+            video_custom_share_links = []
+            if len(video_ids) == 0:
+                sg.Popup('Video ID is require', keep_on_top=True)
+                continue
+            share_descriptions = values.get("video_custom_share_descriptions", "").strip()
+            if share_descriptions != "":
+                share_descriptions = share_descriptions.split('\n')
+            else:
+                share_descriptions = []
 
-        elif event == "Add New Video":
+            # get list group share
+            go_enable = values.get("groups.go", False)
+            co_khi_enable = values.get("groups.co_khi", False)
+            xay_dung_enable = values.get("groups.xay_dung", False)
+            options_enable = values.get("groups.options", False)
+            groups_share = []
+
+            if go_enable:
+                groups_go = get_group_joining_data("group_go")
+                groups_share.extend([x.strip() for x in groups_go.split('\n')])
+            if co_khi_enable:
+                groups_co_khi = get_group_joining_data("group_co_khi")
+                groups_share.extend([x.strip() for x in groups_co_khi.split('\n')])
+            if xay_dung_enable:
+                groups_xay_dung = get_group_joining_data("group_xay_dung")
+                groups_share.extend([x.strip() for x in groups_xay_dung.split('\n')])
+            if options_enable:
+                group_options = get_group_joining_data("group_options")
+                groups_share.extend([x.strip() for x in group_options.split('\n')])
+
+            for video_id in video_ids:
+                video_id = video_id.strip()
+                if video_id == "":
+                    continue
+
+                exist_scheduler = scheduler_table.find_one({"video_id": video_id})
+
+                if exist_scheduler:
+                    number_shared = len(exist_scheduler.get("groups_shared"))
+                    scheduler_table.update_one(
+                        {"_id": exist_scheduler['_id']},
+                        {
+                            "$set": {
+                                "share_number": number_shared,
+                                "shared": False,
+                                "go_enable": go_enable,
+                                "co_khi_enable": co_khi_enable,
+                                "xay_dung_enable": xay_dung_enable,
+                                "options_enable": options_enable,
+                                "share_descriptions": share_descriptions,
+                                "groups_remaining": groups_share,
+                                "video_custom_share_links": video_custom_share_links,
+                                "create_date": datetime.now().timestamp()
+                            }
+                        }
+                    )
+                else:
+                    new_scheduler = {
+                        "_id": str(uuid.uuid4()),
+                        "video_id": video_id,
+                        "scheduler_time": datetime.now().timestamp(),
+                        "create_date": datetime.now().timestamp(),
+                        "shared": False,
+                        "share_number": 0,
+                        "title_shared": [],
+                        "groups_shared": [],
+                        "go_enable": go_enable,
+                        "co_khi_enable": co_khi_enable,
+                        "xay_dung_enable": xay_dung_enable,
+                        "options_enable": options_enable,
+                        "share_descriptions": share_descriptions,
+                        "groups_remaining": groups_share,
+                        "video_custom_share_links": video_custom_share_links
+                    }
+                    result = scheduler_table.insert_one(new_scheduler)
+            table_data = get_scheduler_data()
+            window1.Element('table').Update(values=table_data)
+            sg.Popup('Them thanh cong', keep_on_top=True)
+        elif event == "Add A New Video":
             window2 = add_vid_window()
         elif event == "Via Management":
             via_data = get_via_data()
@@ -719,6 +846,12 @@ if __name__ == '__main__':
                     comments = []
                 comments = "\n".join(comments)
                 windows8.Element('youtube_comments_area').update(comments)
+        elif event == 'Delete Videos':
+            scheduler_table.drop()
+            table_data = get_scheduler_data()
+            window1.Element('table').Update(values=table_data)
+        elif event == 'add_new_via':
+            add_new_via_windows()
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()

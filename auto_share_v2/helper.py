@@ -364,12 +364,12 @@ class ChromeHelper:
         self.driver.get("https://m.facebook.com")
 
         # check die proxy
-        try:
-            any_tag = self.driver.find_element(By.TAG_NAME, "div")
-        except Exception as ex:
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
-            logger.error(f"Proxy die {self.fb_id}")
-            return
+        # try:
+        #     any_tag = self.driver.find_element(By.TAG_NAME, "div")
+        # except Exception as ex:
+        #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+        #     logger.error(f"Proxy die {self.fb_id}")
+        #     return
 
         # check log in needed
         self.check_language()
@@ -723,6 +723,8 @@ class ChromeHelper:
         options.add_argument("test-type=webdriver")
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        # options.binary_location = "chrome-win/chrome.exe"
+        options.add_argument("--window-size=390,844")
 
         if proxy_data != "" and proxy_enable:
 
@@ -804,7 +806,7 @@ class ChromeHelper:
             options.add_argument("--disable-extensions")
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
-        self.driver.set_window_size(390, 844)
+        # self.driver.set_window_size(390, 844)
         # self.driver.quit()
         return True
 
