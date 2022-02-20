@@ -343,6 +343,7 @@ class ChromeHelper:
         share_link = f"https://m.facebook.com/{video_id}"
         if len(video_custom_share_links) > 0:
             share_link = random.choice(video_custom_share_links)
+            share_link = share_link.replace("www", "m")
         total_groups = []
 
         if go_enable:
@@ -359,7 +360,7 @@ class ChromeHelper:
             total_groups.extend([x.strip() for x in group_options.split('\n')])
 
         groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
-        groups_share_fixed.append(found_group_name)
+        # groups_share_fixed.append(found_group_name)
 
         self.driver.get("https://m.facebook.com")
 
@@ -428,7 +429,7 @@ class ChromeHelper:
             # Wait to load page
             random_sleep(1)
 
-        time.sleep(5)
+        random_sleep(5)
         self.driver.get(share_link)
 
         # check content not found
@@ -472,7 +473,8 @@ class ChromeHelper:
         #     self.login()
         not_found_time = 0
         found_group = False
-        for group in random.sample(groups_share_fixed, len(groups_share_fixed)):
+        # group_join_auto = random.sample(get_group_joining_data('group_join_auto').split('\n'), k = 5)
+        for group in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
             group = group.strip()
             if group == "":
                 continue
@@ -484,10 +486,15 @@ class ChromeHelper:
             elif len(splitter) > 2:
                 group_url = splitter[0]
                 group_name = ",".join(splitter[1:])
+            elif len(splitter) == 1:
+                group_url = group
             else:
                 logger.error(f"Can not split {group}")
                 continue
+            if 'www' in group_url:
+                group_url = group_url.replace("www", "m")
 
+            # group_url = "https://m.facebook.com/groups/2701287196753908/"
             self.driver.get(group_url)
 
             # check logged
@@ -516,19 +523,61 @@ class ChromeHelper:
             self.driver.get(group_url)
             write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=1)
             if not write_something:
-                logger.error(f"errors : Write something... not found")
-                continue
+                # check join group
+                join_group_btn = self.find_attr_by_css("button", "label",
+                                                       "Join Group", waiting_time=1)
+                if join_group_btn:
+
+                    # check join in day
+                    via_data = via_share.find_one({"fb_id": fb_id})
+                    current_date = str(datetime.date(datetime.now()))
+                    join_history = via_data.get("join_history", {})
+                    join_in_day = join_history.get(current_date, None)
+
+                    if join_in_day is None:
+                        join_in_day = 0
+                        via_share.update_one({"fb_id": fb_id}, {"$set": {"join_history": {current_date: join_in_day}}})
+
+                    if join_in_day is not None and join_in_day >= 5:
+                        continue
+
+                    join_group_btn.click()
+                    time.sleep(10)
+                    pending_request = self.waiting_for_text_by_css("div", "Your Request Is Pending", waiting_time=1)
+                    try:
+                        if pending_request:
+                            all_questions = self.driver.find_elements(By.TAG_NAME, "textarea")
+                            for question in all_questions:
+                                question.click()
+                                question.send_keys("I'm agree")
+                                time.sleep(1)
+
+                            # submit button
+                            submit_btn = self.find_attr_by_css("button", "label",
+                                                               "Submit")
+                            if submit_btn:
+                                submit_btn.click()
+                        join_in_day += 1
+                        via_share.update_one({"fb_id": fb_id},
+                                             {"$set": {"join_history": {current_date: join_in_day}}})
+                        continue
+                    except:
+                        pass
+                else:
+                    logger.error(f"errors : Write something... not found")
+                    continue
+            # continue
 
             i = 0
-            while i < 10:
+            while i < 5:
                 i += 1
                 # Scroll down to bottom
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 # Wait to load page
-                time.sleep(2)
+                random_sleep(2)
 
             self.driver.get(group_url)
-            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=2)
+            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=1)
             if not write_something:
                 logger.error(f"errors : Write something... not found")
                 continue
