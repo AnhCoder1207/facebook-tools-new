@@ -311,7 +311,7 @@ def crawl_movie(page_name, filter_number):
 
             if view_count > filter_number or filter_number == 0:
                 if view_count >= 1000000:
-                    view_count = f"{view_count/1000000}M"
+                    view_count = f"{view_count/1000}K"
                 elif 1000000 > view_count > 1000:
                     view_count = f"{view_count/1000}K"
                 tables_data.append([
