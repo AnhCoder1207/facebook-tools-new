@@ -737,7 +737,7 @@ class ChromeHelper:
                 r = requests.get("http://www.google.com/", proxies=proxies)
             except Exception as ex:
                 logger.error(f"proxy die: {self.fb_id}")
-                return False
+                # return False
 
             manifest_json = """
                 {
