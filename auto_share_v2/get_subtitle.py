@@ -10,7 +10,7 @@ def validate_string(input_txt):
 
 def video_comments(video_id):
     api_key = 'AIzaSyCwCavl6taBxti5xF4it6xdlq2se2JEV5g'
-    analyzer = SentimentIntensityAnalyzer()
+    analyzer = SentimentIntensityAnalyzer(lexicon_file="./vader_lexicon.txt", emoji_lexicon="./emoji_utf8_lexicon.txt")
     # empty list for storing reply
     replies = []
     comments = []

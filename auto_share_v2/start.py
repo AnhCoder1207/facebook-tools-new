@@ -540,27 +540,42 @@ if __name__ == '__main__':
             window4 = group_to_join_window(group_options, group_go, group_co_khi, group_xay_dung, group_join_auto)
         elif event == "group_modified":
             group_options = values.get("group_options", "").split('\n')
-            groups = [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_options"} for group in group_options if
-                      group.strip() != '']
+            groups = []
+            for group in group_options:
+                group = group.strip() != ''
+                data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_options"}
+                if data_insert not in groups:
+                    groups.append(data_insert)
 
             group_go = values.get("group_go", "").split('\n')
-            groups.extend(
-                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_go"} for group in group_go if group.strip() != ''])
+
+            for group in group_options:
+                group = group.strip() != ''
+                data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_go"}
+                if data_insert not in groups:
+                    groups.append(data_insert)
 
             group_co_khi = values.get("group_co_khi", "").split('\n')
-            groups.extend(
-                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_co_khi"} for group in group_co_khi if
-                           group.strip() != ''])
+
+            for group in group_options:
+                group = group.strip() != ''
+                data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_co_khi"}
+                if data_insert not in groups:
+                    groups.append(data_insert)
 
             group_xay_dung = values.get("group_xay_dung", "").split('\n')
-            groups.extend(
-                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_xay_dung"} for group in group_xay_dung if
-                           group.strip() != ''])
+            for group in group_options:
+                group = group.strip() != ''
+                data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_xay_dung"}
+                if data_insert not in groups:
+                    groups.append(data_insert)
 
             group_join_auto = values.get("group_join_auto", "").split('\n')
-            groups.extend(
-                [{"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_join_auto"} for group in group_join_auto if
-                           group.strip() != ''])
+            for group in group_options:
+                group = group.strip() != ''
+                data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_join_auto"}
+                if data_insert not in groups:
+                    groups.append(data_insert)
 
             #group_join_auto
 
