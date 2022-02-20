@@ -324,7 +324,7 @@ if __name__ == '__main__':
 
             if not sharing:
                 sharing = True
-                window1.Element('Start share').Update(text="Stop Share")
+                # window1.Element('Start share').Update(text="Stop Share")
                 stop_threads = False
                 threads = []
                 via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
@@ -335,14 +335,16 @@ if __name__ == '__main__':
                 for thread in threads:
                     thread.start()
                     time.sleep(5)
-            else:
-                stop_threads = True
-                sharing = False
                 # browserExe = "chrome.exe"
                 # os.system("taskkill /f /im " + browserExe)
                 # browserExe = "chromedriver.exe"
                 # os.system("taskkill /f /im " + browserExe)
-                window1.Element('Start share').Update(text="Start share")
+                # window1.Element('Start share').Update(text="Start share")
+        elif event == "Stop share":
+            stop_threads = True
+            sharing = False
+            browserExe = "chromedriver.exe"
+            os.system("taskkill /f /im " + browserExe)
         elif event == 'remove_video':
             label = pyautogui.confirm(text='Are you sure?', title='Confirm delete', buttons=["yes", "no"])
             if label == "yes":
