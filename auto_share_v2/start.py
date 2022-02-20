@@ -849,9 +849,11 @@ if __name__ == '__main__':
                 comments = "\n".join(comments)
                 windows8.Element('youtube_comments_area').update(comments)
         elif event == 'Delete Videos':
-            scheduler_table.drop()
-            table_data = get_scheduler_data()
-            window1.Element('table').Update(values=table_data)
+            label = pyautogui.confirm(text='Are you sure?', title='Confirm delete all videos', buttons=["yes", "no"])
+            if label == "yes":
+                scheduler_table.drop()
+                table_data = get_scheduler_data()
+                window1.Element('table').Update(values=table_data)
         elif event == 'add_new_via':
             add_new_via_windows()
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
