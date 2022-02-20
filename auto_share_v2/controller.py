@@ -359,6 +359,11 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
                             "create_date": str(datetime.now())
                         }}
                     )
+                    try:
+                        chrome_worker.driver.quit()
+                        main_windows.write_event_value('new_via_login', "")
+                    except:
+                        pass
                     continue
 
                 shutil.rmtree(f"{user_data_dir}/{fb_id}")
