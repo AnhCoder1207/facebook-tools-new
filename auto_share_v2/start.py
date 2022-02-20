@@ -550,7 +550,7 @@ if __name__ == '__main__':
 
             group_go = values.get("group_go", "").split('\n')
 
-            for group in group_options:
+            for group in group_go:
                 group = group.strip()
                 if group != '':
                     data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_go"}
@@ -559,7 +559,7 @@ if __name__ == '__main__':
 
             group_co_khi = values.get("group_co_khi", "").split('\n')
 
-            for group in group_options:
+            for group in group_co_khi:
                 group = group.strip()
                 if group != '':
                     data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_co_khi"}
@@ -567,7 +567,7 @@ if __name__ == '__main__':
                         groups.append(data_insert)
 
             group_xay_dung = values.get("group_xay_dung", "").split('\n')
-            for group in group_options:
+            for group in group_xay_dung:
                 group = group.strip()
                 if group != "":
                     data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_xay_dung"}
@@ -575,7 +575,7 @@ if __name__ == '__main__':
                         groups.append(data_insert)
 
             group_join_auto = values.get("group_join_auto", "").split('\n')
-            for group in group_options:
+            for group in group_join_auto:
                 group = group.strip()
                 if group != '':
                     data_insert = {"_id": str(ObjectId()), "name": group.strip(), "group_type": "group_join_auto"}
