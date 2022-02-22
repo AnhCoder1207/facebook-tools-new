@@ -406,6 +406,7 @@ if __name__ == '__main__':
                 group_options = get_group_joining_data("group_options")
                 groups_share.extend([x.strip() for x in group_options.split('\n')])
 
+            groups_share = list(set(groups_share))
             if exist_scheduler:
                 number_shared = len(exist_scheduler.get("groups_shared"))
                 scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
@@ -477,7 +478,7 @@ if __name__ == '__main__':
             if options_enable:
                 group_options = get_group_joining_data("group_options")
                 groups_share.extend([x.strip() for x in group_options.split('\n')])
-
+            groups_share = list(set(groups_share))
             for video_id in video_ids:
                 video_id = video_id.strip()
                 if video_id == "":
