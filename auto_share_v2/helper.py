@@ -604,13 +604,13 @@ class ChromeHelper:
             post_area.send_keys(share_link)
             random_sleep(5, 10)
 
-            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=2)
-            if not close_link_button:
-                not_found_time += 1
-                if not_found_time > 2:
-                    scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
-                    break
-                continue
+            # close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=2)
+            # if not close_link_button:
+            #     not_found_time += 1
+            #     if not_found_time > 2:
+            #         scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+            #         break
+            #     continue
 
             random_sleep(1, 3)
             # title share
