@@ -434,10 +434,12 @@ class ChromeHelper:
 
         # check content not found
         if self.find_by_text("a", "Content Not Found", waiting_time=2):
+            logger.error(f"Video die errors {fb_id}")
             scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
             return
 
+        scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": False}})
         play_button = self.find_by_attr("div", "data-sigil", "m-video-play-button playInlineVideo")
         if play_button: play_button.click()
         random_sleep(5, 10)
