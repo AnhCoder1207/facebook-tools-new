@@ -32,6 +32,7 @@ scheduler_table = mongo_client['scheduler_table']
 via_share = mongo_client['via_share']
 joining_group = mongo_client['joining_group']
 group_auto_approved = mongo_client['group_auto_approved']
+group_via = mongo_client['group_via']
 
 
 def mapping_table(item):
@@ -44,6 +45,10 @@ def mapping_table(item):
         item.get('xay_dung_enable', False),
         item.get('options_enable', False),
     ]
+
+
+def mapping_group_via(item):
+    return item.get("name")
 
 
 def mapping_via_table(item):
@@ -73,23 +78,22 @@ def get_scheduler_data():
 
 
 def get_group_joining_data(group_type):
-    # results = connection.execute(
-    #     db.select([joining_group]).where(joining_group.columns.group_type == group_type)).fetchall()
-    # groups = [result.name for result in results if result.name.strip() != '']
-    # data_group_join = "\n".join(groups)
     results = joining_group.find({"group_type": group_type})
     groups = [result.get("name") for result in results if result.get("name").strip() != '']
     data_group_join = "\n".join(groups)
     return data_group_join
 
 
-def get_via_data():
+def get_via_data(filter_group=""):
     # results = connection.execute(db.select([via_share])).fetchall()
     # if len(results) == 0:
     #     return []
     # df = pd.DataFrame(results)
     # df.columns = results[0].keys()
-    results = via_share.find().sort([("status", pymongo.DESCENDING), ("create_date", pymongo.DESCENDING)])
+    query = {}
+    if filter_group != "" and filter_group != 'All via':
+        query = {"group": filter_group}
+    results = via_share.find(query).sort([("status", pymongo.DESCENDING), ("create_date", pymongo.DESCENDING)])
     table_default = list(map(mapping_via_table, list(results)))
     return table_default
 
@@ -102,3 +106,13 @@ def validate_string(input_txt):
     if type(input_txt) is str:
         return ''.join(e for e in input_txt if (e.isalnum() or e == " " or e == '.'))
     return input_txt
+
+
+def get_all_group():
+    result = via_share.distinct("group")
+    group = list(result)
+    return group
+
+
+if __name__ == '__main__':
+    get_all_group()

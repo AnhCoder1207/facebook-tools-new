@@ -401,17 +401,24 @@ def start_share(main_window, stop_thread, proxy_enable):
     # Step 1 query all via live
     print("start share")
     while not stop_thread():
-        video_sharing = scheduler_table.find_one({"shared": False})
-        if not video_sharing:
+        video_sharings = scheduler_table.find({"shared": False})
+        video_sharings = list(video_sharings)
+        if len(video_sharings) == 0:
             time.sleep(10)
             continue
 
+        video_sharing = random.choice(video_sharings)
         video_sharing_id = video_sharing.get("video_id", "")
         groups_remaining = video_sharing.get("groups_remaining", [])
         groups_shared = video_sharing.get("groups_shared", [])
+        group_selected = video_sharing.get("group_selected", 'All via')
+        if group_selected != "All via":
+            query = {"$and": [{"group": group_selected}, {"$or": [{"status": 'die proxy'}, {"status": 'live'}]}]}
+        else:
+            query = {"$or": [{"status": 'die proxy'}, {"status": 'live'}]}
         current_date = str(datetime.date(datetime.now()))
         # fb_id = "100067986994042"
-        results = via_share.find({"$or": [{"status": 'die proxy'}, {"status": 'live'}]})
+        results = via_share.find(query)
         results = list(results)
 
         if len(results) == 0:

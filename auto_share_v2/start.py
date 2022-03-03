@@ -13,7 +13,7 @@ from datetime import datetime
 from get_subtitle import video_comments
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
-    get_group_joining_data, scheduler_table, via_share, joining_group
+    get_group_joining_data, scheduler_table, via_share, joining_group, get_all_group
 from controller import thread_join_group, start_login_via, start_share, start_join_group
 
 
@@ -55,10 +55,16 @@ def make_main_window(table_data):
 
 
 def add_vid_window():
+    all_groups = get_all_group()
+    all_groups.insert(0, 'All via')
     layout_add_video = [
         [
             [sg.Text('Video ID')],
             [sg.InputText(size=(100, 5), key="video_id")],
+        ],
+        [
+            [sg.Text('Select via group')],
+            [sg.DropDown(default_value='All via', values=all_groups, size=(100, 1), key="group_selected")],
         ],
         [
             [sg.Text('Custom Share Links')],
@@ -85,10 +91,16 @@ def add_vid_window():
 
 
 def add_multiple_vid_window():
+    all_groups = get_all_group()
+    all_groups.insert(0, 'All via')
     layout_add_video = [
         [
             [sg.Text('Video IDs')],
             [sg.Multiline(size=(100, 5), key="video_ids")],
+        ],
+        [
+            [sg.Text('Select via group')],
+            [sg.DropDown(default_value='All via', values=all_groups, size=(100, 1), key="group_selected")],
         ],
         [
             [sg.Text('Share Descriptions')],
@@ -127,14 +139,21 @@ def get_youtube_comment_window():
 
 
 def show_detail_video_info(video_data):
+    all_groups = get_all_group()
+    all_groups.insert(0, "All via")
     number_shared = len(video_data.get('groups_shared', []))
     number_share_description = len(video_data.get('share_descriptions', []))
     number_share_remaining = len(video_data.get('groups_remaining', []))
     number_video_custom_share_links = len(video_data.get('video_custom_share_links', []))
+    group_selected = video_data.get("group_selected", "")
     layout_detail_video_info = [
         [
             [sg.Text('Video ID')],
             [sg.InputText(video_data.get('video_id'), size=(100, 5), readonly=True, key="detail_video_id")]
+        ],
+        [
+            [sg.Text('Select via group')],
+            [sg.DropDown(default_value=group_selected, values=all_groups, size=(100, 1), key="group_selected")],
         ],
         [
             [sg.Text('Share Config')],
@@ -192,14 +211,29 @@ def export_via_window():
     return sg.Window('Export Via', layout_detail_video_info, finalize=True)
 
 
-def via_manage_window(via_data):
+def input_group_name_window():
+    layout_detail_video_info = [
+        [sg.InputText(key="group_name_created")],
+        [sg.Button('Create', key="create_via_group")]
+    ]
+
+    return sg.Window('Input New Group Name', layout_detail_video_info, finalize=True)
+
+
+def via_manage_window(via_data, all_groups):
+    all_groups.insert(0, 'All via')
     headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "auto share today", "last modified"]
     layout_via_manage_video = [
-        [sg.Button('Add new here', key='add_new_via'),
-         sg.Button('Open Via in Browser', key='open_via_in_browser'),
-         sg.Button('Edit Via', key='edit_via_btn'),
-         sg.Button('Export Via Checkpoint', key="export_checkpoint_via_btn"),
-         sg.Button('Delete Via', key="delete_via")],
+        [
+            sg.Button('Add new here', key='add_new_via'),
+            sg.Button('Open Via in Browser', key='open_via_in_browser'),
+            sg.Button('Edit Via', key='edit_via_btn'),
+            sg.Button('Export Via Checkpoint', key="export_checkpoint_via_btn"),
+            sg.Button('Delete Via', key="delete_via"),
+            sg.Button('Create Via Group', key="open_create_via_group"),
+            sg.Button('Delete Via Group', key="open_delete_via_group"),
+            sg.DropDown(default_value='All via', values=all_groups, size=(20, 1), enable_events=True, key='_VIA_MANAGEMENT_SELECTED_GROUP_')
+        ],
         [
             sg.Table(values=via_data,
                      headings=headings,
@@ -291,6 +325,8 @@ if __name__ == '__main__':
     # All the stuff inside your window.
     table_data = get_scheduler_data()
     window1, window2, window3, window4, window5, window6, windows7, windows8, windows9 = make_main_window(table_data), None, None, None, None, None, None, None, None
+    create_via_group_dialog = None
+    selected_via = []
     # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
@@ -366,6 +402,7 @@ if __name__ == '__main__':
         elif event == 'Them':
             # them video
             video_id = values.get("video_id", "").strip()
+            group_selected = values.get("group_selected", "All via").strip()
 
             video_custom_share_links = values.get("video_custom_share_links", "").strip()
             if video_custom_share_links != "":
@@ -412,6 +449,7 @@ if __name__ == '__main__':
                 scheduler_table.update_one({"_id": exist_scheduler['_id']}, {"$set": {
                     "share_number": number_shared,
                     "shared": False,
+                    "group_selected": group_selected,
                     "go_enable": go_enable,
                     "co_khi_enable": co_khi_enable,
                     "xay_dung_enable": xay_dung_enable,
@@ -428,6 +466,7 @@ if __name__ == '__main__':
                     "scheduler_time": datetime.now().timestamp(),
                     "create_date": datetime.now().timestamp(),
                     "shared": False,
+                    "group_selected": group_selected,
                     "share_number": 0,
                     "title_shared": [],
                     "groups_shared": [],
@@ -449,6 +488,7 @@ if __name__ == '__main__':
         elif event == 'add_multiple_videos':
             # them video
             video_ids = values.get("video_ids", "").strip().split('\n')
+            group_selected = values.get("group_selected", "All via").strip()
             video_custom_share_links = []
             if len(video_ids) == 0:
                 sg.Popup('Video ID is require', keep_on_top=True)
@@ -495,6 +535,7 @@ if __name__ == '__main__':
                                 "share_number": number_shared,
                                 "shared": False,
                                 "go_enable": go_enable,
+                                "group_selected": group_selected,
                                 "co_khi_enable": co_khi_enable,
                                 "xay_dung_enable": xay_dung_enable,
                                 "options_enable": options_enable,
@@ -512,6 +553,7 @@ if __name__ == '__main__':
                         "scheduler_time": datetime.now().timestamp(),
                         "create_date": datetime.now().timestamp(),
                         "shared": False,
+                        "group_selected": group_selected,
                         "share_number": 0,
                         "title_shared": [],
                         "groups_shared": [],
@@ -531,7 +573,25 @@ if __name__ == '__main__':
             window2 = add_vid_window()
         elif event == "Via Management":
             via_data = get_via_data()
-            window3 = via_manage_window(via_data)
+            all_groups = get_all_group()
+            window3 = via_manage_window(via_data, all_groups)
+        elif event == "open_create_via_group":
+            selected_via = values.get('via_table')
+            create_via_group_dialog = input_group_name_window()
+        elif event == "create_via_group":
+            if create_via_group_dialog:
+                group_name = values.get("group_name_created")
+                table_data = window3.Element('via_table').Get()
+                for idx in reversed(selected_via):
+                    fb_id = table_data[idx][0]
+                    via_share.update_one({"fb_id": fb_id}, {"$set": {"group": group_name}})
+                all_groups = get_all_group()
+                all_groups.insert(0, 'All via')
+                window3.Element("_VIA_MANAGEMENT_SELECTED_GROUP_").Update(values=all_groups, value=group_name)
+                via_data = get_via_data(filter_group=group_name)
+                window3.Element('via_table').Update(values=via_data)
+                create_via_group_dialog.close()
+
         elif event == "Edit list group":
             group_options = get_group_joining_data('group_options')
             group_go = get_group_joining_data('group_go')
@@ -815,6 +875,7 @@ if __name__ == '__main__':
             xay_dung_enable = values.get("groups.xay_dung")
             options_enable = values.get("groups.options")
             video_shared = values.get("video_shared")
+            group_selected = values.get("group_selected")
             detail_share_description = [x.strip() for x in values.get("detail_share_description").split("\n") if x.strip() != ""]
             detail_groups_shared = [x.strip() for x in values.get("detail_groups_shared").split("\n") if x.strip() != ""]
             video_custom_share_links = [x.strip() for x in values.get("detail_video_custom_share_links").split("\n") if x.strip() != ""]
@@ -836,16 +897,22 @@ if __name__ == '__main__':
 
             groups_share_fixed = list(set(total_groups) - set(detail_groups_shared))
 
-            scheduler_table.update_one({"video_id": video_id}, {"$set": {
-                "go_enable": go_enable,
-                "co_khi_enable": co_khi_enable,
-                "xay_dung_enable": xay_dung_enable,
-                "options_enable": options_enable,
-                "share_descriptions": detail_share_description,
-                "groups_remaining": groups_share_fixed,
-                "shared": video_shared,
-                "video_custom_share_links": video_custom_share_links
-            }})
+            scheduler_table.update_one(
+                {"video_id": video_id},
+                {
+                    "$set": {
+                        "go_enable": go_enable,
+                        "co_khi_enable": co_khi_enable,
+                        "xay_dung_enable": xay_dung_enable,
+                        "group_selected": group_selected,
+                        "options_enable": options_enable,
+                        "share_descriptions": detail_share_description,
+                        "groups_remaining": groups_share_fixed,
+                        "shared": video_shared,
+                        "video_custom_share_links": video_custom_share_links
+                    }
+                }
+            )
             sg.Popup("Save success!")
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
@@ -875,6 +942,22 @@ if __name__ == '__main__':
                 window1.Element('table').Update(values=table_data)
         elif event == 'add_new_via':
             add_new_via_windows()
+        elif event == '_VIA_MANAGEMENT_SELECTED_GROUP_':
+            group_selected = values.get(event)
+            via_data = get_via_data(filter_group=group_selected)
+            window3.Element('via_table').Update(values=via_data)
+        elif event == "open_delete_via_group":
+            label = pyautogui.confirm(text='Are you sure?', title='Confirm delete', buttons=["yes", "no"])
+            if label != "yes":
+                continue
+            group_deleted = values.get("_VIA_MANAGEMENT_SELECTED_GROUP_")
+            via_share.update_many({"group": group_deleted}, {"$unset": {"group": 1}})
+            all_groups = get_all_group()
+            all_groups.insert(0, 'All via')
+            window3.Element("_VIA_MANAGEMENT_SELECTED_GROUP_").Update(values=all_groups, value="All via")
+            via_data = get_via_data()
+            window3.Element('via_table').Update(values=via_data)
+
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()
