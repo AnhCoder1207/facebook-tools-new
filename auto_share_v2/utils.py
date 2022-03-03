@@ -33,6 +33,7 @@ via_share = mongo_client['via_share']
 joining_group = mongo_client['joining_group']
 group_auto_approved = mongo_client['group_auto_approved']
 group_via = mongo_client['group_via']
+settings_table = mongo_client['settings_table']
 
 
 def mapping_table(item):

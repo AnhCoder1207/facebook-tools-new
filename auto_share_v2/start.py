@@ -13,7 +13,7 @@ from datetime import datetime
 from get_subtitle import video_comments
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
-    get_group_joining_data, scheduler_table, via_share, joining_group, get_all_group
+    get_group_joining_data, scheduler_table, via_share, joining_group, get_all_group, settings_table
 from controller import thread_join_group, start_login_via, start_share, start_join_group
 
 
@@ -57,6 +57,12 @@ def make_main_window(table_data):
 def add_vid_window():
     all_groups = get_all_group()
     all_groups.insert(0, 'All via')
+    settings_obj = settings_table.find_one({"type": "settings"})
+    if settings_obj:
+        default_group_via = settings_obj.get("default_group_via")
+    else:
+        settings_table.insert_one({"type": "settings", "default_group_via": "All via"})
+        default_group_via = "All via"
     layout_add_video = [
         [
             [sg.Text('Video ID')],
@@ -64,7 +70,7 @@ def add_vid_window():
         ],
         [
             [sg.Text('Select via group')],
-            [sg.DropDown(default_value='All via', values=all_groups, size=(100, 1), key="group_selected")],
+            [sg.DropDown(default_value=default_group_via, values=all_groups, size=(100, 1), key="group_selected")],
         ],
         [
             [sg.Text('Custom Share Links')],
@@ -93,6 +99,12 @@ def add_vid_window():
 def add_multiple_vid_window():
     all_groups = get_all_group()
     all_groups.insert(0, 'All via')
+    settings_obj = settings_table.find_one({"type": "settings"})
+    if settings_obj:
+        default_group_via = settings_obj.get("default_group_via")
+    else:
+        settings_table.insert_one({"type": "settings", "default_group_via": "All via"})
+        default_group_via = "All via"
     layout_add_video = [
         [
             [sg.Text('Video IDs')],
@@ -100,7 +112,7 @@ def add_multiple_vid_window():
         ],
         [
             [sg.Text('Select via group')],
-            [sg.DropDown(default_value='All via', values=all_groups, size=(100, 1), key="group_selected")],
+            [sg.DropDown(default_value=default_group_via, values=all_groups, size=(100, 1), key="group_selected")],
         ],
         [
             [sg.Text('Share Descriptions')],
@@ -145,7 +157,7 @@ def show_detail_video_info(video_data):
     number_share_description = len(video_data.get('share_descriptions', []))
     number_share_remaining = len(video_data.get('groups_remaining', []))
     number_video_custom_share_links = len(video_data.get('video_custom_share_links', []))
-    group_selected = video_data.get("group_selected", "")
+    group_selected = video_data.get("group_selected", "All via")
     layout_detail_video_info = [
         [
             [sg.Text('Video ID')],
@@ -175,7 +187,7 @@ def show_detail_video_info(video_data):
         ],
         [
            [sg.Text(f'Custom Share Links: {number_video_custom_share_links}')],
-           [sg.Multiline("\n".join(video_data.get('video_custom_share_links', [])), size=(100, 10),
+           [sg.Multiline("\n".join(video_data.get('video_custom_share_links', [])), size=(100, 5),
                          key="detail_video_custom_share_links")],
         ],
         [
@@ -479,6 +491,7 @@ if __name__ == '__main__':
                     "video_custom_share_links": video_custom_share_links
                 }
                 result = scheduler_table.insert_one(new_scheduler)
+            settings_table.update_one({"type": "settings"}, {"$set": {"default_group_via": group_selected}})
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
             sg.Popup('Them thanh cong', keep_on_top=True)
@@ -566,6 +579,8 @@ if __name__ == '__main__':
                         "video_custom_share_links": video_custom_share_links
                     }
                     result = scheduler_table.insert_one(new_scheduler)
+            # save default group
+            settings_table.update_one({"type": "settings"}, {"$set": {"default_group_via": group_selected}})
             table_data = get_scheduler_data()
             window1.Element('table').Update(values=table_data)
             sg.Popup('Them thanh cong', keep_on_top=True)
