@@ -430,19 +430,19 @@ class ChromeHelper:
             random_sleep(1)
 
         random_sleep(5)
-        self.driver.get(share_link)
+        # self.driver.get(share_link)
 
         # check content not found
-        if self.find_by_text("a", "Content Not Found", waiting_time=2):
-            logger.error(f"Video die errors {fb_id}")
-            scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
-            return
+        # if self.find_by_text("a", "Content Not Found", waiting_time=2):
+        #     logger.error(f"Video die errors {fb_id}")
+        #     scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+        #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
+        #     return
 
-        scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": False}})
-        play_button = self.find_by_attr("div", "data-sigil", "m-video-play-button playInlineVideo")
-        if play_button: play_button.click()
-        random_sleep(5, 10)
+        # scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": False}})
+        # play_button = self.find_by_attr("div", "data-sigil", "m-video-play-button playInlineVideo")
+        # if play_button: play_button.click()
+        # random_sleep(5, 10)
 
         # i = 0
         # while i < 10:
@@ -606,13 +606,13 @@ class ChromeHelper:
             post_area.send_keys(share_link)
             random_sleep(5, 10)
 
-            # close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=2)
-            # if not close_link_button:
-            #     not_found_time += 1
-            #     if not_found_time > 2:
-            #         scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
-            #         break
-            #     continue
+            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=5)
+            if not close_link_button:
+                not_found_time += 1
+                if not_found_time > 2:
+                    scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
+                    break
+                continue
 
             random_sleep(1, 3)
             # title share
