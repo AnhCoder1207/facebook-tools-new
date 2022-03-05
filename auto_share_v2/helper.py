@@ -517,7 +517,7 @@ class ChromeHelper:
 
             if self.waiting_for_text_by_css("#MBackNavBar > a", "You’re Temporarily Blocked", waiting_time=1):
                 logger.error(f"{fb_id} You’re Temporarily Blocked")
-                share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+                share_per_day = os.environ.get("SHARE_PER_DAY", 5)
                 share_per_day = int(share_per_day)
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
                 return False
@@ -657,7 +657,7 @@ class ChromeHelper:
                             if self.waiting_for_text_by_css("#MBackNavBar > a", "You Can't Use This Feature Right Now",
                                                             waiting_time=1):
                                 logger.error(f"{fb_id} You Can't Use This Feature Right Now")
-                                share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+                                share_per_day = os.environ.get("SHARE_PER_DAY", 5)
                                 share_per_day = int(share_per_day)
                                 via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
                                 return False
@@ -665,7 +665,7 @@ class ChromeHelper:
                                                             waiting_time=1):
                                 # You can't use this feature at the moment
                                 logger.error(f"{fb_id} You Can't Use This Feature Right Now")
-                                share_per_day = os.environ.get("SHARE_PER_DAY", 10)
+                                share_per_day = os.environ.get("SHARE_PER_DAY", 5)
                                 share_per_day = int(share_per_day)
                                 via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
                                 return False
