@@ -387,6 +387,12 @@ class ChromeHelper:
             self.driver.get("https://m.facebook.com")
             # check again
             # check logged
+            # close community standard
+            # data-nt="NT:IMAGE"
+            community_standard = self.find_by_attr("img", 'data-nt', 'NT:IMAGE', waiting_time=1)
+            if community_standard:
+                community_standard.click()
+
             if self.find_by_text("h1", "Your account has been disabled", waiting_time=1):
                 logger.info(f"Via {fb_id} Disabled")
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'disable'}})
