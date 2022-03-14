@@ -375,6 +375,16 @@ class ChromeHelper:
         # check log in needed
         self.check_language()
 
+        # close community standard
+        # data-nt="NT:IMAGE"
+        for _ in range(3):
+            community_standard = self.find_by_attr("img", 'data-nt', 'NT:IMAGE', waiting_time=1)
+            if community_standard:
+                community_standard.click()
+                time.sleep(5)
+            else:
+                break
+
         # check logged
         newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
         if not newsfeed:
@@ -387,15 +397,6 @@ class ChromeHelper:
             self.driver.get("https://m.facebook.com")
             # check again
             # check logged
-            # close community standard
-            # data-nt="NT:IMAGE"
-            for _ in range(3):
-                community_standard = self.find_by_attr("img", 'data-nt', 'NT:IMAGE', waiting_time=1)
-                if community_standard:
-                    community_standard.click()
-                    time.sleep(5)
-                else:
-                    break
 
             if self.find_by_text("h1", "Your account has been disabled", waiting_time=1):
                 logger.info(f"Via {fb_id} Disabled")
