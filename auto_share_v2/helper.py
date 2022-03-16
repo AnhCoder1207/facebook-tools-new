@@ -670,7 +670,7 @@ class ChromeHelper:
                                 logger.error(f"{fb_id} You Can't Use This Feature Right Now")
                                 share_per_day = os.environ.get("SHARE_PER_DAY", 10)
                                 share_per_day = int(share_per_day)
-                                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
+                                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day, "status": "live"}})
                                 return False
                             if self.waiting_for_text_by_css("#MBackNavBar > a", "You can't use this feature at the moment",
                                                             waiting_time=1):
@@ -678,7 +678,7 @@ class ChromeHelper:
                                 logger.error(f"{fb_id} You Can't Use This Feature Right Now")
                                 share_per_day = os.environ.get("SHARE_PER_DAY", 10)
                                 share_per_day = int(share_per_day)
-                                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day}})
+                                via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day, "status": "live"}})
                                 return False
                             break
 
