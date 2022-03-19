@@ -173,6 +173,26 @@ class ChromeHelper:
         if drop_down_menu_el:
             print(drop_down_menu_el.value_of_css_property("background-color"))
 
+    def check_comunity_spams(self):
+        # data - nt = "NT:BOX_3_CHILD"
+        ids = self.waiting_for_text_by_css("div", "You can't use this URL")
+        if ids:
+            try:
+                close_btns = self.driver.find_elements(By.CSS_SELECTOR, "div")
+                for btn in close_btns:
+                    try:
+                        #data-nt="NT:BOX"
+                        attribute = btn.get_attribute("data-nt")
+                        style = btn.get_attribute("style")
+                        if attribute == "NT:BOX" and style == "padding: 0 0 0 0":
+                            btn.click()
+                            time.sleep(5)
+                            self.driver.get("https://m.facebook.com")
+                    except Exception as ex:
+                        logger.error(f"check_comunity_spams {ex}")
+            except Exception as ex:
+                logger.error(f"check_comunity_spams {ex}")
+
     def login(self):
         username_xpath = """//*[@id="m_login_email"]"""
         password_xpath = """//*[@id="m_login_password"]"""
@@ -246,6 +266,8 @@ class ChromeHelper:
                 time.sleep(5)
 
                 self.input_mfa()
+
+        self.check_comunity_spams()
 
         login_with_one_tab = self.find_by_text("h3", "Log In With One Tap", waiting_time=1)
         if login_with_one_tab:
@@ -377,13 +399,7 @@ class ChromeHelper:
 
         # close community standard
         # data-nt="NT:IMAGE"
-        for _ in range(3):
-            community_standard = self.find_by_attr("img", 'data-nt', 'NT:IMAGE', waiting_time=1)
-            if community_standard:
-                community_standard.click()
-                time.sleep(5)
-            else:
-                break
+        self.check_comunity_spams()
 
         # check logged
         newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
