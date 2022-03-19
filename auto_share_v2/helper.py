@@ -176,15 +176,17 @@ class ChromeHelper:
     def check_comunity_spams(self):
         # data - nt = "NT:BOX_3_CHILD"
         ids = self.waiting_for_text_by_css("div", "You can't use this URL")
-        if ids:
+        community_standards = self.waiting_for_text_by_css("div", "This post goes against our Community Standards on spam")
+        if ids or community_standards:
             try:
-                close_btns = self.driver.find_elements(By.CSS_SELECTOR, "div")
-                for btn in close_btns:
+                span_elements = self.driver.find_elements(By.CSS_SELECTOR, "span")
+                for btn in span_elements:
                     try:
                         #data-nt="NT:BOX"
-                        attribute = btn.get_attribute("data-nt")
-                        style = btn.get_attribute("style")
-                        if attribute == "NT:BOX" and style == "padding: 0 0 0 0":
+                        img = btn.find_element(By.CSS_SELECTOR, 'img')
+                        attribute = img.get_attribute("data-nt")
+                        style = img.get_attribute("style")
+                        if attribute == "NT:IMAGE" and style == 'object-fit: inherit; width: 20px; height: 20px; max-width: 20px; max-height: 20px;':
                             btn.click()
                             time.sleep(5)
                             self.driver.get("https://m.facebook.com")
