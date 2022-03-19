@@ -401,7 +401,7 @@ class ChromeHelper:
 
         # close community standard
         # data-nt="NT:IMAGE"
-        self.check_comunity_spams()
+
 
         # check logged
         newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
