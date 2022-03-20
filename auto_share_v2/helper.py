@@ -269,8 +269,6 @@ class ChromeHelper:
 
                 self.input_mfa()
 
-        self.check_comunity_spams()
-
         login_with_one_tab = self.find_by_text("h3", "Log In With One Tap", waiting_time=1)
         if login_with_one_tab:
             not_now = self.waiting_for_text_by_css("div > a > span", "Not now", waiting_time=1)
@@ -282,6 +280,12 @@ class ChromeHelper:
         if notifications:
             logger.info(f"{self.fb_id} passed")
             return True
+        else:
+            self.check_comunity_spams()
+            notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+            if notifications:
+                logger.info(f"{self.fb_id} passed")
+                return True
 
         search_header = self.waiting_for_css_selector(homepage)
         if search_header:
