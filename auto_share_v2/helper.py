@@ -430,10 +430,24 @@ class ChromeHelper:
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
                 return
 
-            newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon', waiting_time=1)
-            if login_status and not newsfeed:
-                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
-                return
+            # newsfeed = self.find_by_attr("div", 'data-sigil', 'messenger_icon', waiting_time=1)
+            # if login_status and not newsfeed:
+            #     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+            #     return
+            # < div
+            # id = "checkpoint_title" > Isaac, Login
+            # approval
+            # needed < / div >
+            # check point
+            try:
+                checkpoint_title = self.driver.find_element(By.ID, "checkpoint_title")
+                if checkpoint_title:
+                    logger.info(f"Via {fb_id} Checkpoint")
+                    via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'checkpoint'}})
+                    return
+            except Exception as ex:
+                logger.error(f"get checkpoint_title errors")
+                pass
 
             if not newsfeed:
                 via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
