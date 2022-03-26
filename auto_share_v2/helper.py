@@ -195,145 +195,150 @@ class ChromeHelper:
             except Exception as ex:
                 logger.error(f"check_comunity_spams {ex}")
 
-    # def login(self):
-    #     username_xpath = """//*[@id="m_login_email"]"""
-    #     password_xpath = """//*[@id="m_login_password"]"""
-    #     login_btn_xpath = """//*[@id="login_password_step_element"]/button"""
-    #     mfa_inp_xpath = """//*[@id="approvals_code"]"""
-    #     submit_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
-    #     continue_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
-    #     homepage = "#search_jewel > a > span._7iz_"
-    #     self.driver.set_window_size(375, 812)
-    #     try:
-    #         self.driver.get("https://m.facebook.com/")
-    #     except Exception as ex:
-    #         logger.error(f"{self.fb_id} can not reach internet")
-    #     # check via is ok
-    #
-    #     notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-    #     if notifications:
-    #         logger.info(f"{self.fb_id} passed")
-    #         return True
-    #
-    #     search_header = self.waiting_for_css_selector(homepage)
-    #     if search_header:
-    #         logger.info(f"{self.fb_id} passed")
-    #         return True
-    #
-    #     choose_your_account_selector = """#root > div > div > div > p"""
-    #     choose_your_account = self.waiting_for_text_by_css(choose_your_account_selector, "Choose Your Account")
-    #     if choose_your_account:
-    #         # login exited account
-    #         # data-sigil="login_profile_form"
-    #         login_profile_form = self.find_by_attr("div", "data-sigil", "login_profile_form", waiting_time=1)
-    #         if login_profile_form:
-    #             login_profile_form.click()
-    #             # placeholder="Password"
-    #             password_inp = self.find_by_attr("input", "placeholder", "Password")
-    #             password_inp.send_keys(self.password)
-    #             # data-sigil="touchable password_login_button"
-    #             password_login_button = self.find_by_attr("button", "data-sigil", "touchable password_login_button")
-    #             if password_login_button:
-    #                 password_login_button.click()
-    #                 self.input_mfa()
-    #
-    #     else:
-    #         # login normal
-    #         login_btn = self.waiting_for_xpath(login_btn_xpath)
-    #         username_inp = self.waiting_for_xpath(username_xpath)
-    #         password_inp = self.waiting_for_xpath(password_xpath)
-    #         if login_btn and username_inp and password_inp:
-    #             if username_inp.get_attribute("placeholder") != "Mobile number or email address":
-    #                 english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
-    #                 try:
-    #                     english_uk.click()
-    #                     time.sleep(5)
-    #                     login_btn = self.waiting_for_xpath(login_btn_xpath)
-    #                     username_inp = self.waiting_for_xpath(username_xpath)
-    #                     password_inp = self.waiting_for_xpath(password_xpath)
-    #                     if not login_btn:
-    #                         return False
-    #                 except:
-    #                     pass
-    #
-    #             username_inp.click()
-    #             username_inp.clear()
-    #             password_inp.click()
-    #             password_inp.clear()
-    #             username_inp.send_keys(self.fb_id)
-    #             time.sleep(1)
-    #             password_inp.send_keys(self.password)
-    #             time.sleep(1)
-    #             login_btn.click()
-    #             time.sleep(5)
-    #
-    #             self.input_mfa()
-    #
-    #     login_with_one_tab = self.find_by_text("h3", "Log In With One Tap", waiting_time=1)
-    #     if login_with_one_tab:
-    #         not_now = self.waiting_for_text_by_css("div > a > span", "Not now", waiting_time=1)
-    #         if not_now:
-    #             not_now.click()
-    #             time.sleep(5)
-    #
-    #     notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-    #     if notifications:
-    #         logger.info(f"{self.fb_id} passed")
-    #         return True
-    #     else:
-    #         self.check_comunity_spams()
-    #         notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-    #         if notifications:
-    #             logger.info(f"{self.fb_id} passed")
-    #             return True
-    #
-    #     search_header = self.waiting_for_css_selector(homepage)
-    #     if search_header:
-    #         logger.info(f"{self.fb_id} passed")
-    #         return True
-    #
-    #     return False
-
     def login(self):
-        self.driver.get("https://mbasic.facebook.com/")
-        user_name = self.waiting_for_id("m_login_email")
-        password = self.waiting_for_css_selector("#password_input_with_placeholder > input")
-        submit_btn = self.find_attr_by_css("input", "name", "login")
-        if user_name and password and submit_btn:
+        username_xpath = """//*[@id="m_login_email"]"""
+        password_xpath = """//*[@id="m_login_password"]"""
+        login_btn_xpath = """//*[@id="login_password_step_element"]/button"""
+        mfa_inp_xpath = """//*[@id="approvals_code"]"""
+        submit_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
+        continue_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
+        homepage = "#search_jewel > a > span._7iz_"
+        self.driver.set_window_size(375, 812)
+        try:
+            self.driver.get("https://m.facebook.com/")
+        except Exception as ex:
+            logger.error(f"{self.fb_id} can not reach internet")
+        # check via is ok
 
-            user_name.click()
-            user_name.clear()
-            for item in self.fb_id:
-                user_name.send_keys(item)
-                time.sleep(0.05)
-
-            password.click()
-            password.clear()
-            for item in self.password:
-                password.send_keys(item)
-                time.sleep(0.05)
-
-            submit_btn.click()
-
-        approvals_code = self.waiting_for_id("approvals_code")
-
-        if approvals_code:
-            totp = pyotp.TOTP(self.mfa)
-            current_otp = totp.now()
-            approvals_code.send_keys(current_otp)
-
-            for _ in range(5):
-                checkpointSubmitButton = self.waiting_for_id("checkpointSubmitButton")
-                if not checkpointSubmitButton:
-                    break
-
-                checkpointSubmitButton.click()
-                time.sleep(2)
-
-        fb_logo = self.find_by_attr("img", "alt", "Facebook logo")
-        if fb_logo:
+        notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        if notifications:
+            logger.info(f"{self.fb_id} passed")
             return True
+
+        search_header = self.waiting_for_css_selector(homepage)
+        if search_header:
+            logger.info(f"{self.fb_id} passed")
+            return True
+
+        choose_your_account_selector = """#root > div > div > div > p"""
+        choose_your_account = self.waiting_for_text_by_css(choose_your_account_selector, "Choose Your Account")
+        if choose_your_account:
+            # login exited account
+            # data-sigil="login_profile_form"
+            login_profile_form = self.find_by_attr("div", "data-sigil", "login_profile_form", waiting_time=1)
+            if login_profile_form:
+                login_profile_form.click()
+                # placeholder="Password"
+                password_inp = self.find_by_attr("input", "placeholder", "Password")
+                password_inp.send_keys(self.password)
+                # data-sigil="touchable password_login_button"
+                password_login_button = self.find_by_attr("button", "data-sigil", "touchable password_login_button")
+                if password_login_button:
+                    password_login_button.click()
+                    self.input_mfa()
+
+        else:
+            # login normal
+            login_btn = self.waiting_for_xpath(login_btn_xpath)
+            username_inp = self.waiting_for_xpath(username_xpath)
+            password_inp = self.waiting_for_xpath(password_xpath)
+            if login_btn and username_inp and password_inp:
+                if username_inp.get_attribute("placeholder") != "Mobile number or email address":
+                    english_uk = self.waiting_for_text_by_css(language_selector, "English (UK)")
+                    try:
+                        english_uk.click()
+                        time.sleep(5)
+                        login_btn = self.waiting_for_xpath(login_btn_xpath)
+                        username_inp = self.waiting_for_xpath(username_xpath)
+                        password_inp = self.waiting_for_xpath(password_xpath)
+                        if not login_btn:
+                            return False
+                    except:
+                        pass
+
+                username_inp.click()
+                username_inp.clear()
+                password_inp.click()
+                password_inp.clear()
+                username_inp.send_keys(self.fb_id)
+                time.sleep(1)
+                password_inp.send_keys(self.password)
+                time.sleep(1)
+                login_btn.click()
+                time.sleep(5)
+
+                self.input_mfa()
+
+        login_with_one_tab = self.find_by_text("h3", "Log In With One Tap", waiting_time=1)
+        if login_with_one_tab:
+            not_now = self.waiting_for_text_by_css("div > a > span", "Not now", waiting_time=1)
+            if not_now:
+                not_now.click()
+                time.sleep(5)
+        # nux - nav - button
+        nux_nav_button = self.waiting_for_id("nux-nav-button")
+        if nux_nav_button:
+            nux_nav_button.click()
+
+        self.driver.get("https://m.facebook.com")
+        notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        if notifications:
+            logger.info(f"{self.fb_id} passed")
+            return True
+        else:
+            self.check_comunity_spams()
+            notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+            if notifications:
+                logger.info(f"{self.fb_id} passed")
+                return True
+
+        search_header = self.waiting_for_css_selector(homepage)
+        if search_header:
+            logger.info(f"{self.fb_id} passed")
+            return True
+
         return False
+
+    # def login(self):
+    #     self.driver.get("https://mbasic.facebook.com/")
+    #     user_name = self.waiting_for_id("m_login_email")
+    #     password = self.waiting_for_css_selector("#password_input_with_placeholder > input")
+    #     submit_btn = self.find_attr_by_css("input", "name", "login")
+    #     if user_name and password and submit_btn:
+    #
+    #         user_name.click()
+    #         user_name.clear()
+    #         for item in self.fb_id:
+    #             user_name.send_keys(item)
+    #             time.sleep(0.05)
+    #
+    #         password.click()
+    #         password.clear()
+    #         for item in self.password:
+    #             password.send_keys(item)
+    #             time.sleep(0.05)
+    #
+    #         submit_btn.click()
+    #
+    #     approvals_code = self.waiting_for_id("approvals_code")
+    #
+    #     if approvals_code:
+    #         totp = pyotp.TOTP(self.mfa)
+    #         current_otp = totp.now()
+    #         approvals_code.send_keys(current_otp)
+    #
+    #         for _ in range(5):
+    #             checkpointSubmitButton = self.waiting_for_id("checkpointSubmitButton")
+    #             if not checkpointSubmitButton:
+    #                 break
+    #
+    #             checkpointSubmitButton.click()
+    #             time.sleep(2)
+    #
+    #     fb_logo = self.find_by_attr("img", "alt", "Facebook logo")
+    #     if fb_logo:
+    #         return True
+    #     return False
 
     def input_mfa(self):
         mfa_inp_xpath = """//*[@id="approvals_code"]"""
