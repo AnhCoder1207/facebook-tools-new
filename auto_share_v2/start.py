@@ -13,30 +13,24 @@ from datetime import datetime
 from get_subtitle import video_comments
 from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
-    get_group_joining_data, scheduler_table, via_share, joining_group, get_all_group, settings_table
-from controller import thread_join_group, start_login_via, start_share, start_join_group
+    get_group_joining_data, scheduler_table, via_share, joining_group, \
+    get_all_group, settings_table, page_auto_approved_table
+from controller import start_login_via, start_share, start_join_group, start_post_approved
 
 
 def make_main_window(table_data):
-    menu_def = ['&Menu', ['&Start share', '&Stop share', '---', '&Shutdown Chrome', '&Exit']], \
+    menu_def = ['&Menu', ['&Start share', '&Stop share', '&Bắt đầu tự duyệt bài', '---', '&Shutdown Chrome', '&Exit']], \
                ['&Video', ['&Add A New Video', '&Add Multiple Videos', "&Delete Videos"]], \
-               ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions']], \
+               ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions', '&Tự động duyệt bài']], \
                ['&Tools', ['&Get Youtube Comments', '&Downloader']]
 
     headings = ['video_id', 'share group', 'share done', "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
     layout = [
         [sg.Menu(menu_def, key='menu_bar')],
         [
-            # sg.Button('Start share'),
-            # sg.Button('Add New Video'),
-            # sg.Button('Shutdown Chrome'),
-            # sg.Button('Get Youtube Comments'),
-            # sg.Button('Via Management'),
-            # sg.Button('Edit list group'),
-            # sg.Button('Start Join Group', key="start_join_group"),
-            # sg.Button('Edit Default Share Descriptions'),
             sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1)),
             sg.Checkbox('Use Proxy', key='proxy_enable', enable_events=False, default=True),
+            sg.Text(f"Tự động share: Off", key="auto_share_status"), sg.Text(f"Tự động duyệt bài: Off", key="auto_approved_status")
         ],
         [
             sg.Table(values=table_data,
@@ -234,7 +228,7 @@ def input_group_name_window():
 
 def via_manage_window(via_data, all_groups):
     all_groups.insert(0, 'All via')
-    headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "auto share today", "last modified"]
+    headings = ['fb_id', 'password', '2fa', "email", "email password", "proxy", "status", "auto share today", "Quản trị viên", "last modified"]
     layout_via_manage_video = [
         [
             sg.Button('Add new here', key='add_new_via'),
@@ -306,7 +300,9 @@ def text_seo_window(text_seo_data):
 
 
 def edit_via_window(via_data):
-    fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
+    fb_id, password, mfa, email, email_password, proxy_data, status, share_number, is_moderator, create_date = via_data
+    via_metadata = via_share.find_one({"fb_id": fb_id})
+
     layout_edit_via = [
         [sg.Text('Via ID')],
         [sg.InputText(fb_id, key="edit_via_id", readonly=True)],
@@ -320,6 +316,7 @@ def edit_via_window(via_data):
         [sg.InputText(email_password, key="edit_via_email_password")],
         [sg.Text('proxy_data')],
         [sg.InputText(proxy_data, key="edit_via_proxy_data")],
+        [sg.Checkbox('Quản trị viên', key='set_via_admin_checkbox', enable_events=False, default=via_metadata.get("is_moderator", False))],
         [sg.Text('status')],
         [sg.Listbox(default_values=status, values=['live', 'checkpoint', 'can not login', 'disable', 'join group', 'die proxy', 'can not join group'], size=(42, 6), enable_events=False, key='_LIST_VIA_STATUS_')],
         [sg.Button('Save', key='edit_via_save')]
@@ -327,6 +324,21 @@ def edit_via_window(via_data):
     window = sg.Window('Edit Via Data', layout_edit_via, finalize=True)
 
     return window
+
+
+def edit_group_approved(group_admin, page_auto_approved):
+    layout_group_to_join = [
+        [
+            [
+                [[sg.Text('Danh sách group tự động duyệt')], [sg.Multiline(size=(100, 10), key="group_admin", default_text=group_admin)]],
+                [[sg.Text('Danh sách page cần duyệt')], [sg.Multiline(size=(100, 10), key="page_auto_approved", default_text=page_auto_approved)]]
+            ],
+        ],
+        [
+            sg.Button('Lưu', key="edit_group_approved_modified")
+        ]
+    ]
+    return sg.Window('Tự động duyệt bài', layout_group_to_join, finalize=True)
 
 
 if __name__ == '__main__':
@@ -338,11 +350,14 @@ if __name__ == '__main__':
     table_data = get_scheduler_data()
     window1, window2, window3, window4, window5, window6, windows7, windows8, windows9 = make_main_window(table_data), None, None, None, None, None, None, None, None
     create_via_group_dialog = None
+    edit_group_approved_windows = None
     selected_via = []
     # chrome_worker = ChromeHelper()
     stop_join_group = False
     sharing = False
     joining = False
+    approved_status = False
+    auto_share_status = False
     # clear via status
     via_share.update_many({"status": 'join group'}, {"$set": {"status": "live"}})
     via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
@@ -383,25 +398,18 @@ if __name__ == '__main__':
                 for thread in threads:
                     thread.start()
                     time.sleep(5)
-                # browserExe = "chrome.exe"
-                # os.system("taskkill /f /im " + browserExe)
-                # browserExe = "chromedriver.exe"
-                # os.system("taskkill /f /im " + browserExe)
-                # window1.Element('Start share').Update(text="Start share")
+                # f"Tự động share: Off", key="auto_share_status"
+                window1.Element('auto_share_status').Update("Tự động share: On")
         elif event == "Stop share":
             stop_threads = True
             sharing = False
             browserExe = "chromedriver.exe"
             os.system("taskkill /f /im " + browserExe)
+            window1.Element('auto_share_status').Update("Tự động share: Off")
         elif event == 'remove_video':
             label = pyautogui.confirm(text='Are you sure?', title='Confirm delete', buttons=["yes", "no"])
             if label == "yes":
                 video_id = values.get("detail_video_id")
-                # removed = values['table']
-                # table_data = window1.Element('table').Get()
-                # for idx in reversed(removed):
-                #     video_id = table_data[idx][0]
-                    # scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
                 scheduler_table.delete_one({"video_id": video_id})
                 if windows7:
                     windows7.close()
@@ -713,7 +721,7 @@ if __name__ == '__main__':
                 os.remove("checkpoint.txt")
             with open("checkpoint.txt", mode='w') as cp_via_files:
                 for via_data in via_table_data:
-                    fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
+                    fb_id, password, mfa, email, email_password, proxy_data, status, share_number, _, create_date = via_data
                     if config_all_via:
                         if proxy_data != "":
                             cp_via_files.write(f'{fb_id}|{password}|{mfa}|{email}|{email_password}|{proxy_data}\n')
@@ -764,7 +772,9 @@ if __name__ == '__main__':
             'edit_via_email': 'eileendawnlew@hotmail.com', 
             'edit_via_email_password': 'wAvrbwjwvo7', 
             'edit_via_proxy_data': '107.181.160.6:21516:huyduc399:3b4i7mMN', 
-            '_LIST_VIA_STATUS_': ['can not login']}
+            '_LIST_VIA_STATUS_': ['can not login'],
+            'set_via_admin_checkbox': False
+            }
             """
             if not window3:
                 continue
@@ -774,6 +784,7 @@ if __name__ == '__main__':
             edit_via_id = values.get("edit_via_id", "").strip()
             edit_via_password = values.get("edit_via_password", "").strip()
             edit_via_mfa = values.get("edit_via_mfa", "").strip()
+            is_moderator = values.get("set_via_admin_checkbox", False)
             edit_via_email = values.get("edit_via_email", "").strip()
             edit_via_email_password = values.get("edit_via_email_password", "").strip()
             edit_via_proxy_data = values.get("edit_via_proxy_data", "").strip()
@@ -792,7 +803,9 @@ if __name__ == '__main__':
                     "email": edit_via_email,
                     "email_password": edit_via_email_password,
                     "proxy": edit_via_proxy_data,
-                    "status": status_via
+                    "status": status_via,
+                    "is_moderator": is_moderator,
+                    "block_share": 0
                 }}
             )
             via_data = get_via_data()
@@ -822,7 +835,7 @@ if __name__ == '__main__':
             via_table_data = window3.Element('via_table').Get()
             for via_idx in via_selected:
                 via_data = via_table_data[via_idx]
-                fb_id, password, mfa, email, email_password, proxy_data, status, share_number, create_date = via_data
+                fb_id, password, mfa, email, email_password, proxy_data, status, share_number, _, create_date = via_data
                 # chrome_worker = get_free_worker()
                 try:
                     default_chrome_worker = ChromeHelper()
@@ -972,7 +985,65 @@ if __name__ == '__main__':
             window3.Element("_VIA_MANAGEMENT_SELECTED_GROUP_").Update(values=all_groups, value="All via")
             via_data = get_via_data()
             window3.Element('via_table').Update(values=via_data)
+        elif event == 'Tự động duyệt bài':
+            if edit_group_approved_windows:
+                edit_group_approved_windows.close()
 
+            # open group
+            group_approved_settings = page_auto_approved_table.find_one({"type": "group_approved"})
+
+            if group_approved_settings is None:
+                group_approved_settings = {}
+
+            group_admin = group_approved_settings.get("group_admin", "")
+            page_auto_approved = group_approved_settings.get("page_auto_approved", "")
+            edit_group_approved_windows = edit_group_approved(group_admin, page_auto_approved)
+        elif event == 'edit_group_approved_modified':
+            group_admin = values.get("group_admin", "").strip()
+            page_auto_approved = values.get("page_auto_approved", "").strip()
+            group_approved_settings = page_auto_approved_table.find_one({"type": "group_approved"})
+
+            if group_approved_settings:
+                page_auto_approved_table.update_one(
+                    {
+                        "type": "group_approved"
+                    },
+                    {
+                        "$set": {
+                            "group_admin": group_admin,
+                            "page_auto_approved": page_auto_approved
+                        }
+                    }
+                )
+            else:
+                page_auto_approved_table.insert_one(
+                    {
+                        "type": "group_approved",
+                        "group_admin": group_admin,
+                        "page_auto_approved": page_auto_approved
+                    }
+                )
+            sg.Popup("Lưu thành công!")
+            edit_group_approved_windows.close()
+        elif event == 'Bắt đầu tự duyệt bài':
+            if not approved_status:
+                via_data = via_share.find_one({"is_moderator": True})
+                if via_data is None:
+                    sg.Popup("Vui lòng cài đặt via quản trị trong Via Management")
+                    # return True
+                    continue
+
+                group_approved_settings = page_auto_approved_table.find_one({"type": "group_approved"})
+                if group_approved_settings is None:
+                    sg.Popup("Vui lòng cài đặt group quản trị và page tự động duyệt bài trong menu Edit")
+                    # return True
+                    continue
+
+                window1.Element('auto_approved_status').Update("Tự động duyệt bài: On")
+                approved_status = True
+                threading.Thread(target=start_post_approved, daemon=True).start()
+            else:
+                sg.Popup("Đã bật tự động duyệt bài")
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()

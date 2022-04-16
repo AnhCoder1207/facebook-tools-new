@@ -3,13 +3,14 @@ import os
 import random
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import PySimpleGUI as sg
 from bson import ObjectId
 from selenium.webdriver.common.by import By
 
 from helper import ChromeHelper
-from utils import get_group_joining_data, logger, via_share, scheduler_table, group_auto_approved
+from utils import get_group_joining_data, logger, via_share, scheduler_table, group_auto_approved, \
+    page_auto_approved_table
 from config_btn import *
 
 
@@ -26,6 +27,45 @@ def start_join_group(stop_joining):
             chrome_worker.driver.quit()
         except Exception as ex:
             pass
+
+
+def start_post_approved():
+
+    while True:
+        try:
+            via_data = via_share.find_one({"is_moderator": True})
+            group_approved_settings = page_auto_approved_table.find_one({"type": "group_approved"})
+            group_admin = group_approved_settings.get("group_admin", "").strip().split("\n")
+            page_auto_approved = group_approved_settings.get("page_auto_approved", "").strip().split("\n")
+            password = via_data.get("password")
+            fb_id = via_data.get("fb_id")
+            mfa = via_data.get("mfa")
+            proxy_data = via_data.get("proxy")
+            chrome_worker = ChromeHelper()  # init worker
+            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data)
+            chrome_worker.driver.maximize_window()
+            chrome_worker.driver.get("https://facebook.com")
+        except Exception as ex:
+            logger.error(f"start_post_approved errors {ex}")
+            return True
+
+        for group in group_admin:
+            if not group.endswith("/"):
+                group += "/"
+            start_date = datetime.now()
+            end_date = datetime.now() - timedelta(hours=12)
+            group += f"pending_posts?search=&has_selection=false"
+            chrome_worker.driver.get(group)
+            # scroll down
+            # chrome_worker.scroll_down()
+            # find page and click
+            chrome_worker.click_approve(page_auto_approved)
+
+            try:
+                chrome_worker.driver.quit()
+            except Exception as ex:
+                pass
+        time.sleep(3600)  # sleep a hour
 
 
 def thread_join_group(chrome_worker):
@@ -418,7 +458,7 @@ def start_share(main_window, stop_thread, proxy_enable):
             query = {"$or": [{"status": 'die proxy'}, {"status": 'live'}]}
         current_date = str(datetime.date(datetime.now()))
         # fb_id = "100067986994042"
-        results = via_share.find(query)
+        results = via_share.find({"fb_id": "100051692670269", "status": 'live'})
         results = list(results)
 
         if len(results) == 0:
@@ -428,23 +468,7 @@ def start_share(main_window, stop_thread, proxy_enable):
         groups_share_fixed = list(set(groups_remaining) - set(groups_shared))
 
         via_data = random.choice(results)
-        founded = True
         found_group_name = ""
-        # for via_data in results:
-        #     group_joined = via_data.get("group_joined", [])
-        #     for group_share_fixed in random.sample(groups_share_fixed, k=len(groups_share_fixed)):
-        #         if group_share_fixed in group_joined:
-        #             founded = True
-        #             found_group_name = group_share_fixed
-        #             break
-        #     if founded:
-        #         # found group joined
-        #         break
-
-        # if not founded:
-        #     # not found any via have joined this group in the remaining groups
-        #     scheduler_table.update_one({"video_id": video_sharing_id}, {"$set": {"shared": True}})
-        #     continue
 
         share_date = via_data.get("date")
         fb_id = via_data.get("fb_id")
@@ -452,6 +476,18 @@ def start_share(main_window, stop_thread, proxy_enable):
         mfa = via_data.get("mfa")
         proxy_data = via_data.get("proxy")
         via_share_number = via_data.get("share_number")
+        is_moderator = via_data.get("is_moderator", False)
+        block_share = via_data.get("block_share", 0)
+        if block_share > int(time.time()) or is_moderator:
+            # via is blocked. does not open this via
+            time.sleep(10)
+            continue
+        if block_share and block_share < int(time.time()):
+            via_share.update_one(
+                {"fb_id": fb_id},
+                {"$set": {"block_share": 0, "status": 'live'}}
+            )
+
         # reset via share counting
         share_per_day = os.environ.get("SHARE_PER_DAY", 10)
         share_per_day = int(share_per_day)

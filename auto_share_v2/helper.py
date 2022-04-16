@@ -1,6 +1,6 @@
 import os
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 import requests
 import pyotp
@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from config_btn import drop_down_menu_xpath, confirm_friend_request, add_friend_button, language_selector
+from config_btn import drop_down_menu_xpath, language_selector
 from utils import logger, get_group_joining_data, scheduler_table, via_share, random_sleep, validate_string
 
 
@@ -438,6 +438,26 @@ class ChromeHelper:
 
         self.driver.get("https://m.facebook.com")
 
+        # check account restricted
+        text_compare = "Your account is restricted"
+        try:
+            if self.driver.find_element(By.ID, "MChromeHeader"):
+                elements = self.driver.find_elements(By.TAG_NAME, "div")
+                for element in elements:
+                    if element.text and text_compare.lower().strip() in element.text.lower().strip():
+                        print(element.text)
+                        day_restrict = [int(i) for i in element.text.split() if i.isdigit()]
+                        if len(day_restrict) > 0:
+                            day_restrict = int(time.time()) + day_restrict[0]*86400
+                            via_share.update_one(
+                                {"fb_id": fb_id},
+                                {"$set": {"block_share": day_restrict, "status": 'restricted'}}
+                            )
+                            return False
+                            # account restricted
+        except Exception as ex:
+            logger.error(f"Can not find {text_compare}")
+
         # check die proxy
         # try:
         #     any_tag = self.driver.find_element(By.TAG_NAME, "div")
@@ -762,6 +782,10 @@ class ChromeHelper:
                                 share_per_day = int(share_per_day)
                                 via_share.update_one({"fb_id": fb_id}, {"$set": {"share_number": share_per_day, "status": "live"}})
                                 return False
+                            video_sharing = scheduler_table.find_one({"video_id": video_id})
+                            via_shares = video_sharing.get("via_shares", [])
+                            via_shares.append(fb_id)
+                            scheduler_table.update_one({"video_id": video_id}, {"$set": {"via_shares": via_shares}})
                             break
 
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
@@ -818,6 +842,62 @@ class ChromeHelper:
 
         return wrapper
 
+    def scroll_down(self):
+        SCROLL_PAUSE_TIME = 1
+
+        # Get scroll height
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        for _ in range(10):
+            # Scroll down to bottom
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Wait to load page
+            time.sleep(2)
+
+        # Calculate new scroll height and compare with last scroll height
+        # new_height = self.driver.execute_script("return document.body.scrollHeight")
+        # if new_height == last_height:
+        #     break
+        # last_height = new_height
+
+    def click_approve(self, page_auto_approved):
+        page_auto_approved = [x.lower().strip() for x in page_auto_approved]
+        # self.driver.execute_script("window.scrollTo(0, 0);")
+        for _ in range(10):
+            # Scroll down to bottom
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Wait to load page
+            time.sleep(5)
+
+            try:
+                articles = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.lzcic4wl"))
+                )
+            except Exception as ex:
+                return
+
+            # articles = self.driver.find_elements(By.CSS_SELECTOR, "div.lzcic4wl")
+            for article in reversed(articles):
+                try:
+                    role = article.get_attribute('role')
+                    if role and role == "article":
+                        all_page_name = article.find_elements(By.CSS_SELECTOR, "h4 > span > a > strong > span")
+                        for page_name in all_page_name:
+                            if page_name.text.lower().strip() in page_auto_approved:
+                                # click approve
+                                approved_buttons = article.find_elements(By.TAG_NAME, "div")
+                                for btn in approved_buttons:
+                                    # aria-label="Decline"
+                                    # role="button"
+                                    aria_label = btn.get_attribute('aria-label')
+                                    if aria_label == "Approve":
+                                        self.driver.execute_script(f"window.scrollTo(0, {article.location['y']});")
+                                        time.sleep(5)
+                                        btn.click()
+                                        print(page_name.text)
+                                        break
+                except Exception as ex:
+                    print(ex)
+
     def open_chrome(self, fb_id, password, mfa, proxy_data, proxy_enable=True):
         self.in_use = True
         self.fb_id = fb_id
@@ -864,6 +944,7 @@ class ChromeHelper:
         options.add_argument('--no-service-autorun')
         options.add_argument('--password-store=basic')
         options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-popup-blocking')
         options.add_argument("test-type=webdriver")
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -950,6 +1031,12 @@ class ChromeHelper:
             options.add_argument("--disable-extensions")
 
         self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
+        # self.driver.get("https://m.facebook.com/groups/1514416682242976")
+        # self.driver.execute_script("window.onbeforeunload = function() {};")
+        # while True:
+        #
+        #     print(self.driver.switchTo().alert().getText())
+        #     time.sleep(1)
         # self.driver.set_window_size(390, 844)
         # self.driver.quit()
         return True

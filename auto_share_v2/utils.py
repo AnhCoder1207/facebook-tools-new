@@ -34,6 +34,7 @@ joining_group = mongo_client['joining_group']
 group_auto_approved = mongo_client['group_auto_approved']
 group_via = mongo_client['group_via']
 settings_table = mongo_client['settings_table']
+page_auto_approved_table = mongo_client['page_auto_approved_table']
 
 
 def mapping_table(item):
@@ -68,6 +69,7 @@ def mapping_via_table(item):
         item.get('proxy', ''),
         item.get('status', ''),
         share_number,
+        "Quản trị viên" if item.get('is_moderator', False) else "Không",
         item.get('create_date', ''),
     ]
 

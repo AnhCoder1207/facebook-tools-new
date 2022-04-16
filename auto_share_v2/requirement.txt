@@ -12,3 +12,4 @@ requests
 pyinstaller
 google-api-python-client
 vaderSentiment
+scheduler
