@@ -458,7 +458,7 @@ def start_share(main_window, stop_thread, proxy_enable):
             query = {"$or": [{"status": 'die proxy'}, {"status": 'live'}]}
         current_date = str(datetime.date(datetime.now()))
         # fb_id = "100067986994042"
-        results = via_share.find({"fb_id": "100051692670269", "status": 'live'})
+        results = via_share.find(query)
         results = list(results)
 
         if len(results) == 0:
