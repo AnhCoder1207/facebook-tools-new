@@ -358,17 +358,21 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
         via_exist = via_share.find_one({"fb_id": fb_id})
         chrome_worker = ChromeHelper()
         if not via_exist:
-            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
-            try:
-                login_status = chrome_worker.login()
-                # login success
-                if login_status:
-                    via_status = "live"
-                else:
+
+            chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
+            if chrome_status:
+                try:
+                    login_status = chrome_worker.login()
+                    # login success
+                    if login_status:
+                        via_status = "live"
+                    else:
+                        via_status = "can not login"
+                except Exception as ex:
                     via_status = "can not login"
-            except Exception as ex:
-                via_status = "can not login"
-                logger.error(ex)
+                    logger.error(ex)
+            else:
+                via_status = "die proxy"
             via_share.insert_one(
                 {
                     "fb_id": fb_id,

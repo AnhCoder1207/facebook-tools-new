@@ -1039,7 +1039,10 @@ class ChromeHelper:
                     logger.error("Can not remove plugin files.")
             options.add_argument("--disable-extensions")
 
-        self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
+        if os.name == "posix":
+            self.driver = webdriver.Chrome(executable_path=f'./chromedriver', options=options)
+        else:
+            self.driver = webdriver.Chrome(executable_path=f'chromedriver.exe', options=options)
         # self.driver.get("https://m.facebook.com/groups/1514416682242976")
         # self.driver.execute_script("window.onbeforeunload = function() {};")
         # while True:
