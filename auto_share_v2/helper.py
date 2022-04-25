@@ -959,9 +959,18 @@ class ChromeHelper:
             proxies = {"http": f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"}
 
             try:
-                r = requests.get("http://www.google.com/", proxies=proxies)
+                # check internet connection
+                r = requests.get("http://www.google.com/")
+                if r.status_code == 200:
+                    try:
+                        # check proxy connection
+                        r = requests.get("http://www.google.com/", proxies=proxies)
+                    except Exception as ex:
+                        logger.error(f"proxy die: {self.fb_id}")
+                        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'die proxy'}})
+                        return False
             except Exception as ex:
-                logger.error(f"proxy die: {self.fb_id}")
+                pass
                 # return False
 
             manifest_json = """
