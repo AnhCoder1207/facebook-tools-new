@@ -41,7 +41,10 @@ def mapping_table(item):
     return [
         item.get('video_id', ''),
         item.get('share_number', 0),
+        len(item.get('groups_shared', [])),
+        len(item.get('groups_remaining', [])),
         item.get('shared', False),
+        item.get('group_selected', False),
         item.get('go_enable', False),
         item.get('co_khi_enable', False),
         item.get('xay_dung_enable', False),

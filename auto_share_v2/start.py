@@ -24,7 +24,7 @@ def make_main_window(table_data):
                ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions', '&Tự động duyệt bài']], \
                ['&Tools', ['&Get Youtube Comments', '&Downloader']]
 
-    headings = ['video_id', 'share group', 'share done', "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
+    headings = ['Video ID', 'Số lần mở via', 'Đã chia sẻ', "Còn Lại", 'Đã Chạy Xong', "Nhóm Via", "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
     layout = [
         [sg.Menu(menu_def, key='menu_bar')],
         [
@@ -39,13 +39,12 @@ def make_main_window(table_data):
                      justification='right',
                      enable_events=True,
                      auto_size_columns=False,
-                     col_widths=[20, 25, 20, 15, 15, 15, 15],
                      vertical_scroll_only=False,
                      num_rows=24, key='table')
         ]
     ]
     # Create the Window
-    return sg.Window('Auto Share V1.3', layout, finalize=True)
+    return sg.Window('Auto Share V1.4', layout, finalize=True)
 
 
 def add_vid_window():
@@ -196,7 +195,7 @@ def show_detail_video_info(video_data):
             [sg.Text(f'Remaining: {number_share_remaining}')],
             [sg.Multiline("\n".join(video_data.get('groups_remaining', [])), size=(100, 10), key="detail_groups_remaining")],
         ],
-        [sg.Button('Save', key="video_modified"), sg.Button('Delete', key="remove_video")]
+        [sg.Button('Save', key="video_modified"), sg.Button('Delete', key="remove_video"), sg.Button("Check views", key="start_check_view")]
     ]
 
     return sg.Window('Detail Video', layout_detail_video_info, finalize=True)
@@ -1044,6 +1043,9 @@ if __name__ == '__main__':
                 threading.Thread(target=start_post_approved, daemon=True).start()
             else:
                 sg.Popup("Đã bật tự động duyệt bài")
+        elif event == "start_check_view":
+
+            pass
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()
