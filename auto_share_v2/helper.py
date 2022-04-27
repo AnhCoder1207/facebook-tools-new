@@ -784,7 +784,10 @@ class ChromeHelper:
                                 return False
                             video_sharing = scheduler_table.find_one({"video_id": video_id})
                             via_shares = video_sharing.get("via_shares", [])
-                            via_shares.append(fb_id)
+                            via_shares.append({
+                                "group_id": group,
+                                "via_id": fb_id
+                            })
                             scheduler_table.update_one({"video_id": video_id}, {"$set": {"via_shares": via_shares}})
                             break
 

@@ -1044,7 +1044,10 @@ if __name__ == '__main__':
             else:
                 sg.Popup("Đã bật tự động duyệt bài")
         elif event == "start_check_view":
-
+            detail_video_id = values.get("detail_video_id", "")
+            video_data = scheduler_table.find_one({"video_id", detail_video_id})
+            if video_data:
+                groups_shared = video_data.get("groups_shared", [])
             pass
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:

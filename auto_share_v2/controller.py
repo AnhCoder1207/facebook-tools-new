@@ -29,6 +29,10 @@ def start_join_group(stop_joining):
             pass
 
 
+# def check_views_func(groups):
+#     chrome_worker = ChromeHelper()
+#     for group in groups:
+
 def start_post_approved():
 
     while True:
