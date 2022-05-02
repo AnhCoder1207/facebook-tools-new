@@ -901,6 +901,72 @@ class ChromeHelper:
                 except Exception as ex:
                     print(ex)
 
+    def check_views(self, group_id, video_id, fb_id):
+        group_id = group_id.replace("m.facebook.com", "www.facebook.com")
+        if not group_id.endswith("/"):
+            group_id += "/"
+
+        # check posted content
+        for status in ["my_pending_content", "my_posted_content", "my_declined_content", "my_removed_content"]:
+            self.driver.get(group_id + status)
+            time.sleep(5)
+            selector = "div.i09qtzwb.pmk7jnqg.dpja2al7.pnx7fd3z.e4zzj2sf.k4urcfbm.tghn160j.bp9cbjyn.jeutjz8y.j83agx80.btwxx1t3 > div > span > span > span > a"
+            permalinks_selector = "div.rq0escxv.l9j0dhe7.du4w35lb.cbu4d94t.d2edcug0.hpfvmrgz.rj1gh0hx.buofh1pr.g5gj957u.j83agx80.dp1hu0rb > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > a"
+            try:
+                el = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                )
+                if not el:
+                    continue
+
+                elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                permalinks = self.driver.find_elements(By.CSS_SELECTOR, permalinks_selector)
+
+                for el_idx, element in enumerate(elements):
+                    if element.get_attribute("aria-label") == "Enlarge":
+                        href = element.get_attribute("href")
+                        href_split = href.split("/")
+                        if len(href_split) >= 5:
+                            extracted_video_id = href_split[5]
+                            if extracted_video_id == video_id:
+                                video_data = scheduler_table.find_one({"video_id": video_id})
+                                via_shares = video_data.get("via_shares", [])
+                                for idx, item in enumerate(via_shares):
+                                    tmp_group_id = item.get("group_id")
+                                    tmp_group_id = tmp_group_id.replace("m.facebook.com", "www.facebook.com")
+                                    if not tmp_group_id.endswith("/"):
+                                        tmp_group_id += "/"
+                                    tmp_via_id = item.get("via_id")
+                                    if tmp_group_id.split('/')[5] == group_id.split('/')[5] and tmp_via_id == fb_id:
+                                        via_shares[idx]['status'] = status
+                                        video_permalink = ""
+                                        if status == 'my_posted_content':
+                                            video_permalink = permalinks[el_idx].get_attribute("href")
+                                        via_shares[idx]['video_permalink'] = video_permalink
+
+                                        print(f"found {video_id} {status}")
+                                        if video_permalink != "":
+                                            try:
+                                                self.driver.get(video_permalink)
+                                                article = self.driver.find_element(By.CSS_SELECTOR,
+                                                                                   "div.du4w35lb.k4urcfbm.l9j0dhe7.sjgh65i0 > div > div > div > div")
+                                                if article:
+                                                    like = article.find_element(By.CSS_SELECTOR,
+                                                                                "div.bp9cbjyn.j83agx80.buofh1pr.ni8dbmo4.stjgntxs > div > span > div > span.gpro0wi8.cwj9ozl2.bzsjyuwj.ja2t1vim > span > span")
+                                                    if like:
+                                                        like = like.text
+                                                        via_shares[idx]['like'] = like
+                                            except Exception as ex:
+                                                pass
+                                        scheduler_table.update_one({"video_id": video_id},
+                                                                   {"$set": {"via_shares": via_shares}})
+                                        break
+
+            except Exception as ex:
+                pass
+
+
+    # span/span/span/a
     def open_chrome(self, fb_id, password, mfa, proxy_data, proxy_enable=True):
         self.in_use = True
         self.fb_id = fb_id

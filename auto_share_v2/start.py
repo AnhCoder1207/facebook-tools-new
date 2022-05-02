@@ -3,6 +3,7 @@ import shutil
 import threading
 import time
 import uuid
+import csv
 
 import PySimpleGUI as sg
 import pyautogui
@@ -15,7 +16,7 @@ from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
     get_group_joining_data, scheduler_table, via_share, joining_group, \
     get_all_group, settings_table, page_auto_approved_table
-from controller import start_login_via, start_share, start_join_group, start_post_approved
+from controller import start_login_via, start_share, start_join_group, start_post_approved, check_views_func
 
 
 def make_main_window(table_data):
@@ -195,7 +196,7 @@ def show_detail_video_info(video_data):
             [sg.Text(f'Remaining: {number_share_remaining}')],
             [sg.Multiline("\n".join(video_data.get('groups_remaining', [])), size=(100, 10), key="detail_groups_remaining")],
         ],
-        [sg.Button('Save', key="video_modified"), sg.Button('Delete', key="remove_video"), sg.Button("Check views", key="start_check_view")]
+        [sg.Button('Save', key="video_modified"), sg.Button('Delete', key="remove_video"), sg.Button("Check views", key="start_check_view"), sg.Button("Export check views report", key="done_check_views")]
     ]
 
     return sg.Window('Detail Video', layout_detail_video_info, finalize=True)
@@ -239,6 +240,7 @@ def via_manage_window(via_data, all_groups):
             sg.Button('Delete Via Group', key="open_delete_via_group"),
             sg.DropDown(default_value='All via', values=all_groups, size=(20, 1), enable_events=True, key='_VIA_MANAGEMENT_SELECTED_GROUP_')
         ],
+        [sg.Text("Tìm Kiếm"), sg.InputText(enable_events=True, key="search_via_inp")],
         [
             sg.Table(values=via_data,
                      headings=headings,
@@ -1045,10 +1047,49 @@ if __name__ == '__main__':
                 sg.Popup("Đã bật tự động duyệt bài")
         elif event == "start_check_view":
             detail_video_id = values.get("detail_video_id", "")
-            video_data = scheduler_table.find_one({"video_id", detail_video_id})
+            video_data = scheduler_table.find_one({"video_id": detail_video_id})
             if video_data:
-                groups_shared = video_data.get("groups_shared", [])
-            pass
+                via_shares = video_data.get("via_shares", [])
+                number_threads = values.get("number_threads", 1)
+                proxy_enable = window1.Element('proxy_enable').Get()
+                try:
+                    number_threads = int(number_threads)
+                except Exception as ex:
+                    sg.Popup("Number threads must be integer")
+                    continue
+
+                stop_threads = True
+                sharing = False
+                window1.Element('auto_share_status').Update("Tự động share: Off")
+                thread = threading.Thread(target=check_views_func,
+                                          args=(window1, detail_video_id, via_shares, proxy_enable), daemon=True)
+                thread.start()
+                sg.Popup("Đang tiến hành kiểm tra trạng thái video, vui lòng chờ đến khi có thông báo hoàn tất")
+        elif event == "done_check_views":
+
+            try:
+                detail_video_id = values.get("done_check_views", "")
+                if detail_video_id == "":
+                    detail_video_id = values.get("detail_video_id", "")
+                if detail_video_id == "":
+                    continue
+
+                video_data = scheduler_table.find_one({"video_id": detail_video_id})
+                directory = sg.popup_get_folder("", no_window=True)
+                via_shares = video_data.get("via_shares")
+                with open(f'{directory}/report {detail_video_id}.csv', mode='w') as csv_file:
+                    fieldnames = ['group_id', 'via_id', 'status', 'video_permalink', 'like']
+                    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(via_shares)
+                sg.Popup(f"Đã hoàn thành quá trình kiểm tra trạng thái video, file kết quả lưu tại thư mục {directory}/report {detail_video_id}.csv")
+            except Exception as ex:
+                print(ex)
+        elif event == "search_via_inp":
+            search_via_inp_str = values.get("search_via_inp", "")
+            filter_group = values.get("_VIA_MANAGEMENT_SELECTED_GROUP_", "All via")
+            via_data = get_via_data(filter_group, search_via_inp_str)
+            window3.Element('via_table').Update(values=via_data)
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()

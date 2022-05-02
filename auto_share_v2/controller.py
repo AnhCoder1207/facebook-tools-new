@@ -29,9 +29,30 @@ def start_join_group(stop_joining):
             pass
 
 
-# def check_views_func(groups):
-#     chrome_worker = ChromeHelper()
-#     for group in groups:
+def check_views_func(windows, video_id, groups, proxy_enable):
+    for group in groups:
+        group_id = group.get("group_id")
+        via_id = group.get('via_id')
+        via_data = via_share.find_one({"fb_id": via_id})
+        fb_id = via_data.get("fb_id")
+        password = via_data.get('password')
+        mfa = via_data.get("mfa")
+        proxy_data = via_data.get("proxy")
+        try:
+            chrome_worker = ChromeHelper()
+            chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
+            if chrome_status:
+                chrome_worker.driver.maximize_window()
+                chrome_worker.check_views(group_id, video_id, fb_id)
+            try:
+                chrome_worker.driver.quit()
+            except Exception as ex:
+                pass
+        except Exception as ex:
+            logger.error(f"Can not open browser {ex}")
+            raise ex
+    windows.write_event_value('done_check_views', video_id)
+
 
 def start_post_approved():
 

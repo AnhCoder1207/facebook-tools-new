@@ -90,7 +90,7 @@ def get_group_joining_data(group_type):
     return data_group_join
 
 
-def get_via_data(filter_group=""):
+def get_via_data(filter_group="", filter_name=""):
     # results = connection.execute(db.select([via_share])).fetchall()
     # if len(results) == 0:
     #     return []
@@ -98,7 +98,17 @@ def get_via_data(filter_group=""):
     # df.columns = results[0].keys()
     query = {}
     if filter_group != "" and filter_group != 'All via':
-        query = {"group": filter_group}
+        query["group"] = filter_group
+    if filter_name != "":
+        query['$or'] = [
+            {"fb_id": {"$regex": filter_name}},
+            {"password": {"$regex": filter_name}},
+            {"mfa": {"$regex": filter_name}},
+            {"email": {"$regex": filter_name}},
+            {"email_password": {"$regex": filter_name}},
+            {"proxy": {"$regex": filter_name}},
+            {"status": {"$regex": filter_name}}
+        ]
     results = via_share.find(query).sort([("status", pymongo.DESCENDING), ("create_date", pymongo.DESCENDING)])
     table_default = list(map(mapping_via_table, list(results)))
     return table_default
