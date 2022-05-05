@@ -33,12 +33,20 @@ def check_views_func(windows, video_id, groups, proxy_enable):
     for group in groups:
         group_id = group.get("group_id")
         via_id = group.get('via_id')
-        via_data = via_share.find_one({"fb_id": via_id})
-        fb_id = via_data.get("fb_id")
-        password = via_data.get('password')
-        mfa = via_data.get("mfa")
-        proxy_data = via_data.get("proxy")
+        while True:
+            via_data = via_share.find_one({"fb_id": via_id})
+            if not via_data:
+                break
+            status = via_data.get("status")
+            if status == "live":
+                break
+            time.sleep(10)
+
         try:
+            fb_id = via_data.get("fb_id")
+            password = via_data.get('password')
+            mfa = via_data.get("mfa")
+            proxy_data = via_data.get("proxy")
             chrome_worker = ChromeHelper()
             chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             if chrome_status:
