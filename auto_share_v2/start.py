@@ -186,15 +186,15 @@ def show_detail_video_info(video_data):
         ],
         [
             [sg.Text(f'Share Descriptions: {number_share_description}')],
-            [sg.Multiline("\n".join(video_data.get('share_descriptions', [])), size=(100, 10), key="detail_share_description")],
+            [sg.Multiline("\n".join(video_data.get('share_descriptions', [])), size=(100, 5), key="detail_share_description")],
         ],
         [
             [sg.Text(f'Shared Groups: {number_shared}')],
-            [sg.Multiline("\n".join(video_data.get('groups_shared', [])), size=(100, 10), key="detail_groups_shared")],
+            [sg.Multiline("\n".join(video_data.get('groups_shared', [])), size=(100, 5), key="detail_groups_shared")],
         ],
         [
             [sg.Text(f'Remaining: {number_share_remaining}')],
-            [sg.Multiline("\n".join(video_data.get('groups_remaining', [])), size=(100, 10), key="detail_groups_remaining")],
+            [sg.Multiline("\n".join(video_data.get('groups_remaining', [])), size=(100, 5), key="detail_groups_remaining")],
         ],
         [sg.Button('Save', key="video_modified"), sg.Button('Delete', key="remove_video"), sg.Button("Check views", key="start_check_view"), sg.Button("Export check views report", key="done_check_views")]
     ]
