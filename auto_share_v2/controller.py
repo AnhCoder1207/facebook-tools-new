@@ -43,14 +43,16 @@ def check_views_func(windows, video_id, groups, proxy_enable):
             chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             if chrome_status:
                 chrome_worker.driver.maximize_window()
+                via_share.update_one({"fb_id": via_id}, {"$set": {"status": "check_view"}})
                 chrome_worker.check_views(group_id, video_id, fb_id)
             try:
                 chrome_worker.driver.quit()
             except Exception as ex:
                 pass
         except Exception as ex:
-            logger.error(f"Can not open browser {ex}")
-            raise ex
+            logger.error(f"ERROR check_views_func Can not open browser {ex}, via_id {via_id}, group_id {group_id}")
+        finally:
+            via_share.update_one({"fb_id": via_id}, {"$set": {"status": "live"}})
     windows.write_event_value('done_check_views', video_id)
 
 

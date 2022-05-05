@@ -944,8 +944,9 @@ class ChromeHelper:
                                             video_permalink = permalinks[el_idx].get_attribute("href")
                                         via_shares[idx]['video_permalink'] = video_permalink
 
-                                        print(f"found {video_id} {status}")
-                                        if video_permalink != "":
+                                        logger.info(f"found {video_id} {status}")
+                                        if video_permalink.strip() != "":
+                                            like = None
                                             try:
                                                 self.driver.get(video_permalink)
                                                 article = self.driver.find_element(By.CSS_SELECTOR,
@@ -953,20 +954,16 @@ class ChromeHelper:
                                                 if article:
                                                     like = article.find_element(By.CSS_SELECTOR,
                                                                                 "div.bp9cbjyn.j83agx80.buofh1pr.ni8dbmo4.stjgntxs > div > span > div > span.gpro0wi8.cwj9ozl2.bzsjyuwj.ja2t1vim > span > span")
-                                                    if like:
-                                                        like = like.text
-                                                        via_shares[idx]['like'] = like
                                             except Exception as ex:
                                                 pass
+                                            like = like.text if like else "0"
+                                            via_shares[idx]['like'] = like
                                         scheduler_table.update_one({"video_id": video_id},
                                                                    {"$set": {"via_shares": via_shares}})
                                         break
-
             except Exception as ex:
                 pass
 
-
-    # span/span/span/a
     def open_chrome(self, fb_id, password, mfa, proxy_data, proxy_enable=True):
         self.in_use = True
         self.fb_id = fb_id

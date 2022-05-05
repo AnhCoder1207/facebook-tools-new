@@ -362,6 +362,7 @@ if __name__ == '__main__':
     # clear via status
     via_share.update_many({"status": 'join group'}, {"$set": {"status": "live"}})
     via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
+    via_share.update_many({"status": 'check_view'}, {"$set": {"status": "live"}})
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         window, event, values = sg.read_all_windows()
@@ -1050,17 +1051,8 @@ if __name__ == '__main__':
             video_data = scheduler_table.find_one({"video_id": detail_video_id})
             if video_data:
                 via_shares = video_data.get("via_shares", [])
-                number_threads = values.get("number_threads", 1)
                 proxy_enable = window1.Element('proxy_enable').Get()
-                try:
-                    number_threads = int(number_threads)
-                except Exception as ex:
-                    sg.Popup("Number threads must be integer")
-                    continue
 
-                stop_threads = True
-                sharing = False
-                window1.Element('auto_share_status').Update("Tự động share: Off")
                 thread = threading.Thread(target=check_views_func,
                                           args=(window1, detail_video_id, via_shares, proxy_enable), daemon=True)
                 thread.start()
