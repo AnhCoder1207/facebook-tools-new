@@ -359,6 +359,7 @@ if __name__ == '__main__':
     joining = False
     approved_status = False
     auto_share_status = False
+    check_view_process = None
     # clear via status
     via_share.update_many({"status": 'join group'}, {"$set": {"status": "live"}})
     via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
@@ -1049,16 +1050,20 @@ if __name__ == '__main__':
         elif event == "start_check_view":
             detail_video_id = values.get("detail_video_id", "")
             video_data = scheduler_table.find_one({"video_id": detail_video_id})
-            if video_data:
+            if video_data and not check_view_process:
                 via_shares = video_data.get("via_shares", [])
                 proxy_enable = window1.Element('proxy_enable').Get()
 
                 thread = threading.Thread(target=check_views_func,
                                           args=(window1, detail_video_id, via_shares, proxy_enable), daemon=True)
                 thread.start()
+                check_view_process = detail_video_id
                 sg.Popup("Đang tiến hành kiểm tra trạng thái video, vui lòng chờ đến khi có thông báo hoàn tất")
+            else:
+                sg.Popup(f"Đang tiến hành kiểm tra views video {check_view_process} vui lòng chờ quá trình hoàn tất")
         elif event == "done_check_views":
-
+            if event == "done_check_views" and values.get("done_check_views", "") != "":
+                check_view_process = None
             try:
                 detail_video_id = values.get("done_check_views", "")
                 if detail_video_id == "":
