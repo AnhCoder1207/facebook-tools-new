@@ -638,7 +638,7 @@ class ChromeHelper:
             self.driver.get(group_url)
             write_something = None  # init write el
             try:
-                write_something_els = self.driver.find_elements(By.CSS_SELECTOR, "._5xu4")
+                write_something_els = self.driver.find_elements(By.CSS_SELECTOR, "#u_0_4t_Fd > div")
                 for el in write_something_els:
                     if el.text == "Write something...":
                         write_something = el
@@ -702,7 +702,7 @@ class ChromeHelper:
 
             self.driver.get(group_url)
             try:
-                write_something_els = self.driver.find_elements(By.CSS_SELECTOR, "._5xu4")
+                write_something_els = self.driver.find_elements(By.CSS_SELECTOR, "#u_0_4t_Fd > div")
                 for el in write_something_els:
                     if el.text == "Write something...":
                         write_something.click()
