@@ -705,7 +705,7 @@ class ChromeHelper:
                 write_something_els = self.driver.find_elements(By.CLASS_NAME, "_5xu4")
                 for el in write_something_els:
                     if el.text == "Write something...":
-                        write_something.click()
+                        el.click()
                         random_sleep(1, 3)
             except Exception as ex:
                 logger.error(f"errors : Write something... not found")
