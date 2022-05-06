@@ -473,7 +473,8 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
             chrome_worker.driver.quit()
         except Exception as ex:
             logger.error(f"can not close drive")
-        main_windows.write_event_value('new_via_login', "")
+        finally:
+            main_windows.write_event_value('new_via_login', "")
 
 
 def start_share(main_window, stop_thread, proxy_enable):
