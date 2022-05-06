@@ -636,7 +636,17 @@ class ChromeHelper:
                 return False
 
             self.driver.get(group_url)
-            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=1)
+            write_something = None  # init write el
+            try:
+                write_something_els = self.driver.find_elements(By.CSS_SELECTOR, "._5xu4")
+                for el in write_something_els:
+                    if el.text == "Write something...":
+                        write_something = el
+            except Exception as ex:
+                logger.error(f"errors : Write something... not found")
+                continue
+
+            # join group private
             if not write_something:
                 # check join group
                 join_group_btn = self.find_attr_by_css("button", "label",
@@ -682,23 +692,29 @@ class ChromeHelper:
                     logger.error(f"errors : Write something... not found")
                     continue
             # continue
-
-            i = 0
-            while i < 5:
-                i += 1
-                # Scroll down to bottom
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                # Wait to load page
-                random_sleep(2)
+            else:
+                # scroll page
+                for _ in range(5):
+                    # Scroll down to bottom
+                    self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    # Wait to load page
+                    random_sleep(1, 3)
 
             self.driver.get(group_url)
-            write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=1)
-            if not write_something:
+            try:
+                write_something_els = self.driver.find_elements(By.CSS_SELECTOR, "._5xu4")
+                for el in write_something_els:
+                    if el.text == "Write something...":
+                        write_something.click()
+                        random_sleep(1, 3)
+            except Exception as ex:
                 logger.error(f"errors : Write something... not found")
                 continue
 
-            write_something.click()
-            random_sleep(1, 3)
+            # write_something = self.waiting_for_text("div > div", "Write something...", waiting_time=1)
+            # if not write_something:
+            #     logger.error(f"errors : Write something... not found")
+            #     continue
 
             # check group is shared
             video_sharing_tmp = scheduler_table.find_one({"video_id": video_id})
@@ -719,7 +735,7 @@ class ChromeHelper:
             post_area.send_keys(share_link)
             random_sleep(5, 10)
 
-            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=5)
+            close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=3)
             if not close_link_button:
                 not_found_time += 1
                 if not_found_time > 2:
