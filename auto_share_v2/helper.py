@@ -738,7 +738,7 @@ class ChromeHelper:
             close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=3)
             if not close_link_button:
                 not_found_time += 1
-                if not_found_time > 2:
+                if not_found_time > 5:
                     scheduler_table.update_one({"video_id": video_id}, {"$set": {"shared": True}})
                     break
                 continue
