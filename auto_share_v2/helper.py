@@ -733,7 +733,7 @@ class ChromeHelper:
             post_area.click()
             post_area.clear()
             post_area.send_keys(share_link)
-            random_sleep(5, 10)
+            random_sleep(1, 3)
 
             close_link_button = self.find_by_attr("a", "data-sigil", "close-link-preview-button", waiting_time=3)
             if not close_link_button:
