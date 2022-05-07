@@ -668,7 +668,7 @@ class ChromeHelper:
 
                     join_group_btn.click()
                     time.sleep(10)
-                    pending_request = self.waiting_for_text_by_css("div", "Your Request Is Pending", waiting_time=1)
+                    pending_request = self.find_attr_by_css("button", "label", "Submit")
                     try:
                         if pending_request:
                             all_questions = self.driver.find_elements(By.TAG_NAME, "textarea")
@@ -689,7 +689,7 @@ class ChromeHelper:
                     except:
                         pass
                 else:
-                    logger.error(f"errors : Write something... not found")
+                    logger.error(f"errors : Can not find button join group")
                     continue
             # continue
             else:

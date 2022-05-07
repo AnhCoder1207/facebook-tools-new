@@ -592,9 +592,8 @@ def start_share(main_window, stop_thread, proxy_enable):
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": 'live'}})
             logger.error(f"share video errors {ex}")
 
-        main_window.write_event_value('-THREAD-', "")
-
         try:
+            main_window.write_event_value('-THREAD-', "")
             chrome_worker.driver.quit()
         except Exception as ex:
             pass
