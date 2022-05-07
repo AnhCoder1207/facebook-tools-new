@@ -940,6 +940,7 @@ if __name__ == '__main__':
                         "share_descriptions": detail_share_description,
                         "groups_remaining": groups_share_fixed,
                         "shared": video_shared,
+                        "share_number": 0,
                         "video_custom_share_links": video_custom_share_links
                     }
                 }
