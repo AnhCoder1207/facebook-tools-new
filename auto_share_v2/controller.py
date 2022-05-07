@@ -339,21 +339,52 @@ def thread_join_group(chrome_worker):
 
 
 def start_login_via(main_windows, file_input, login_existed, number_threads, proxy_enable):
+    all_via = list()
     with open(file_input, encoding="utf-8") as via_files:
         def chunks(l, n):
             n = max(1, n)
             return (l[i:i + n] for i in range(0, len(l), n))
 
-        all_line = len(via_files.readlines())
+        # pre process via files
+        for line in via_files.readlines():
+            lines = line.split("|")
+            if len(lines) == 5:
+                fb_id, password, mfa, email, email_password = lines
+                fb_id = fb_id.strip()
+                existed_via = via_share.find_one({"fb_id": fb_id})
+                if existed_via:
+                    curr_password = existed_via.get("password", "")
+                    curr_mfa = existed_via.get("mfa", "")
+                    curr_email = existed_via.get("email", "")
+                    curr_email_password = existed_via.get("email_password", "")
+                    if curr_password.strip() != password.strip() or curr_mfa.strip() != mfa.strip() or curr_email.strip() != curr_email.strip() or \
+                            curr_email_password.strip() != email_password.strip():
+                        all_via.append(line)
+                else:
+                    all_via.append(line)
+            if len(lines) == 6:
+                fb_id, password, mfa, email, email_password, proxy_data = lines
+                fb_id = fb_id.strip()
+                existed_via = via_share.find_one({"fb_id": fb_id})
+                if existed_via:
+                    curr_password = existed_via.get("password", "")
+                    curr_mfa = existed_via.get("mfa", "")
+                    curr_email = existed_via.get("email", "")
+                    curr_email_password = existed_via.get("email_password", "")
+                    curr_proxy_data = existed_via.get("proxy_data", "")
+                    if curr_password.strip() != password.strip() or curr_mfa.strip() != mfa.strip() or curr_email.strip() != curr_email.strip() or \
+                            curr_email_password.strip() != email_password.strip() or proxy_data.strip() != curr_proxy_data.strip():
+                        all_via.append(line)
+                else:
+                    all_via.append(line)
 
-    with open(file_input, encoding="utf-8") as via_files:
-        data_via = chunks(via_files.readlines(), all_line//number_threads)
-        for sub_data in data_via:
-            start_login_thread = threading.Thread(target=login_via_thread,
-                                                  args=(sub_data, main_windows, login_existed, proxy_enable),
-                                                  daemon=True)
-            start_login_thread.start()
-            time.sleep(5)
+    data_via = chunks(all_via, len(all_via)//number_threads)
+    for sub_data in data_via:
+        start_login_thread = threading.Thread(target=login_via_thread,
+                                              args=(sub_data, main_windows, login_existed, proxy_enable),
+                                              daemon=True)
+        start_login_thread.start()
+        time.sleep(5)
 
 
 def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
@@ -370,6 +401,12 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
 
         if len(user_data) == 6:
             fb_id, password, mfa, email, email_password, proxy_data = user_data
+            fb_id = fb_id.strip()
+            password = password.strip()
+            mfa = mfa.strip()
+            email = email.strip()
+            email_password = email_password.strip()
+            proxy_data = proxy_data.strip()
             if proxy_data == "" and proxy_enable:
                 logger.error(f"Proxy can not null when proxy enable")
                 continue
@@ -384,6 +421,10 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
 
         if len(user_data) == 5:
             fb_id, password, mfa, email, email_password = user_data
+            fb_id = fb_id.strip()
+            password = password.strip()
+            mfa = mfa.strip()
+            email_password = email_password.strip()
             proxy_data = ""
 
         mfa = mfa.replace(" ", '')
@@ -393,7 +434,6 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
         via_exist = via_share.find_one({"fb_id": fb_id})
         chrome_worker = ChromeHelper()
         if not via_exist:
-
             chrome_status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             if chrome_status:
                 try:
@@ -423,7 +463,7 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
                     "create_date": str(datetime.now())
                 }
             )
-        if login_existed and via_exist:
+        if via_exist:
             try:
                 user_data_dir = "User Data"
                 if os.path.isfile("config.txt"):
@@ -431,19 +471,19 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
                         for line in config_file.readlines():
                             user_data_dir = line.strip()
                             break
-                if via_exist['status'] == 'live':
-                    via_share.update_one(
-                        {"fb_id": fb_id},
-                        {"$set": {
-                            "create_date": str(datetime.now())
-                        }}
-                    )
-                    try:
-                        chrome_worker.driver.quit()
-                        main_windows.write_event_value('new_via_login', "")
-                    except:
-                        pass
-                    continue
+                # if via_exist['status'] == 'live':
+                #     via_share.update_one(
+                #         {"fb_id": fb_id},
+                #         {"$set": {
+                #             "create_date": str(datetime.now())
+                #         }}
+                #     )
+                #     try:
+                #         chrome_worker.driver.quit()
+                #         main_windows.write_event_value('new_via_login', "")
+                #     except:
+                #         pass
+                #     continue
 
                 shutil.rmtree(f"{user_data_dir}/{fb_id}")
                 chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
