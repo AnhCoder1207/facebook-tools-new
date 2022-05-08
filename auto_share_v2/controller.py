@@ -130,10 +130,11 @@ def start_page_scanner(proxy_enable):
             # chrome_worker.driver.maximize_window()
             chrome_worker.driver.get("https://m.facebook.com")
             try:
-                newsfeed = chrome_worker.driver.find_by_attr("div", 'data-sigil', 'messenger_icon')
+                newsfeed = chrome_worker.find_by_attr("div", 'data-sigil', 'messenger_icon')
                 if not newsfeed:
                     continue
             except:
+                time.sleep(10)
                 continue
                 # get new via
 

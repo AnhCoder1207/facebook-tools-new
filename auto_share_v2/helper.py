@@ -1,9 +1,11 @@
 import os
+import uuid
 import zipfile
 from datetime import datetime, timedelta
 from functools import wraps
 import requests
 import pyotp
+import json
 import time
 import random
 from selenium import webdriver
@@ -13,7 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from config_btn import drop_down_menu_xpath, language_selector
-from utils import logger, get_group_joining_data, scheduler_table, via_share, random_sleep, validate_string
+from utils import logger, get_group_joining_data, scheduler_table, via_share, random_sleep, validate_string, \
+    settings_table
 
 
 class ChromeHelper:
@@ -892,7 +895,7 @@ class ChromeHelper:
             # Calculate new scroll height and compare with last scroll height
             new_height = self.driver.execute_script("return document.body.scrollHeight")
             if new_height == last_height:
-                break
+                return
             last_height = new_height
 
             try:
@@ -900,10 +903,42 @@ class ChromeHelper:
                 for video in videos:
                     if video.get_attribute("aria-label") == "Video":
                         data_store = video.get_attribute("data-store")
-                        video_id = data_store['videoID']
-                        print(video_id)
+                        data_store = json.loads(data_store)
+                        video_id = str(data_store['videoID'])
+                        video_exist = scheduler_table.find_one({"video_id": video_id})
+                        if video_exist:
+                            return
+
+                        settings = settings_table.find_one({"type": "settings"})
+                        default_group_via = "All via"
+                        if settings:
+                            default_group_via = settings.get("default_group_via")
+
+                        groups_share = get_group_joining_data("group_options")
+
+                        new_scheduler = {
+                            "_id": str(uuid.uuid4()),
+                            "video_id": video_id,
+                            "scheduler_time": datetime.now().timestamp(),
+                            "create_date": datetime.now().timestamp(),
+                            "shared": False,
+                            "group_selected": default_group_via,
+                            "share_number": 0,
+                            "title_shared": [],
+                            "groups_shared": [],
+                            "go_enable": False,
+                            "co_khi_enable": False,
+                            "xay_dung_enable": False,
+                            "options_enable": True,
+                            "share_descriptions": [],
+                            "groups_remaining": groups_share,
+                            "video_custom_share_links": []
+                        }
+                        result = scheduler_table.insert_one(new_scheduler)
+                        logger.info(f"Inset new video: {video_id}")
             except Exception as ex:
                 logger.error(f"Get video id errors: {ex}")
+                raise ex
 
     def click_approve(self, page_auto_approved):
         page_auto_approved = [x.lower().strip() for x in page_auto_approved]
