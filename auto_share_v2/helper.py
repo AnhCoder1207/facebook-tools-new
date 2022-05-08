@@ -883,9 +883,11 @@ class ChromeHelper:
 
     def check_video_ids(self):
         SCROLL_PAUSE_TIME = 10
+        video_checked = []
 
         # Get scroll height
         last_height = self.driver.execute_script("return document.body.scrollHeight")
+
         while True:
             # Scroll down to bottom
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -907,35 +909,40 @@ class ChromeHelper:
                         video_id = str(data_store['videoID'])
                         video_exist = scheduler_table.find_one({"video_id": video_id})
                         if video_exist:
-                            return
+                            logger.info(f"check video existed {video_id}")
+                            if video_id not in video_checked:
+                                video_checked.append(video_id)
+                                if len(video_checked) > 5:
+                                    return
+                        else:
+                            video_checked = []  # reset counter
+                            settings = settings_table.find_one({"type": "settings"})
+                            default_group_via = "All via"
+                            if settings:
+                                default_group_via = settings.get("default_group_via")
 
-                        settings = settings_table.find_one({"type": "settings"})
-                        default_group_via = "All via"
-                        if settings:
-                            default_group_via = settings.get("default_group_via")
+                            groups_share = [x.strip() for x in get_group_joining_data("group_options").split('\n')]
 
-                        groups_share = [x.strip() for x in get_group_joining_data("group_options").split('\n')]
-
-                        new_scheduler = {
-                            "_id": str(uuid.uuid4()),
-                            "video_id": video_id,
-                            "scheduler_time": datetime.now().timestamp(),
-                            "create_date": datetime.now().timestamp(),
-                            "shared": False,
-                            "group_selected": default_group_via,
-                            "share_number": 0,
-                            "title_shared": [],
-                            "groups_shared": [],
-                            "go_enable": False,
-                            "co_khi_enable": False,
-                            "xay_dung_enable": False,
-                            "options_enable": True,
-                            "share_descriptions": [],
-                            "groups_remaining": groups_share,
-                            "video_custom_share_links": []
-                        }
-                        result = scheduler_table.insert_one(new_scheduler)
-                        logger.info(f"Inset new video: {video_id}")
+                            new_scheduler = {
+                                "_id": str(uuid.uuid4()),
+                                "video_id": video_id,
+                                "scheduler_time": datetime.now().timestamp(),
+                                "create_date": datetime.now().timestamp(),
+                                "shared": False,
+                                "group_selected": default_group_via,
+                                "share_number": 0,
+                                "title_shared": [],
+                                "groups_shared": [],
+                                "go_enable": False,
+                                "co_khi_enable": False,
+                                "xay_dung_enable": False,
+                                "options_enable": True,
+                                "share_descriptions": [],
+                                "groups_remaining": groups_share,
+                                "video_custom_share_links": []
+                            }
+                            result = scheduler_table.insert_one(new_scheduler)
+                            logger.info(f"Inset new video: {video_id}")
             except Exception as ex:
                 logger.error(f"Get video id errors: {ex}")
                 raise ex
