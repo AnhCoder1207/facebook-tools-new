@@ -146,6 +146,7 @@ def start_page_scanner(proxy_enable):
                 chrome_worker.driver.quit()
             except Exception as ex:
                 pass
+        logger.info(f"check page done")
         time.sleep(3600)  # sleep a hour
 
 

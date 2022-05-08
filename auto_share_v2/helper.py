@@ -879,7 +879,7 @@ class ChromeHelper:
         # last_height = new_height
 
     def check_video_ids(self):
-        SCROLL_PAUSE_TIME = 3
+        SCROLL_PAUSE_TIME = 10
 
         # Get scroll height
         last_height = self.driver.execute_script("return document.body.scrollHeight")
@@ -1031,7 +1031,7 @@ class ChromeHelper:
         os.makedirs("Plugin", exist_ok=True)
         os.makedirs(user_data_dir, exist_ok=True)
         options.add_argument(f"user-data-dir={user_data_dir}/{self.fb_id}")  # Path to your chrome profile
-        options.add_argument(f"--profile-directory=Default")
+        options.add_argument(f"--profile-directory={self.fb_id}")
         options.add_argument("--start-maximized")
         options.add_argument("--disable-3d-apis")
         options.add_argument("--disable-notifications")
