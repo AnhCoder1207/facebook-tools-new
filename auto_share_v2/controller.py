@@ -128,10 +128,18 @@ def start_page_scanner(proxy_enable):
                     pass
 
             # chrome_worker.driver.maximize_window()
-            # chrome_worker.driver.get("https://facebook.com")
+            chrome_worker.driver.get("https://m.facebook.com")
+            try:
+                newsfeed = chrome_worker.driver.find_by_attr("div", 'data-sigil', 'messenger_icon')
+                if not newsfeed:
+                    continue
+            except:
+                continue
+                # get new via
+
         except Exception as ex:
             logger.error(f"start_post_approved errors {ex}")
-            return True
+            continue
 
         for page in pages:
             if "www" in page:
