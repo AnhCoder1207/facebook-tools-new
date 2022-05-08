@@ -118,23 +118,22 @@ def start_page_scanner(proxy_enable):
             fb_id = via_data.get("fb_id")
             mfa = via_data.get("mfa")
             proxy_data = via_data.get("proxy")
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
             chrome_worker = ChromeHelper()  # init worker
             status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
-            if not status:
-                time.sleep(5)
-                try:
-                    chrome_worker.driver.quit()
-                except Exception as ex:
-                    pass
-
-            # chrome_worker.driver.maximize_window()
             try:
                 chrome_worker.driver.get("https://m.facebook.com")
                 newsfeed = chrome_worker.find_by_attr("div", 'data-sigil', 'messenger_icon')
                 if not newsfeed:
                     continue
-                else:
-                    via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
+                for page in pages:
+                    if "www" in page:
+                        page = page.replace("www", "m")
+                    chrome_worker.driver.get(page)
+                    # scroll down
+                    # chrome_worker.scroll_down()
+                    # find page and click
+                    chrome_worker.check_video_ids()
             except:
                 try:
                     time.sleep(10)
@@ -149,15 +148,6 @@ def start_page_scanner(proxy_enable):
         except Exception as ex:
             logger.error(f"start_post_approved errors {ex}")
             continue
-
-        for page in pages:
-            if "www" in page:
-                page = page.replace("www", "m")
-            chrome_worker.driver.get(page)
-            # scroll down
-            # chrome_worker.scroll_down()
-            # find page and click
-            chrome_worker.check_video_ids()
 
         try:
             chrome_worker.driver.quit()
