@@ -107,10 +107,11 @@ def start_page_scanner(proxy_enable):
     while True:
         try:
             via_data = via_share.find({"status": "live"})
+            via_data = list(via_data)
             if len(via_data) == 0:
                 time.sleep(3600)
                 continue
-            via_data = random.choice(list(via_data))
+            via_data = random.choice(via_data)
             settings = page_auto_approved_table.find_one({"type": "page_scan"})
             pages = settings.get("page_auto_scan", "").strip().split("\n")
             password = via_data.get("password")
