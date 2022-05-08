@@ -914,7 +914,7 @@ class ChromeHelper:
                         if settings:
                             default_group_via = settings.get("default_group_via")
 
-                        groups_share = get_group_joining_data("group_options")
+                        groups_share = [x.strip() for x in get_group_joining_data("group_options").split('\n')]
 
                         new_scheduler = {
                             "_id": str(uuid.uuid4()),
