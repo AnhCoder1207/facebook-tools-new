@@ -106,11 +106,11 @@ def start_post_approved():
 def start_page_scanner(proxy_enable):
     while True:
         try:
-            via_data = via_share.find_one({"status": "live"})
-            if not via_data:
+            via_data = via_share.find({"status": "live"})
+            if len(via_data) == 0:
                 time.sleep(3600)
                 continue
-
+            via_data = random.choice(list(via_data))
             settings = page_auto_approved_table.find_one({"type": "page_scan"})
             pages = settings.get("page_auto_scan", "").strip().split("\n")
             password = via_data.get("password")
@@ -118,7 +118,14 @@ def start_page_scanner(proxy_enable):
             mfa = via_data.get("mfa")
             proxy_data = via_data.get("proxy")
             chrome_worker = ChromeHelper()  # init worker
-            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
+            status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
+            if not status:
+                time.sleep(5)
+                try:
+                    chrome_worker.driver.quit()
+                except Exception as ex:
+                    pass
+
             # chrome_worker.driver.maximize_window()
             # chrome_worker.driver.get("https://facebook.com")
         except Exception as ex:
@@ -126,6 +133,8 @@ def start_page_scanner(proxy_enable):
             return True
 
         for page in pages:
+            if "www" in page:
+                page = page.replace("www", "m")
             chrome_worker.driver.get(page)
             # scroll down
             # chrome_worker.scroll_down()
@@ -137,6 +146,7 @@ def start_page_scanner(proxy_enable):
             except Exception as ex:
                 pass
         time.sleep(3600)  # sleep a hour
+
 
 def thread_join_group(chrome_worker):
     results = via_share.find({"status": "live"})
