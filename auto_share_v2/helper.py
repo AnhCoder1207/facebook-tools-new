@@ -1031,7 +1031,7 @@ class ChromeHelper:
         os.makedirs("Plugin", exist_ok=True)
         os.makedirs(user_data_dir, exist_ok=True)
         options.add_argument(f"user-data-dir={user_data_dir}/{self.fb_id}")  # Path to your chrome profile
-        options.add_argument(f"--profile-directory={self.fb_id}")
+        options.add_argument(f"--profile-directory=Default")
         options.add_argument("--start-maximized")
         options.add_argument("--disable-3d-apis")
         options.add_argument("--disable-notifications")
