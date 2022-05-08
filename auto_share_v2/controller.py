@@ -136,8 +136,13 @@ def start_page_scanner(proxy_enable):
                 else:
                     via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
             except:
-                time.sleep(10)
-                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
+                try:
+                    time.sleep(10)
+                    chrome_worker.driver.quit()
+                except Exception as ex:
+                    pass
+                finally:
+                    via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
                 continue
                 # get new via
 
