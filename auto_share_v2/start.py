@@ -379,6 +379,7 @@ if __name__ == '__main__':
     via_share.update_many({"status": 'join group'}, {"$set": {"status": "live"}})
     via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
     via_share.update_many({"status": 'check_view'}, {"$set": {"status": "live"}})
+    via_share.update_many({"status": 'page_scan'}, {"$set": {"status": "live"}})
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         window, event, values = sg.read_all_windows()
