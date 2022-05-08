@@ -121,6 +121,11 @@ def start_page_scanner(proxy_enable):
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
             chrome_worker = ChromeHelper()  # init worker
             status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
+            if not status:
+                chrome_worker.driver.quit()
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
+                continue
+
             try:
                 chrome_worker.driver.get("https://m.facebook.com")
                 newsfeed = chrome_worker.find_by_attr("div", 'data-sigil', 'messenger_icon')
