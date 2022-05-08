@@ -128,13 +128,16 @@ def start_page_scanner(proxy_enable):
                     pass
 
             # chrome_worker.driver.maximize_window()
-            chrome_worker.driver.get("https://m.facebook.com")
             try:
+                chrome_worker.driver.get("https://m.facebook.com")
                 newsfeed = chrome_worker.find_by_attr("div", 'data-sigil', 'messenger_icon')
                 if not newsfeed:
                     continue
+                else:
+                    via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
             except:
                 time.sleep(10)
+                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
                 continue
                 # get new via
 
@@ -151,10 +154,12 @@ def start_page_scanner(proxy_enable):
             # find page and click
             chrome_worker.check_video_ids()
 
-            try:
-                chrome_worker.driver.quit()
-            except Exception as ex:
-                pass
+        try:
+            chrome_worker.driver.quit()
+        except Exception as ex:
+            pass
+        finally:
+            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
         logger.info(f"check page done")
         time.sleep(3600)  # sleep a hour
 
