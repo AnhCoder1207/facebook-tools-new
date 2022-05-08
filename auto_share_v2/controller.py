@@ -103,6 +103,41 @@ def start_post_approved():
         time.sleep(3600)  # sleep a hour
 
 
+def start_page_scanner(proxy_enable):
+    while True:
+        try:
+            via_data = via_share.find_one({"status": "live"})
+            if not via_data:
+                time.sleep(3600)
+                continue
+
+            settings = page_auto_approved_table.find_one({"type": "page_scan"})
+            pages = settings.get("page_auto_scan", "").strip().split("\n")
+            password = via_data.get("password")
+            fb_id = via_data.get("fb_id")
+            mfa = via_data.get("mfa")
+            proxy_data = via_data.get("proxy")
+            chrome_worker = ChromeHelper()  # init worker
+            chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
+            # chrome_worker.driver.maximize_window()
+            # chrome_worker.driver.get("https://facebook.com")
+        except Exception as ex:
+            logger.error(f"start_post_approved errors {ex}")
+            return True
+
+        for page in pages:
+            chrome_worker.driver.get(page)
+            # scroll down
+            # chrome_worker.scroll_down()
+            # find page and click
+            chrome_worker.check_video_ids()
+
+            try:
+                chrome_worker.driver.quit()
+            except Exception as ex:
+                pass
+        time.sleep(3600)  # sleep a hour
+
 def thread_join_group(chrome_worker):
     results = via_share.find({"status": "live"})
     results = list(results)

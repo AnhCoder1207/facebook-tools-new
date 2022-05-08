@@ -878,6 +878,33 @@ class ChromeHelper:
         #     break
         # last_height = new_height
 
+    def check_video_ids(self):
+        SCROLL_PAUSE_TIME = 3
+
+        # Get scroll height
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        while True:
+            # Scroll down to bottom
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Wait to load page
+            time.sleep(SCROLL_PAUSE_TIME)
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = self.driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
+
+            try:
+                videos = self.driver.find_elements(By.CSS_SELECTOR, "div._53mw")
+                for video in videos:
+                    if video.get_attribute("aria-label") == "Video":
+                        data_store = video.get_attribute("data-store")
+                        video_id = data_store['videoID']
+                        print(video_id)
+            except Exception as ex:
+                logger.error(f"Get video id errors: {ex}")
+
     def click_approve(self, page_auto_approved):
         page_auto_approved = [x.lower().strip() for x in page_auto_approved]
         # self.driver.execute_script("window.scrollTo(0, 0);")
@@ -1044,7 +1071,7 @@ class ChromeHelper:
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         # options.binary_location = "chrome-win/chrome.exe"
-        options.add_argument("--window-size=399,356")
+        options.add_argument("--window-size=375,667")
         options.add_argument("--flag-switches-begin")
         options.add_argument("--flag-switches-end data:,")
         options.add_argument("--app=https://m.facebook.com")

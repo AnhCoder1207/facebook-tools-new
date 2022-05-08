@@ -16,13 +16,14 @@ from helper import ChromeHelper
 from utils import logger, get_scheduler_data, get_via_data, \
     get_group_joining_data, scheduler_table, via_share, joining_group, \
     get_all_group, settings_table, page_auto_approved_table
-from controller import start_login_via, start_share, start_join_group, start_post_approved, check_views_func
+from controller import start_login_via, start_share, start_join_group, start_post_approved, check_views_func, \
+    start_page_scanner
 
 
 def make_main_window(table_data):
-    menu_def = ['&Menu', ['&Start share', '&Stop share', '&Bắt đầu tự duyệt bài', '---', '&Shutdown Chrome', '&Exit']], \
+    menu_def = ['&Menu', ['&Start share', '&Stop share', '&Bắt đầu tự duyệt bài', '&Bắt đầu tự scan page', '---', '&Shutdown Chrome', '&Exit']], \
                ['&Video', ['&Add A New Video', '&Add Multiple Videos', "&Delete Videos"]], \
-               ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions', '&Tự động duyệt bài']], \
+               ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions', '&Tự động duyệt bài', '&Tự động scan page']], \
                ['&Tools', ['&Get Youtube Comments', '&Downloader']]
 
     headings = ['Video ID', 'Số lần mở via', 'Đã chia sẻ', "Còn Lại", 'Đã Chạy Xong', "Nhóm Via", "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
@@ -31,7 +32,7 @@ def make_main_window(table_data):
         [
             sg.Text("Number threads"), sg.InputText(key="number_threads", default_text=2, size=(4, 1)),
             sg.Checkbox('Use Proxy', key='proxy_enable', enable_events=False, default=True),
-            sg.Text(f"Tự động share: Off", key="auto_share_status"), sg.Text(f"Tự động duyệt bài: Off", key="auto_approved_status")
+            sg.Text(f"Tự động share: Off", key="auto_share_status"), sg.Text(f"Tự động duyệt bài: Off", key="auto_approved_status"), sg.Text(f"Tự động scan page: Off", key="auto_scan_page_status")
         ],
         [
             sg.Table(values=table_data,
@@ -246,8 +247,6 @@ def via_manage_window(via_data, all_groups):
                      headings=headings,
                      display_row_numbers=True,
                      justification='right',
-                     auto_size_columns=False,
-                     col_widths=[15, 15, 15, 15, 15, 20, 15, 15, 20],
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ]
@@ -342,6 +341,21 @@ def edit_group_approved(group_admin, page_auto_approved):
     return sg.Window('Tự động duyệt bài', layout_group_to_join, finalize=True)
 
 
+def page_auto_scan_window(page_auto_scan):
+    layout_group_to_join = [
+        [
+            [
+                [[sg.Text('Danh sách page cần lấy bài share test tự động')],
+                 [sg.Multiline(size=(100, 10), key="page_auto_scan", default_text=page_auto_scan)]]
+            ],
+        ],
+        [
+            sg.Button('Lưu', key="edit_page_auto_scan")
+        ]
+    ]
+    return sg.Window('Danh sách page tự động lấy bài', layout_group_to_join, finalize=True)
+
+
 if __name__ == '__main__':
     # time.sleep(2)
     # print(pyautogui.position())
@@ -360,6 +374,7 @@ if __name__ == '__main__':
     approved_status = False
     auto_share_status = False
     check_view_process = None
+    scan_page_status = False
     # clear via status
     via_share.update_many({"status": 'join group'}, {"$set": {"status": "live"}})
     via_share.update_many({"status": 'sharing'}, {"$set": {"status": "live"}})
@@ -1088,6 +1103,54 @@ if __name__ == '__main__':
             filter_group = values.get("_VIA_MANAGEMENT_SELECTED_GROUP_", "All via")
             via_data = get_via_data(filter_group, search_via_inp_str)
             window3.Element('via_table').Update(values=via_data)
+        elif event == "Tự động scan page":
+            # open edit windows
+            settings = page_auto_approved_table.find_one({"type": "page_scan"})
+
+            if settings is None:
+                settings = {}
+
+            page_auto_scan = settings.get("page_auto_scan", "")
+            page_auto_scan_window(page_auto_scan)
+        elif event == "edit_page_auto_scan":
+            page_auto_scan = values.get("page_auto_scan", "").strip()
+
+            if not all([True if item.endswith("videos") else False for item in page_auto_scan.split("\n")]):
+                sg.Popup("Chú ý, link page có dạng https://www.facebook.com/acbxyz/videos \nThêm thất bại!")
+                continue
+            # if not all_ok:
+            #     # not validate data
+            #     continue
+
+            group_approved_settings = page_auto_approved_table.find_one({"type": "page_scan"})
+
+            if group_approved_settings:
+                page_auto_approved_table.update_one(
+                    {
+                        "type": "page_scan"
+                    },
+                    {
+                        "$set": {
+                            "page_auto_scan": page_auto_scan
+                        }
+                    }
+                )
+            else:
+                page_auto_approved_table.insert_one(
+                    {
+                        "type": "page_scan",
+                        "page_auto_scan": page_auto_scan
+                    }
+                )
+            sg.Popup("Lưu thành công!")
+        elif event == "Bắt đầu tự scan page":
+            if not scan_page_status:
+                window1.Element('auto_scan_page_status').Update("Tự động scan page: On")
+                scan_page_status = True
+                proxy_enable = window1.Element('proxy_enable').Get()
+                threading.Thread(target=start_page_scanner, args=(proxy_enable,), daemon=True).start()
+            else:
+                sg.Popup("Đã bật tự động duyệt page")
     for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
         if window:
             window.close()
