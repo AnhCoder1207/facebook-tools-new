@@ -122,8 +122,12 @@ def start_page_scanner(proxy_enable):
             chrome_worker = ChromeHelper()  # init worker
             status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             if not status:
-                chrome_worker.driver.quit()
-                via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
+                try:
+                    chrome_worker.driver.quit()
+                except Exception as ex:
+                    pass
+                finally:
+                    via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
                 continue
 
             try:
@@ -163,7 +167,7 @@ def start_page_scanner(proxy_enable):
         finally:
             via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
         logger.info(f"check page done")
-        time.sleep(3600)  # sleep a hour
+        time.sleep(1800)  # sleep a hour
 
 
 def thread_join_group(chrome_worker):
