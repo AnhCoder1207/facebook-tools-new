@@ -622,6 +622,7 @@ if __name__ == '__main__':
             base64_bytes = base64.b64encode(message_bytes)
             base64_message = base64_bytes.decode('ascii')
             if base64_message != "TWluaFRoaW5oMTIzNCFAIyQ=":
+                sg.Popup("Mật khẩu không đúng")
                 continue
 
             via_data = get_via_data()
@@ -652,6 +653,7 @@ if __name__ == '__main__':
             base64_bytes = base64.b64encode(message_bytes)
             base64_message = base64_bytes.decode('ascii')
             if base64_message != "TWluaFRoaW5oMTIzNCFAIyQ=":
+                sg.Popup("Mật khẩu không đúng")
                 continue
             group_options = get_group_joining_data('group_options')
             group_go = get_group_joining_data('group_go')
