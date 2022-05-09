@@ -616,6 +616,8 @@ if __name__ == '__main__':
             window2 = add_vid_window()
         elif event == "Via Management":
             password = sg.popup_get_text(message="Vui lòng nhập mật khẩu", title='Yêu cầu mật khẩu', password_char="*")
+            if not password:
+                continue
             message_bytes = password.encode('ascii')
             base64_bytes = base64.b64encode(message_bytes)
             base64_message = base64_bytes.decode('ascii')
@@ -644,6 +646,8 @@ if __name__ == '__main__':
 
         elif event == "Edit list group":
             password = sg.popup_get_text(message="Vui lòng nhập mật khẩu", title='Yêu cầu mật khẩu', password_char="*")
+            if not password:
+                continue
             message_bytes = password.encode('ascii')
             base64_bytes = base64.b64encode(message_bytes)
             base64_message = base64_bytes.decode('ascii')
