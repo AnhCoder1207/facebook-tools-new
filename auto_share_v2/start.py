@@ -1,3 +1,4 @@
+import base64
 import os
 import shutil
 import threading
@@ -614,6 +615,13 @@ if __name__ == '__main__':
         elif event == "Add A New Video":
             window2 = add_vid_window()
         elif event == "Via Management":
+            password = sg.popup_get_text(message="Vui lòng nhập mật khẩu", title='Yêu cầu mật khẩu', password_char="*")
+            message_bytes = password.encode('ascii')
+            base64_bytes = base64.b64encode(message_bytes)
+            base64_message = base64_bytes.decode('ascii')
+            if base64_message != "TWluaFRoaW5oMTIzNCFAIyQ=":
+                continue
+
             via_data = get_via_data()
             all_groups = get_all_group()
             window3 = via_manage_window(via_data, all_groups)
@@ -635,6 +643,12 @@ if __name__ == '__main__':
                 create_via_group_dialog.close()
 
         elif event == "Edit list group":
+            password = sg.popup_get_text(message="Vui lòng nhập mật khẩu", title='Yêu cầu mật khẩu', password_char="*")
+            message_bytes = password.encode('ascii')
+            base64_bytes = base64.b64encode(message_bytes)
+            base64_message = base64_bytes.decode('ascii')
+            if base64_message != "TWluaFRoaW5oMTIzNCFAIyQ=":
+                continue
             group_options = get_group_joining_data('group_options')
             group_go = get_group_joining_data('group_go')
             group_co_khi = get_group_joining_data('group_co_khi')
@@ -1090,6 +1104,7 @@ if __name__ == '__main__':
 
                 video_data = scheduler_table.find_one({"video_id": detail_video_id})
                 directory = sg.popup_get_folder("", no_window=True)
+
                 via_shares = video_data.get("via_shares")
                 with open(f'{directory}/report {detail_video_id}.csv', mode='w') as csv_file:
                     fieldnames = ['group_id', 'via_id', 'status', 'video_permalink', 'like']

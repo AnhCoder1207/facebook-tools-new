@@ -1113,7 +1113,7 @@ class ChromeHelper:
         options.add_experimental_option("detach", True)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         # options.binary_location = "chrome-win/chrome.exe"
-        options.add_argument("--window-size=375,667")
+        options.add_argument("--window-size=375,356")
         options.add_argument("--flag-switches-begin")
         options.add_argument("--flag-switches-end data:,")
         options.add_argument("--app=https://m.facebook.com")
