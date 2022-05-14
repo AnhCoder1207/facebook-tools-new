@@ -38,8 +38,12 @@ page_auto_approved_table = mongo_client['page_auto_approved_table']
 
 
 def mapping_table(item):
+    create_date = item.get('create_date', '')
+    if create_date != "":
+        create_date = datetime.fromtimestamp(create_date).strftime("%d-%m-%Y %H:%M")
     return [
         item.get('video_id', ''),
+        create_date,
         item.get('share_number', 0),
         len(item.get('groups_shared', [])),
         len(item.get('groups_remaining', [])),
@@ -77,8 +81,13 @@ def mapping_via_table(item):
     ]
 
 
-def get_scheduler_data():
-    table_default = scheduler_table.find().sort("create_date", pymongo.ASCENDING)
+def get_scheduler_data(search_text=""):
+    query = {}
+    if search_text != "":
+        query['$or'] = [
+            {"video_id": {"$regex": search_text}}
+        ]
+    table_default = scheduler_table.find(query).sort("create_date", pymongo.DESCENDING)
     table_default = list(map(mapping_table, list(table_default)))
     return table_default
 

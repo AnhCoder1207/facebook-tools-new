@@ -27,7 +27,7 @@ def make_main_window(table_data):
                ['&Edit', ['&Via Management', '&Edit list group', '&Edit Default Share Descriptions', '&Tự động duyệt bài', '&Tự động scan page']], \
                ['&Tools', ['&Get Youtube Comments', '&Downloader']]
 
-    headings = ['Video ID', 'Số lần mở via', 'Đã chia sẻ', "Còn Lại", 'Đã Chạy Xong', "Nhóm Via", "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
+    headings = ['Video ID', 'Ngày tạo', 'Số lần mở via', 'Đã chia sẻ', "Còn Lại", 'Đã Chạy Xong', "Nhóm Via", "Gỗ", "Cơ Khí", "Xây Dựng", "Tùy Chọn"]
     layout = [
         [sg.Menu(menu_def, key='menu_bar')],
         [
@@ -35,13 +35,14 @@ def make_main_window(table_data):
             sg.Checkbox('Use Proxy', key='proxy_enable', enable_events=False, default=True),
             sg.Text(f"Tự động share: Off", key="auto_share_status"), sg.Text(f"Tự động duyệt bài: Off", key="auto_approved_status"), sg.Text(f"Tự động scan page: Off", key="auto_scan_page_status")
         ],
+        [sg.Text("Tìm Kiếm"), sg.InputText(key="tim_kiem_main_page", default_text="", size=(40, 1), enable_events=True)],
         [
             sg.Table(values=table_data,
                      headings=headings,
                      display_row_numbers=True,
                      justification='right',
                      enable_events=True,
-                     auto_size_columns=False,
+                     auto_size_columns=True,
                      vertical_scroll_only=False,
                      num_rows=24, key='table')
         ]
@@ -248,6 +249,7 @@ def via_manage_window(via_data, all_groups):
                      headings=headings,
                      display_row_numbers=True,
                      justification='right',
+                     auto_size_columns=True,
                      vertical_scroll_only=False,
                      num_rows=24, key='via_table')
         ]
@@ -1178,6 +1180,10 @@ if __name__ == '__main__':
                 threading.Thread(target=start_page_scanner, args=(proxy_enable,), daemon=True).start()
             else:
                 sg.Popup("Đã bật tự động duyệt page")
+        elif event == "tim_kiem_main_page":
+            search_text = values.get("tim_kiem_main_page").strip()
+            table_data = get_scheduler_data(search_text=search_text)
+            window1.Element("table").Update(values=table_data)
     for window in [window1, window2, window3, window4, window5, window6,
                    windows7, windows8, windows9, create_via_group_dialog, edit_group_approved_windows]:
         if window:
