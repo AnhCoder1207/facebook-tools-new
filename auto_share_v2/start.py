@@ -48,7 +48,7 @@ def make_main_window(table_data):
         ]
     ]
     # Create the Window
-    return sg.Window('Auto Share V1.4', layout, finalize=True)
+    return sg.Window('Auto Share V1.5', layout, finalize=True)
 
 
 def add_vid_window():
