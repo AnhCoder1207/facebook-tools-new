@@ -206,7 +206,7 @@ class ChromeHelper:
         submit_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
         continue_mfa_xpath = """//*[@id="checkpointSubmitButton-actual-button"]"""
         homepage = "#search_jewel > a > span._7iz_"
-        self.driver.set_window_size(375, 812)
+        # self.driver.set_window_size(375, 812)
         try:
             self.driver.get("https://m.facebook.com/")
         except Exception as ex:
