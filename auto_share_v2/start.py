@@ -390,6 +390,10 @@ if __name__ == '__main__':
                 window.close()
             else:
                 break
+        elif event == "Exit":
+            browserExe = "chromedriver.exe"
+            os.system("taskkill /f /im " + browserExe)
+            break
         elif event == 'Shutdown Chrome':
             browserExe = "chrome.exe"
             os.system("taskkill /f /im " + browserExe)
@@ -1173,6 +1177,7 @@ if __name__ == '__main__':
                 threading.Thread(target=start_page_scanner, args=(proxy_enable,), daemon=True).start()
             else:
                 sg.Popup("Đã bật tự động duyệt page")
-    for window in [window1, window2, window3, window4, window5, window6, windows7, windows8, windows9]:
+    for window in [window1, window2, window3, window4, window5, window6,
+                   windows7, windows8, windows9, create_via_group_dialog, edit_group_approved_windows]:
         if window:
             window.close()
