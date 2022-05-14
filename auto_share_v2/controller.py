@@ -105,20 +105,21 @@ def start_post_approved():
 
 def start_page_scanner(proxy_enable):
     while True:
+        via_data = via_share.find({"status": "live"})
+        via_data = list(via_data)
+        if len(via_data) == 0:
+            time.sleep(3600)
+            continue
+        via_data = random.choice(via_data)
+        settings = page_auto_approved_table.find_one({"type": "page_scan"})
+        pages = settings.get("page_auto_scan", "").strip().split("\n")
+        password = via_data.get("password")
+        fb_id = via_data.get("fb_id")
+        mfa = via_data.get("mfa")
+        proxy_data = via_data.get("proxy")
+        via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
+
         try:
-            via_data = via_share.find({"status": "live"})
-            via_data = list(via_data)
-            if len(via_data) == 0:
-                time.sleep(3600)
-                continue
-            via_data = random.choice(via_data)
-            settings = page_auto_approved_table.find_one({"type": "page_scan"})
-            pages = settings.get("page_auto_scan", "").strip().split("\n")
-            password = via_data.get("password")
-            fb_id = via_data.get("fb_id")
-            mfa = via_data.get("mfa")
-            proxy_data = via_data.get("proxy")
-            via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "page_scan"}})
             chrome_worker = ChromeHelper()  # init worker
             status = chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
             if not status:
@@ -157,8 +158,9 @@ def start_page_scanner(proxy_enable):
                 # get new via
 
         except Exception as ex:
+            # via_share.update_one({"fb_id": fb_id}, {"$set": {"status": "live"}})
             logger.error(f"start_post_approved errors {ex}")
-            continue
+            # continue
 
         try:
             chrome_worker.driver.quit()
