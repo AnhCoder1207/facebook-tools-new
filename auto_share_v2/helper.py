@@ -229,7 +229,7 @@ class ChromeHelper:
             return True
 
         choose_your_account_selector = """#root > div > div > div > p"""
-        choose_your_account = self.waiting_for_text_by_css(choose_your_account_selector, "Choose Your Account")
+        choose_your_account = self.waiting_for_text_by_css(choose_your_account_selector, "Choose Your Account", waiting_time=1)
         if choose_your_account:
             # login exited account
             # data-sigil="login_profile_form"
