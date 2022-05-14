@@ -453,7 +453,7 @@ def start_login_via(main_windows, file_input, login_existed, number_threads, pro
                                               args=(sub_data, main_windows, login_existed, proxy_enable),
                                               daemon=True)
         start_login_thread.start()
-        time.sleep(5)
+        time.sleep(1)
 
 
 def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
