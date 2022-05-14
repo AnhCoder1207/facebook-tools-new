@@ -213,13 +213,18 @@ class ChromeHelper:
             logger.error(f"{self.fb_id} can not reach internet")
         # check via is ok
 
-        notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-        if notifications:
-            logger.info(f"{self.fb_id} passed")
-            return True
-
-        search_header = self.waiting_for_css_selector(homepage)
-        if search_header:
+        # notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        # if notifications:
+        #     logger.info(f"{self.fb_id} passed")
+        #     return True
+        #
+        # search_header = self.waiting_for_css_selector(homepage)
+        # if search_header:
+        #     logger.info(f"{self.fb_id} passed")
+        #     return True
+        # check passed
+        header = self.waiting_for_id("header")
+        if header:
             logger.info(f"{self.fb_id} passed")
             return True
 
@@ -284,21 +289,29 @@ class ChromeHelper:
             nux_nav_button.click()
 
         self.driver.get("https://m.facebook.com")
-        notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-        if notifications:
+        # notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+        # if notifications:
+        #     logger.info(f"{self.fb_id} passed")
+        #     return True
+        header = self.waiting_for_id("header")
+        if header:
             logger.info(f"{self.fb_id} passed")
             return True
         else:
             self.check_comunity_spams()
-            notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
-            if notifications:
+            # notifications = self.find_by_attr("div", 'data-sigil', 'messenger_icon')
+            # if notifications:
+            #     logger.info(f"{self.fb_id} passed")
+            #     return True
+            header = self.waiting_for_id("header")
+            if header:
                 logger.info(f"{self.fb_id} passed")
                 return True
 
-        search_header = self.waiting_for_css_selector(homepage)
-        if search_header:
-            logger.info(f"{self.fb_id} passed")
-            return True
+        # search_header = self.waiting_for_css_selector(homepage)
+        # if search_header:
+        #     logger.info(f"{self.fb_id} passed")
+        #     return True
 
         return False
 

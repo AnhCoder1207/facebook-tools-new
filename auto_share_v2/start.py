@@ -740,11 +740,12 @@ if __name__ == '__main__':
                     # print(video_id)
 
                     try:
-                        shutil.rmtree(f"{user_data_dir}/{fb_id}", ignore_errors=True)
+                        # shutil.rmtree(f"{user_data_dir}/{fb_id}/Default", ignore_errors=True)
                         via_share.delete_one({"fb_id": fb_id})
-                    except:
-                        sg.Popup(f"Can not remove {fb_id} please close chrome before delete via")
-                        break
+                    except Exception as ex:
+                        logger.error(f"delete profile error: {ex}")
+                        # sg.Popup(f"Can not remove {fb_id} please close chrome before delete via")
+                        continue
 
                     # query = db.delete(via_share).where(via_share.columns.fb_id == fb_id)
                     # results = connection.execute(query)

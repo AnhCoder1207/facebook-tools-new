@@ -554,7 +554,10 @@ def login_via_thread(via_data, main_windows, login_existed, proxy_enable):
                 #         pass
                 #     continue
 
-                shutil.rmtree(f"{user_data_dir}/{fb_id}")
+                try:
+                    shutil.rmtree(f"{user_data_dir}/{fb_id}/Default", ignore_errors=True)
+                except Exception as ex:
+                    pass
                 chrome_worker.open_chrome(fb_id, password, mfa, proxy_data, proxy_enable)
                 login_status = chrome_worker.login()
                 # login success
